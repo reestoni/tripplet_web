@@ -1,0 +1,129 @@
+import { useEffect, useState } from "react";
+import { request, ApiError } from "../api";
+import { useI18n } from "../i18n";
+import { useDisplay, type DisplayPrefs } from "../display";
+
+/* The user's own settings (desktop ui/widgets/user_settings_dialog.py + ui/screen_change_pw.py) on
+   backend/app/settings_api.py - same stored values as the desktop. */
+
+type Data = { welcome: string; welcome_max: number; first_name: string; accent: string; default_accent: string;
+  prefs: DisplayPrefs; start_options: { key: string; nav_route: string | null; web: boolean }[]; can_store: boolean };
+
+export function PasswordForm({ onDone, submit }: { onDone: () => void;
+  submit: (old: string, nw: string, rep: string) => Promise<unknown> }) {
+  const { t } = useI18n();
+  const [v, setV] = useState({ old: "", nw: "", rep: "" });
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true); setErr(null);
+    try { await submit(v.old, v.nw, v.rep); setV({ old: "", nw: "", rep: "" }); onDone(); }
+    catch (e) { setErr(e instanceof ApiError && e.code ? t(`pw.err.${e.code}`) : String(e)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="st-form">
+      <label>{t("pw.old")}<input type="password" autoComplete="current-password" value={v.old} onChange={(e) => setV({ ...v, old: e.target.value })} /></label>
+      <label>{t("pw.new")}<input type="password" autoComplete="new-password" value={v.nw} onChange={(e) => setV({ ...v, nw: e.target.value })} /></label>
+      <label>{t("pw.repeat")}<input type="password" autoComplete="new-password" value={v.rep} onChange={(e) => setV({ ...v, rep: e.target.value })}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); go(); } }} /></label>
+      {err && <div className="login-error set-full">{err}</div>}
+      <div className="set-full"><button type="button" className="btn-green" disabled={busy || !v.old || !v.nw || !v.rep} onClick={go}>{t("pw.change")}</button></div>
+    </div>
+  );
+}
+
+export default function Settings() {
+  const { t } = useI18n();
+  const disp = useDisplay();
+  const [d, setD] = useState<Data | null>(null);
+  const [welcome, setWelcome] = useState("");
+  const [accent, setAccent] = useState("#39a650");
+  const [start, setStart] = useState("backlog");
+  const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [pwDone, setPwDone] = useState(false);
+
+  useEffect(() => {
+    request<Data>("GET", "/api/settings").then((x) => {
+      setD(x); setWelcome(x.welcome); setAccent(x.accent); setStart(x.prefs.start || "backlog");
+    }).catch((e) => setMsg({ kind: "err", text: String(e) }));
+  }, []);
+  if (!d || !disp) return <div className="muted">{msg?.text ?? t("app.loading")}</div>;
+  const p = disp.prefs;
+
+  const save = async () => {
+    try {
+      await request("POST", "/api/settings", { welcome, accent, start,
+        prefs: { contrast: p.contrast, crosshair: p.crosshair, readbar: p.readbar, alert_marks: p.alert_marks, cb_colours: p.cb_colours, scale: p.scale } });
+      document.documentElement.style.setProperty("--accent", accent);
+      setMsg({ kind: "ok", text: t("set.saved") });
+    } catch (e) { setMsg({ kind: "err", text: e instanceof ApiError && e.code ? t(`set.err.${e.code}`) : String(e) }); }
+  };
+  const tog = (k: keyof DisplayPrefs) => disp.set({ [k]: !p[k] } as Partial<DisplayPrefs>, false);
+
+  return (
+    <div className="page set-page">
+      <div className="page-head"><h1>{t("set.title")}</h1></div>
+
+      <section className="set-box">
+        <h2>{t("set.welcome")}</h2>
+        <input className="mj-search set-wide" maxLength={d.welcome_max} value={welcome} placeholder={t("bl.welcome", { name: d.first_name })}
+          onChange={(e) => setWelcome(e.target.value)} />
+        <p className="muted">{t("set.welcomeHint", { n: d.welcome_max })}</p>
+      </section>
+
+      <section className="set-box">
+        <h2>{t("set.start")}</h2>
+        <label className="st-goto">{t("set.startLabel")}
+          <select value={start} onChange={(e) => setStart(e.target.value)}>
+            {d.start_options.map((o) => <option key={o.key} value={o.key}>{o.nav_route ? t(`nav.${o.nav_route}`) : o.key}{o.web ? "" : ` (${t("set.desktopOnly")})`}</option>)}
+          </select></label>
+        <p className="muted">{t("set.startHint")}</p>
+      </section>
+
+      <section className="set-box">
+        <h2>{t("set.accent")}</h2>
+        <span className="set-row">
+          <input type="color" value={accent} onChange={(e) => { setAccent(e.target.value); document.documentElement.style.setProperty("--accent", e.target.value); }} />
+          <code>{accent}</code>
+          <button className="btn-plain" onClick={() => { setAccent(d.default_accent); document.documentElement.style.setProperty("--accent", d.default_accent); }}>{t("set.defaultGreen")}</button>
+        </span>
+      </section>
+
+      <section className="set-box">
+        <h2>{t("set.textSize")}</h2>
+        <p className="muted">{t("set.textSizeWeb")}</p>
+      </section>
+
+      <section className="set-box">
+        <h2>{t("set.tables")}</h2>
+        {(["contrast", "crosshair", "readbar", "alert_marks", "cb_colours"] as const).map((k) => (
+          <label key={k} className="st-check set-check"><input type="checkbox" checked={!!p[k]} onChange={() => tog(k)} /> {t(`set.${k}`)}</label>
+        ))}
+        <p className="muted">{t("set.zoomHint")} {p.scale !== 100 && <>{t("set.zoomNow", { n: p.scale })} <button className="btn-plain" onClick={() => disp.set({ scale: 100 }, false)}>100 %</button></>}</p>
+        <table className="pivot set-preview" onClick={(e) => { const td = (e.target as HTMLElement).closest("td"); if (td) window.dispatchEvent(new CustomEvent("tripplet:cell-focus", { detail: td })); }}>
+          <thead><tr><th className="pv-corner" /><th>V1</th><th>V2</th><th>V3</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">{t("set.pvTenacity")}</th><td>42.1</td><td className="red">38.7</td><td>41.9</td></tr>
+            <tr><th scope="row">{t("set.pvElong")}</th><td className="orange">21.5</td><td>24.0</td><td>23.8</td></tr>
+            <tr><th scope="row">{t("set.pvShrink")}</th><td>5.2</td><td>5.0</td><td>5.4</td></tr>
+          </tbody>
+        </table>
+        <p className="muted">{t("set.previewHint")}</p>
+      </section>
+
+      <div className="toolbar">
+        <button className="btn-green" onClick={save}>{t("mj.save")}</button>
+        {msg && <span className={msg.kind === "err" ? "mj-msg err" : "mj-msg"}>{msg.text}</span>}
+      </div>
+
+      <section className="set-box">
+        <h2>{t("pw.title")}</h2>
+        {pwDone ? <p className="mj-msg">{t("pw.done")}</p> : (
+          <PasswordForm onDone={() => setPwDone(true)}
+            submit={(old, nw, rep) => request("POST", "/api/settings/password", { old, new: nw, repeat: rep })} />
+        )}
+      </section>
+    </div>
+  );
+}

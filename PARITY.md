@@ -14,22 +14,20 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 |---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
 | 2. Backlog | 31 | 0 | 0 | 1 | 32 |
-| 3. Show Experiment | 91 | 3 | 4 | 1 | 99 |
+| 3. Show Experiment | 92 | 3 | 3 | 1 | 99 |
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
-| 7. Login, sidebar, account | 10 | 3 | 7 | 1 | 21 |
+| 7. Login, sidebar, account | 14 | 1 | 5 | 1 | 21 |
 | 8. Create Experiment / Add Trial Series / Add Lab Machines | 16 | 0 | 0 | 0 | 16 |
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
 | 12. Manage User | 7 | 0 | 0 | 1 | 8 |
-| **Total** | 270 | 8 | 14 | 5 | 297 |
+| **Total** | 275 | 6 | 11 | 5 | 297 |
 
-Most important gaps (judgement, updated 2026-11-13): Backlog multi-select + move several, Ctrl+double-click = new tab
-(lists), Show Experiment material line with stock symbol, jet / spool / housing tooltips, Jet Air "Sync physical jets" /
-"Apply to all", recycle bin (preview + restore), notifications bell, quick search, recent series, settings (display prefs,
-start screen, accent colour), change password, What's new. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, recycle bin (preview + restore),
+notifications bell, quick search, recent series, What's new, then the tools. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -182,7 +180,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Groups view writes all plies of the group, orange if different | `GroupCellBinding` | **DONE** | server binding + `cell_alerts` (assumed) |
 | Change log, DY ratio, tension timestamps, multi-ply tracking on save | `_save_all` / `_stamp_trial_timestamp` / `_track_multi_ply` | **DONE** | `db/series_save.save_series_edits` |
 | Zoom Ctrl+wheel / Ctrl+± / Ctrl+0 | `FrozenFirstColumnTable` shortcuts | **PARTIAL** | browser zoom only |
-| Display prefs: text size, contrast stripes, crosshair | `display_prefs` / `_pass_display_to_model` | **MISSING** | Qt (`ui/display_prefs.py`); stored in `tblUser.DisplaySettings` |
+| Display prefs: text size, contrast stripes, crosshair | `display_prefs` / `_pass_display_to_model` | **DONE** | `fe/display.tsx` (contrast, crosshair, reading bar, warning symbols, colour-blind colours, Ctrl+wheel table zoom) from `tblUser.DisplaySettings` via `be/settings_api.py`; text size = browser zoom |
 | Read bar (parameter + value of current cell, warning) | `read_bar_text` | **MISSING** | |
 | Frozen first column / header while scrolling | `FrozenFirstColumnTable` | **DONE** | sticky CSS (assumed in styles.css) |
 
@@ -301,8 +299,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Feature | Desktop (file:function) | Web status | Notes / logic location |
 |---|---|---|---|
 | Login user + password, inactive user, wrong password | `_attempt_login` | **DONE** | same checks in `be/auth.py` |
-| Password = username → forced change | `_attempt_login` | **PARTIAL** | refused with hint to use desktop |
-| "Change Password" | `ui/screen_change_pw.py` | **MISSING** | Qt screen |
+| Password = username → forced change | `_attempt_login` | **DONE** | login page shows the change form, `POST /api/auth/initial-password` (`db/user_account.change_password`), then logged in |
+| "Change Password" | `ui/screen_change_pw.py` | **DONE** | Settings page, `POST /api/settings/password`, codes from `db/user_account` |
 | Landing screen from Settings ("start") | `_go_landing` | **DONE** | `be/start_page.py` (web routes only) |
 | Sidebar sections, collapse, narrow mode (logo click) | `sidebar.py` / `install_full_sidebar` | **DONE** | localStorage |
 | Feature access (hide items) | `feature_access` / `_allowed` | **DONE** | `be/nav.py`, `require_feature` |
@@ -314,8 +312,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Knowledge Base | `screen_onboarding.py` | **DONE** | `pages/KnowledgeBase.tsx`, `backend/app/kb.py` (same HTML pages, tree, scene tabs, quiz → usage log, open:/tool: links). Popup from app cells (kb_popup) still missing, see Show Experiment |
 | Help (F1) search | `help_search.py` | **DONE** | `fe/components/Help.tsx` (`HelpHost` in the Shell: F1 + sidebar entry), `be/help.py` on `ui/help_index`, `ui/kb_search`; same help_* usage events. KB hits navigate to the KB page (desktop: popup) |
 | Ask AI in the help search | `help_ai.py` | **NOT IN WEB** | deliberately left out (user decision 2026-11-13) |
-| Settings (text size, contrast, crosshair, start screen) | `display_prefs` / `user_settings_dialog` | **MISSING** | |
-| Accent colour picker | `pick_accent_colour` | **PARTIAL** | colour applied, cannot be changed |
+| Settings (text size, contrast, crosshair, start screen) | `display_prefs` / `user_settings_dialog` | **DONE** | `fe/pages/Settings.tsx` (⚙ in the sidebar footer) on `be/settings_api.py`: welcome, start screen, accent, table options; same stored values as desktop; text size = browser zoom |
+| Accent colour picker | `pick_accent_colour` | **DONE** | Settings page, live preview + "Default green" |
 | "Fresh off the Spool" (What's new) + auto popup after login | `ui/whats_new.py` | **MISSING** | data `ui/widgets/whats_new_texts.py` |
 | Log Out | `on_logout` | **DONE** | |
 | Mode/DB banner (non-prod), version | footer / title | **DONE** | |

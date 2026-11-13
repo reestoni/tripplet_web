@@ -11,7 +11,8 @@ export type User = {
   accent_colour: string | null;
 };
 
-export type Me = { user: User; mode: string; db: string; version: string; start_route: string };
+export type Me = { user: User; mode: string; db: string; version: string; start_route: string;
+  display: import("./display").DisplayPrefs };
 
 export type NavItem = {
   key: string;

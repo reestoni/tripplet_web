@@ -120,6 +120,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
               <img src={img("user_white.png")} alt="" />
               <span>{name}</span>
             </div>
+            <NavLink className="sb-settings" to="/settings" title={t("sb.settings")}>⚙</NavLink>
             <button className="sb-logout" onClick={onLogout}>{t("sb.logout")}</button>
           </div>
           <LangFlags className="sb-flags" />

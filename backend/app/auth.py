@@ -58,9 +58,9 @@ def attempt_login(username: str, password: str) -> Dict[str, Any]:
     if not username or not password:
         raise LoginError("missing", "Please enter username and password.")
     if username.lower() == password.lower():
+        # the page then offers the change (desktop ScreenChangePw): /api/auth/initial-password
         raise LoginError("insecure_password",
-                         "The password must not be the same as the username. "
-                         "Please change your password in the TrippleT desktop app first.")
+                         "The password must not be the same as the username. Please set a new password.")
     if not check_credentials(username, password):
         try:
             if verify_user_password(username, password) and not is_user_active(username):

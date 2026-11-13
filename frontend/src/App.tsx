@@ -17,6 +17,8 @@ import ManageYarn from "./pages/ManageYarn";
 import YarnStock from "./pages/YarnStock";
 import StockTake from "./pages/StockTake";
 import ManageUsers from "./pages/ManageUsers";
+import Settings from "./pages/Settings";
+import { DisplayProvider } from "./display";
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -53,6 +55,7 @@ export default function App() {
   };
 
   return (
+    <DisplayProvider initial={me.display}>
     <Shell me={me} onLogout={logout}>
       <Routes>
         <Route path="/" element={<Navigate to={me.start_route || "/backlog"} replace />} />
@@ -73,10 +76,12 @@ export default function App() {
         <Route path="/tools/yarn-stock" element={<YarnStock />} />
         <Route path="/tools/yarn-stock/stock-take" element={<StockTake />} />
         <Route path="/superuser/users" element={<ManageUsers />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/knowledge-base" element={<KnowledgeBase />} />
         <Route path="/knowledge-base/:key" element={<KnowledgeBase />} />
         <Route path="*" element={<NotYet />} />
       </Routes>
     </Shell>
+    </DisplayProvider>
   );
 }

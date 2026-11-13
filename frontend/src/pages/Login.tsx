@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
-import { api, ApiError, img } from "../api";
+import { api, ApiError, img, request } from "../api";
+import { PasswordForm } from "./Settings";
 import { LangFlags, useI18n } from "../i18n";
 
 /** startupError is a text key (e.g. "app.serverDown"). */
@@ -9,6 +10,7 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(startupError);
+  const [initial, setInitial] = useState<string | null>(null);   // user name: password = user name -> set a new one
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -19,7 +21,8 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
       await api.login(username.trim(), password);
       onLoggedIn();
     } catch (err) {
-      setError(err instanceof ApiError && err.code ? `login.err.${err.code}` : "app.serverDown");
+      if (err instanceof ApiError && err.code === "insecure_password") { setInitial(username.trim()); setError(null); }
+      else setError(err instanceof ApiError && err.code ? `login.err.${err.code}` : "app.serverDown");
       setPassword("");
     } finally {
       setBusy(false);
@@ -37,6 +40,13 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
             <div className="login-brand-sub">HEBERLEIN</div>
           </div>
         </div>
+        {initial ? (<>
+          <h1>{t("pw.initialTitle")}</h1>
+          <p className="muted">{t("pw.initialHint")}</p>
+          <PasswordForm onDone={onLoggedIn}
+            submit={(old, nw, rep) => request("POST", "/api/auth/initial-password", { username: initial, old, new: nw, repeat: rep })} />
+          <button type="button" className="btn-plain" onClick={() => setInitial(null)}>{t("pw.back")}</button>
+        </>) : (<>
         <h1>{t("login.title")}</h1>
         <label>
           {t("login.username")}
@@ -55,6 +65,7 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
         <button className="btn-green" type="submit" disabled={busy || !username.trim() || !password}>
           {busy ? t("login.busy") : t("login.submit")}
         </button>
+        </>)}
       </form>
     </div>
   );

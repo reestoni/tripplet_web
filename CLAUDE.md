@@ -188,6 +188,15 @@ neu/zurücksetzen = Argon2. Bewusst nicht im Web: API-Key/Tokens (KI). Strenger 
 höchstens so lang wie die Spalte (`UserName` ist auf dev_local VARCHAR(5)!), eigenes Konto nicht löschbar.
 Tests `tests/test_user_admin.py` (Test-Benutzer wird angelegt und gelöscht, Zugriffsregeln danach exakt wiederhergestellt).
 
+**Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
+`db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
+`tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,
+Fadenkreuz + Lesezeile (folgen dem Ereignis `tripplet:cell-focus` aus `edit.tsx`), Warnsymbole, Farbenblind-Farben,
+Tabellen-Zoom Strg+Mausrad (`--tscale`, still gespeichert über `/api/settings/prefs`). Textgrösse = Browser-Zoom (bewusst,
+CSS-Zoom der ganzen Seite verschiebt Kontextmenüs). Passwort ändern (`/api/settings/password`) und Pflicht-Wechsel beim
+Login, wenn Passwort = Benutzername (`/api/auth/initial-password`, danach angemeldet). Tests `tests/test_settings.py`
+(nur auf einem Test-Benutzer, der angelegt und gelöscht wird).
+
 **Yarn-Stock-Hilfe** (2026-11-13): eigenes Desktop-Format (`ui/widgets/yarn_stock_help_dialog.py` + `yarn_stock_help_texts.py`)
 -> `help._yarn_stock_help()` baut daraus Reiter/Bausteine für den normalen Hilfe-Dialog (`EXTRA_HELP`); "?" auf Yarn Stock,
 Inventur springt auf Reiter `stocktake`. Knopfnamen in den Texten bleiben die englischen des Desktops.
@@ -208,7 +217,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
-  2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, dann Settings, dann
+  2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, ✅ Settings, dann
   nacheinander die Werkzeuge. **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
   Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
@@ -220,7 +229,5 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
   Freigaben für YarnScope-TDMS und Serien-Anhänge (Bilder/PDFs, `\\heb-fil-003\heberlein\technik\tripplet\...`
   = `H:\Technik\TrippleT\...`); evtl. Firmen-Login.
 
-- Passwort ändern gibt es im Web noch nicht (Login mit Passwort = Benutzername wird mit
-  Hinweis auf die Desktop-App abgewiesen).
 - Beim Desktop-Login laufen zusätzlich Draft-Request-Bereinigung und Athena-Token-Reset –
   im Web noch nicht (erst relevant mit Experiment Requests bzw. KI-Funktionen).

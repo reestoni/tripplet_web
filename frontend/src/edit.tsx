@@ -205,6 +205,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       setSel(new Set([k]));   // right-click inside the selection keeps it (desktop _GridView)
     }
     anchor.current = td;
+    window.dispatchEvent(new CustomEvent("tripplet:cell-focus", { detail: td }));
   }, []);
 
   const parse = (k: string): CellAddr => {

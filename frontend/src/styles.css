@@ -956,3 +956,33 @@ th.jump-flash { outline: 3px solid var(--accent); outline-offset: -3px; backgrou
 .mu-cell.def { color: #9AA19C; }
 .mu-cell.yes { color: #1F7A3A; font-weight: 700; }
 .mu-cell.no { color: #C62828; font-weight: 700; }
+
+/* Settings + display options of the experiment tables (display.tsx) */
+.set-page { max-width: 820px; }
+.set-box { background: #fff; border: 1px solid #dfe7df; border-radius: 6px; padding: 12px 16px; margin: 0 0 12px; }
+.set-box h2 { font-size: 15px; margin: 0 0 8px; color: #1F7A3A; }
+.set-wide { width: 100%; max-width: 480px; }
+.set-row { display: inline-flex; align-items: center; gap: 10px; }
+.set-row input[type=color] { width: 40px; height: 28px; padding: 0; border: 1px solid #ccc; cursor: pointer; }
+.set-check { display: block; margin: 4px 0; }
+.set-preview { margin-top: 8px; }
+.set-full { grid-column: 1 / -1; }
+.st-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
+.st-form label { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.sb-settings { color: #333; text-decoration: none; font-size: 18px; padding: 0 6px; }
+.sb-settings:hover, .sb-settings.active { color: var(--accent); }
+:root { --xh-colour: rgba(57, 166, 80, 0.13); --tscale: 1; }
+table.pivot { zoom: var(--tscale); }
+.readbar { position: fixed; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 900; max-width: 80vw;
+  background: #263238; color: #fff; padding: 6px 14px; border-radius: 6px; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+body.pv-contrast table.pivot th, body.pv-contrast table.pivot td { border-color: #555; color: #000; }
+body.pv-contrast table.pivot td { background: #fff; }
+body.pv-contrast table.pivot thead th { background: #1b1b1b; color: #fff; }
+body.pv-contrast table.pivot td.red { background: #ff9c9c !important; color: #7a0000; }
+body.pv-contrast table.pivot td.orange { background: #ffc96b !important; color: #6b3500; }
+body.pv-marks table.pivot td.red::before { content: "● "; font-size: 10px; }
+body.pv-marks table.pivot td.orange::before { content: "▲ "; font-size: 10px; }
+body.pv-cb { --xh-colour: rgba(33, 120, 230, 0.15); }
+body.pv-cb table.pivot td.red { background: #ffcf99 !important; color: #8a4200; }
+body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a00; }
