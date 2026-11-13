@@ -14,7 +14,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 |---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
 | 2. Backlog | 31 | 0 | 0 | 1 | 32 |
-| 3. Show Experiment | 92 | 3 | 3 | 1 | 99 |
+| 3. Show Experiment | 93 | 3 | 2 | 1 | 99 |
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
@@ -25,10 +25,11 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
 | 12. Manage User | 7 | 0 | 0 | 1 | 8 |
 | 13. Smart Chart / Dashboards | 22 | 1 | 0 | 0 | 23 |
-| **Total** | 297 | 7 | 11 | 5 | 320 |
+| 14. Tools | 9 | 0 | 0 | 0 | 9 |
+| **Total** | 307 | 7 | 10 | 5 | 329 |
 
 Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, recycle bin (preview + restore),
-notifications bell, quick search, recent series, What's new, then the tools. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+notifications bell, quick search, recent series, What's new (all tools are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -458,3 +459,4 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | TDMS Inspector (any .tdms file, DTY + ATY YarnScope, no DB; no save/batch/compare) | `ui/screen_tdms_inspector.py` | **DONE** | `be/tdms_inspector.py` (upload) + the YarnScope routes for negative series numbers |
 | Canvas (free board, series images + PDFs + local files, move / scale / rotate, annotation tools, undo, grid, background colour, PNG export, project files, paste, Del) | `ui/screen_canvas.py` | **DONE** | `fe/pages/Canvas.tsx` on the Image Compare routes; rotation around the centre |
 | Process Playground (yarn/jet list with search + sort, start from a trial or typed with range notes, sliders, statements per lab value, warnings, goals + Find settings, suggestions, chart with model curve + band, Reload/F5, open from Show Experiment) | `ui/screen_process_playground.py` | **DONE** | `be/process_playground_api.py` on `ui/dty_whatif.py` + `ui/process_playground_core.py`; statements / based-on / start notes English (shared module) |
+| Requirement Hub / Quick Scan (hub card, filters = must, targets must / weighted / distance with goal, direction, weight, tension, lookup multi-select, ad-hoc DB fields, score table + ranking, query overview, rulesets save / load / delete) | `ui/screen_requirement_hub.py`, `ui/screen_quick_scan.py` | **DONE** | `be/quick_scan_api.py` on `db/quick_scan.py`; no Athena advisor (no AI in the web); click on a hit opens the series |

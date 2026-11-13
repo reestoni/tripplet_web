@@ -18,7 +18,7 @@ WEB_ROUTES = {"backlog": "/backlog", "all_experiments": "/experiments", "my_requ
               "smart_chart": "/tools/smart-chart", "dashboards": "/tools/dashboards",
               "jet_roi": "/tools/jet-roi", "air_supply": "/tools/air-supply", "image_compare": "/tools/image-compare",
               "label_generator": "/tools/label-generator", "tdms_inspector": "/tools/tdms-inspector",
-              "canvas": "/tools/canvas", "process_playground": "/tools/process-playground"}
+              "canvas": "/tools/canvas", "process_playground": "/tools/process-playground", "requirement_hub": "/tools/requirement-hub"}
 
 
 def preferred_start(user_id: Any) -> str:

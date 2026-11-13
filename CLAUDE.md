@@ -31,7 +31,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   **dort** in ein Qt-freies Modul gezogen (Desktop nutzt es dann auch), nie hier nachgebaut.
   Bisher so herausgezogen: `db/nav_counts.py` (Badges), `db/user_profile.py` (Login-Profil),
   `feature_access.rules_for()` (Rechte für beliebigen Benutzer), `db/experiment_create.py`
-  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13), `db/yarn_stock.py` (Yarn Stock, 2026-11-13), `db/user_admin.py` (Manage User, 2026-11-13).
+  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13), `db/yarn_stock.py` (Yarn Stock, 2026-11-13), `db/user_admin.py` (Manage User, 2026-11-13), `ui/process_playground_core.py`, `db/quick_scan.py` (2026-11-13).
   Alle Regeln der Desktop-`CLAUDE.md` zu Schreibpfaden gelten auch hier (Änderungsprotokoll,
   `dy_ratio`, Papierkorb, Plausibilität, `exclude_references_sql`, `execute_insert` …).
 - Offline-Modus (SQLite) gibt es im Web nicht (offen, ob je nötig).
@@ -250,6 +250,14 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Warnungen als Codes, Vorschläge, Diagrammdaten, `trial_start`, `series_is_dty`; Desktop-Screen nutzt es). Versuche einmal pro
   Prozess geladen (Neu laden/F5), Modell-Fits pro Kombination gecacht. Seite `ProcessPlayground.tsx` (Plotly). Aussagen,
   "Grundlage", Start-Hinweise und die Vorschlags-Meldung kommen englisch aus dem gemeinsamen Modul.
+- Requirement Hub `/tools/requirement-hub` (Karte) + Quick Scan `/tools/requirement-hub/quick-scan` (`QuickScan.tsx`, beide
+  Seiten in einer Datei): `app/quick_scan_api.py` (`/api/quick-scan/…`, Feature requirement_hub) auf neu `db/quick_scan.py`
+  (aus `ui/screen_quick_scan.py` gezogen: Felder, Lookup-Optionen, Ad-hoc-Felder, `QuickScanEvaluator`, Score, Regelsätze;
+  Desktop nutzt es). **Sicherheit:** Tabellen-/Spaltennamen landen im SQL-Text - der Browser schickt nur Feld-Referenzen
+  (`field_id` oder Ad-hoc Tabelle+Spalte), `quick_scan.resolve_field` prüft gegen Whitelist + information_schema.
+  Kein Athena-Berater (keine KI im Web). Korrigiert in beiden Apps: geladene Regelsätze behalten ihre Reihenfolge
+  (gewichtete Regeln tragen die Richtung in sort_order = n*10+Code); Lookup-Auswahlen werden ohne Werte gespeichert
+  (Desktop brach das Speichern ab).
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
@@ -281,7 +289,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
   2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, ✅ Settings, dann
-  nacheinander die Werkzeuge (✅ Smart Chart + Dashboards zuerst, Nutzerwunsch). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
+  nacheinander die Werkzeuge (✅ alle, zuletzt Process Playground und Requirement Hub, 2026-11-13). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
   Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen

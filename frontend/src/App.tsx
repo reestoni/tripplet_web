@@ -20,6 +20,7 @@ import ManageUsers from "./pages/ManageUsers";
 import Settings from "./pages/Settings";
 import SmartChart from "./pages/SmartChart";
 import Dashboards from "./pages/Dashboards";
+import QuickScan, { RequirementHub } from "./pages/QuickScan";
 import ProcessPlayground from "./pages/ProcessPlayground";
 import Canvas from "./pages/Canvas";
 import TdmsInspector from "./pages/TdmsInspector";
@@ -89,6 +90,8 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
+        <Route path="/tools/requirement-hub" element={<RequirementHub />} />
+        <Route path="/tools/requirement-hub/quick-scan" element={<QuickScan />} />
         <Route path="/tools/process-playground" element={<ProcessPlayground />} />
         <Route path="/tools/canvas" element={<Canvas />} />
         <Route path="/tools/tdms-inspector" element={<TdmsInspector />} />
