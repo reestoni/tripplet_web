@@ -3,6 +3,7 @@ import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import AdminTable, { ColumnOrderDialog, type FkItems, type Row } from "../components/AdminTable";
 import { HelpButton } from "../components/Help";
+import { useContextMenu } from "../components/ContextMenu";
 import { errText as errTextFor, UsageList, type Usage } from "./ManageJets";
 
 /* Manage Yarn (desktop ui/screen_manage_yarn.py + ui/screen_new_yarn.py) on backend/app/admin_yarn.py.
@@ -24,6 +25,7 @@ type YarnData = {
   rows: Row[];
   can_delete: boolean;
   can_edit_minstock: boolean;
+  kb: Record<string, Record<string, string>>;   // column -> value id -> Knowledge Base route (Material / Garntyp)
   column_order: string[];
 };
 
@@ -128,6 +130,7 @@ export default function ManageYarn() {
   const [dup, setDup] = useState<ApiError | null>(null);
   const [colourFor, setColourFor] = useState<{ col: string; id: number } | null>(null);
   const dirtyCount = Object.keys(changes).length;
+  const cm = useContextMenu();
 
   const load = useCallback((selectId?: number) => {
     setLoadErr(null);
@@ -256,6 +259,10 @@ export default function ManageYarn() {
         changes={changes} onEdit={onEdit} selected={selected} onSelect={setSelected}
         onOpen={(id) => openEdit(data.rows.find((r) => Number(r[ID]) === id))}
         search={search} searchCols={[sp.name ?? "Name"]} onCount={setShownCount}
+        onCellMenu={(e, col, v) => {
+          const url = v === null || v === undefined ? undefined : data.kb?.[col]?.[String(v)];
+          if (url) cm.open(e, [{ label: t("kb.learnMore"), onClick: () => window.open(url, "_blank") }]);
+        }}
         header={label}
         prefix={(c, _row, val) => (c === sp.name || c === sp.colour) && sp.colour ? <Square css={css(val(sp.colour))} /> : null}
         addNew={sp.colour ? { cols: new Set([sp.colour]), label: t("my.colour_add"), onAdd: (col, id) => setColourFor({ col, id }) } : undefined}
@@ -283,6 +290,7 @@ export default function ManageYarn() {
         }}
       />
 
+      {cm.menu}
       {colsOpen && (
         <ColumnOrderDialog columns={order} onChange={setOrder} label={label}
           onSave={() => request("POST", "/api/admin/yarn/column-order", { columns: [ID, sp.name, ...order] }).catch((e) => setMsg({ kind: "err", text: errText(t, e) }))}

@@ -14,7 +14,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 |---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
 | 2. Backlog | 31 | 0 | 0 | 1 | 32 |
-| 3. Show Experiment | 87 | 3 | 8 | 1 | 99 |
+| 3. Show Experiment | 91 | 3 | 4 | 1 | 99 |
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
@@ -23,7 +23,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
-| **Total** | 259 | 8 | 18 | 4 | 289 |
+| **Total** | 263 | 8 | 14 | 4 | 289 |
 
 Most important gaps (judgement, updated 2026-11-13): Backlog multi-select + move several, Ctrl+double-click = new tab
 (lists), Show Experiment material line with stock symbol, jet / spool / housing tooltips, Jet Air "Sync physical jets" /
@@ -191,7 +191,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 |---|---|---|---|
 | Value: Add note… / Notes (n)… (add, edit own, delete own/superuser) | `cell_notes_ui.add_cell_note_actions` | **DONE** | `NotesDialog`, `be/series_actions.py` → `db/cell_notes` |
 | Value: Change history… (superuser), "whole series" checkbox | `_add_cell_history_action`, `change_history_dialog.py` | **DONE** | `HistoryDialog` → `db/change_log` |
-| Value / row title / lab header: "Learn more in Knowledge Base" | `kb_links.add_action` / `machine_cell_target` / `table_target` | **MISSING** | mapping `ui/kb_links.py` is Qt (dicts could be split) |
+| Value / row title / lab header: "Learn more in Knowledge Base" | `kb_links.add_action` / `machine_cell_target` / `table_target` | **DONE** | row title / cell / lab cells → `kbItem` (new tab); routes from `ui/kb_links` via `series_view.kb_url` (DTY Process cell by value); Manage Yarn Material / Garntyp too |
 | Value / row title (Machine, R&D): Fill row… (trial range, plies) | `_fill_machine_row_from_title` / `FillDialog` | **DONE** | `db/series_save.fill_range_edits` |
 | Row title: Hide row / Hide n rows / Show hidden here / Show all | `machine_row_visibility.add_context_actions` | **DONE** | web stores in localStorage, desktop in QSettings (not shared) |
 | "n rows hidden" button with menu | `btn_hidden_rows` | **DONE** | |
@@ -203,12 +203,12 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Trial header: Open Vn in Process Playground… | `_process_playground_available` | **MISSING** | Process Playground not in web; stats Qt-free `ui/dty_whatif.py` |
 | Trial header: Add reference sample… | `_add_reference_sample` | **DONE** | trial menu |
 | Trial header: Mark Vn as reference / Rename reference / Turn into normal trial | `_set_reference_flag` / `_rename_reference_sample` | **DONE** | trial menu |
-| Trial header (ref): Compare trials with this reference… | `_open_ref_compare` | **MISSING** | see "vs Ref / Target" |
+| Trial header (ref): Compare trials with this reference… | `_open_ref_compare` | **DONE** | trial header menu `tl.cmpWithRef` |
 | Trial header: Delete Vn / Delete n selected trials (blocked if unsaved) | `_delete_trials` / `_trial_delete_blocker` | **DONE** | `DeleteTrialsDialog` → `recycle_bin.delete_trials` |
 | Lab trial header: Flag Vn for retest… (superuser) | `_on_lab_header_context_menu` / `_mark_trial_for_retest` | **DONE** | `RetestDialog` → `db/retest_flags` |
 | Series change history (trial header menu) | `change_history_dialog` (series checkbox) | **DONE** | web extra entry |
-| Compare dialog double-click → jump to trial in Machine Data | `_show_trial_in_machine_data` | **MISSING** | with compare dialog |
-| DTY schema station right-click → KB, double-click | `dty_schema_panel` | **MISSING** | with schema |
+| Compare dialog double-click → jump to trial in Machine Data | `_show_trial_in_machine_data` | **DONE** | `RefCompareDialog onJump` → Machine Data tab, column scrolled into view |
+| DTY schema station right-click → KB, double-click | `dty_schema_panel` | **DONE** | `SchemaPanel` (right-click = KB page of the station) |
 
 ### 3e. Tooltips & markers
 

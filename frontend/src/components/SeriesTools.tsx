@@ -441,7 +441,8 @@ type CmpRow = { trial_id: number; label: string; passed: number; total: number; 
 
 const num = (s: string) => (s.trim() === "" ? null : Number(s.replace(",", ".")));
 
-export function RefCompareDialog({ seriesId, refId, onClose }: { seriesId: number; refId: number | null; onClose: () => void }) {
+export function RefCompareDialog({ seriesId, refId, onClose, onJump }: { seriesId: number; refId: number | null; onClose: () => void;
+  onJump?: (trialId: number) => void }) {
   const { t } = useI18n();
   const [setup, setSetup] = useState<CmpSetup | null>(null);
   const [ref, setRef] = useState<number | null>(refId);
@@ -547,7 +548,8 @@ export function RefCompareDialog({ seriesId, refId, onClose }: { seriesId: numbe
                 <thead><tr><th>{t("nt.trial")}</th><th>{t("tl.cmpPassed")}</th>{counted.map((m) => <th key={m.key} title={m.tab}>{m.title}</th>)}</tr></thead>
                 <tbody>
                   {res.rows.filter((r) => !onlyPass || r.all_pass).map((r) => (
-                    <tr key={r.trial_id} className={r.all_pass ? "cmp-all" : ""} title={r.failing.length ? t("tl.cmpMisses", { list: r.failing.join(", ") }) : undefined}>
+                    <tr key={r.trial_id} className={r.all_pass ? "cmp-all" : ""} onDoubleClick={() => onJump?.(r.trial_id)}
+                      title={[r.failing.length ? t("tl.cmpMisses", { list: r.failing.join(", ") }) : "", onJump ? t("tl.cmpJumpTip") : ""].filter(Boolean).join("\n") || undefined}>
                       <td className="nowrap"><b>{r.label}</b></td>
                       <td className="nowrap">{r.passed}/{r.total}</td>
                       {counted.map((m) => {

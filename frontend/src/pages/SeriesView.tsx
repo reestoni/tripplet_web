@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, ApiError, notesTip, request, type SeriesData, type SeriesRights } from "../api";
+import { api, ApiError, kbItem, notesTip, request, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
 import { confirmLeave, EditCell, EditProvider, useEdit } from "../edit";
 import MachineTable from "../components/MachineTable";
@@ -168,7 +168,19 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           )} />
       </EditProvider>
       {tool?.kind === "labels" && <LabelsDialog seriesId={s.id} onClose={() => setTool(null)} />}
-      {tool?.kind === "compare" && <RefCompareDialog seriesId={s.id} refId={tool.ref} onClose={() => setTool(null)} />}
+      {tool?.kind === "compare" && <RefCompareDialog seriesId={s.id} refId={tool.ref} onClose={() => setTool(null)}
+        onJump={(trialId) => {
+          // desktop _show_trial_in_machine_data: Machine Data, first column of that trial
+          setTool(null);
+          choose("machine");
+          window.setTimeout(() => {
+            const th = document.querySelector<HTMLElement>(`th[data-trial="${trialId}"]`);
+            if (!th) return;
+            th.scrollIntoView({ block: "nearest", inline: "center" });
+            th.classList.add("jump-flash");
+            window.setTimeout(() => th.classList.remove("jump-flash"), 1600);
+          }, 500);
+        }} />}
       {tool?.kind === "copy" && <CopyTrialsDialog seriesId={s.id} preselected={tool.ids} onClose={() => setTool(null)}
         onDone={(n) => reloadAll(t("tl.copied", { n }))} />}
       {tool?.kind === "yarns" && <YarnsDialog seriesId={s.id} onClose={() => setTool(null)} onDone={() => reloadAll(t("tl.yarnsSaved"))} />}
@@ -377,7 +389,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
               <tbody>
                 {current.rows.map((row, r) => (
                   <tr key={r} className={row.info ? "info" : ""}>
-                    <th scope="row">{tr("row", row.title, row.title)}</th>
+                    <th scope="row" onContextMenu={(e) => { if (current.kb) menus.open(e, kbItem(t, current.kb).slice(1)); }}>{tr("row", row.title, row.title)}</th>
                     {row.cells.map((cell, c) => (row.r == null ? (
                       <td key={c} className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "")}>{cell.v}</td>
                     ) : (
@@ -385,7 +397,8 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
                         className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
                         title={notesTip(cell.notes) || undefined}
                         onContextMenu={(e, a) => menus.cellMenu(e, a, cell,
-                          `${data.trials[c]?.label ?? ""} · ${tr("tab", current.key, current.title)} · ${tr("row", row.title, row.title)}`)} />
+                          `${data.trials[c]?.label ?? ""} · ${tr("tab", current.key, current.title)} · ${tr("row", row.title, row.title)}`,
+                          kbItem(t, current.kb).slice(1).concat(current.kb ? [{ sep: true as const }] : []))} />
                     )))}
                   </tr>
                 ))}

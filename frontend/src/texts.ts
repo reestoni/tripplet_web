@@ -1306,6 +1306,8 @@ const en = {
   "tl.trialOutput": "+ Trial output",
   "tl.trialOutputTip": "Adds the output of another trial (semi-finished product) as a ply",
   "tl.cmpOnlyPass": "Only trials that meet all criteria",
+  "kb.learnMore": "Learn more in Knowledge Base…",
+  "tl.cmpJumpTip": "Double-click: show this trial in Machine Data",
 };
 
 export type TextKey = keyof typeof en;
@@ -2605,6 +2607,8 @@ const de: Texts = {
   "tl.trialOutput": "+ Versuchs-Output",
   "tl.trialOutputTip": "Fügt den Output eines anderen Versuchs (Halbfabrikat) als Ply hinzu",
   "tl.cmpOnlyPass": "Nur Versuche, die alle Kriterien erfüllen",
+  "kb.learnMore": "In der Knowledge Base nachlesen…",
+  "tl.cmpJumpTip": "Doppelklick: diesen Versuch in Machine Data zeigen",
 };
 
 const es: Texts = {
@@ -3902,6 +3906,8 @@ const es: Texts = {
   "tl.trialOutput": "+ Salida de ensayo",
   "tl.trialOutputTip": "Añade la salida de otro ensayo (producto semiacabado) como ply",
   "tl.cmpOnlyPass": "Solo ensayos que cumplen todos los criterios",
+  "kb.learnMore": "Más información en la Knowledge Base…",
+  "tl.cmpJumpTip": "Doble clic: mostrar este ensayo en Machine Data",
 };
 
 const zh: Texts = {
@@ -5195,6 +5201,8 @@ const zh: Texts = {
   "tl.trialOutput": "+ 试验产出",
   "tl.trialOutputTip": "将另一个试验的产出（半成品）添加为一股",
   "tl.cmpOnlyPass": "仅显示满足所有标准的试验",
+  "kb.learnMore": "在知识库中了解更多…",
+  "tl.cmpJumpTip": "双击：在 Machine Data 中显示此试验",
 };
 
 export const TEXTS = { en, de, es, zh } as const;

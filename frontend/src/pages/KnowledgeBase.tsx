@@ -44,6 +44,7 @@ export default function KnowledgeBase() {
   // ?scene=&station= (1-based, ui/kb_links.py targets, e.g. from the machine schema)
   const wantScene = Number(search.get("scene")) || 0;
   const wantStation = Number(search.get("station")) || 0;
+  const wantFibre = (search.get("fibre") || "").replace(/[^a-z0-9_-]/gi, "");
   const [cat, setCat] = useState<Catalog | null>(null);
   const [mod, setMod] = useState<ModInfo | null>(null);
   const [scene, setScene] = useState(0);
@@ -78,7 +79,7 @@ export default function KnowledgeBase() {
           const sc = wantScene > 0 ? `&scene=${wantScene - 1 + (m.scene_base ?? 0)}` : "";
           const stn = wantStation > 0 ? `&station=${wantStation}` : "";
           setScene(wantScene > 0 ? wantScene - 1 : 0);
-          setSrc(`${m.url}?lang=${langRef.current}&embedded=1${sc}${stn}`);
+          setSrc(`${m.url}?lang=${langRef.current}&embedded=1${sc}${stn}${wantFibre ? `&fibre=${wantFibre}` : ""}`);
           store(LAST, m.key);
           request("POST", "/api/kb/opened", { key: m.key }).catch(() => undefined);
         } else {

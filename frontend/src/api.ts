@@ -93,7 +93,7 @@ export type SeriesData = {
   has_rd: boolean;
   has_yarnscope: boolean;
   has_yarnscope_aty: boolean;
-  tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; r?: number; cells: PivotCell[] }[]; flags: Record<string, string>; retest?: { trial: string; note: string }[] }[];
+  tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; r?: number; cells: PivotCell[] }[]; flags: Record<string, string>; retest?: { trial: string; note: string }[]; kb?: string | null }[];
   pending_tabs: { key: string; title: string }[];
   notes: (CellNote & { where_tab: string | null; where_row: string; trial_note: boolean })[];
 };
@@ -104,8 +104,8 @@ export type MachineData = {
   message: string | null;
   columns: { c: number; notes: CellNote[]; filter: string; trial_id: number; trial_label: string; reference: string | null; ply: string;
     ply_tooltip: string; colour: string | null; colour_name: string }[];
-  rows: { r: number; title: string; key: string; readonly: boolean; options?: [number | string, string][] | null;
-    cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null; img?: number | string }[] }[];
+  rows: { r: number; title: string; key: string; readonly: boolean; options?: [number | string, string][] | null; kb?: string | null;
+    cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null; img?: number | string; kb?: string }[] }[];
   filter_labels: string[];
   multi_ply?: boolean;
   machine_id?: number | null;
@@ -178,6 +178,10 @@ export const api = {
 export const img = (name: string) => `/api/img/${name}`;
 
 /** Tooltip text for notes on a value (same content as the desktop tooltip). */
+/** "Learn more in Knowledge Base…" (desktop ui/kb_links): opened in a new tab, so the user stays where he was. */
+export const kbItem = (t: (k: string) => string, url: string | null | undefined) =>
+  url ? [{ sep: true as const }, { label: t("kb.learnMore"), onClick: () => window.open(url, "_blank") }] : [];
+
 export function notesTip(notes?: CellNote[]): string {
   return (notes ?? []).map((n) => `${n.user || "?"}, ${n.when}: ${n.text}`).join("\n");
 }

@@ -168,7 +168,9 @@ def _tab_json(lt: stb.LabTab, p: stb.LabPivot, info: list, series_id: int, trial
             cells.append(cell)
         rows.append({"title": title, "r": r, "cells": cells})
     banner: List[Dict[str, str]] = []
+    from ui import kb_links
     return {"key": lt.key, "title": lt.title, "rows": rows,
+            "kb": kb_url(kb_links.LAB_TABLE_TARGET.get("tbl_" + lt.key)),   # desktop kb_links.table_target
             "flags": {str(c): tip for c, tip in _flags(series_id, lt.lab_source, trial_col, banner).items()},
             "retest": banner}
 
@@ -271,12 +273,18 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
     for rr, lst in (md.dropdown_lists or {}).items():
         dd_rows[rr] = _options(lst)
     rows = []
+    prof = _schema_profile(cache, md.row_keys)
     for r, title in enumerate(md.row_titles):
         if r in hidden:
             continue
         cells = []
+        rkey = md.row_keys[r] if r < len(md.row_keys) else ""
+        rkb = _row_kb(prof, rkey)
         for c in keep:
             cell: Dict[str, Any] = {"v": mdm.display_text(md, r, c, jets.map, housing.map)}
+            ckb = _cell_kb(rkb, cell["v"])
+            if ckb and ckb != rkb:
+                cell["kb"] = kb_url(ckb)
             if md.cells[r][c][1] is not None and r not in ro:
                 cell["e"] = 1
                 if r in dd_rows:
@@ -298,13 +306,40 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
             cells.append(cell)
         rows.append({"r": r, "rule": md.validators[r] if r < len(md.validators) else None,
                      "options": dd_rows.get(r),
-                     "title": title, "key": md.row_keys[r] if r < len(md.row_keys) else "",
+                     "title": title, "key": rkey, "kb": kb_url(rkb),
                      "readonly": r in set(md.read_only_rows or ()), "cells": cells})
     return {"mode": mode, "has_groups": has_groups, "message": None, "columns": columns, "rows": rows,
             "filter_labels": list(md.filter_labels or []) if mode != "compact" else [],
             "multi_ply": bool(md.has_multi_ply), "machine_id": md.machine_id,
             "custom_row": md.custom_group_row if has_custom else None,
-            "schema": _schema_profile(cache, md.row_keys)}   # "dty" / "aty" / None (app/schema.py)
+            "schema": prof}   # "dty" / "aty" / None (app/schema.py)
+
+
+def kb_url(target) -> Optional[str]:
+    """ui/kb_links target (module, scene, station[, fibre]) -> web route of the Knowledge Base page."""
+    if not target:
+        return None
+    key, scene, station = (list(target) + [None, None])[:3]
+    fibre = target[3] if len(target) > 3 else None
+    q = "&".join(x for x in (f"scene={scene}" if scene else "", f"station={station}" if station else "",
+                             f"fibre={fibre}" if fibre else "") if x)
+    return f"/knowledge-base/{key}" + (f"?{q}" if q else "")
+
+
+def _row_kb(profile: Optional[str], row_key: Optional[str]):
+    """KB target of a Machine Data row (desktop kb_links.machine_row_target: DTY / ATY schema stations only)."""
+    if profile not in ("dty", "aty"):
+        return None
+    from db import machine_schema
+    return machine_schema.kb_target(machine_schema.station_module(profile).station_of(row_key), profile)
+
+
+def _cell_kb(row_target, text: str):
+    """The DTY Process cell leads to its own variant page (desktop kb_links.machine_cell_target)."""
+    from ui import kb_links
+    if row_target and row_target == kb_links.DTY_STATION_TARGET["process"]:
+        return kb_links.DTY_PROCESS_TARGET.get(str(text or "").strip().lower(), row_target)
+    return None
 
 
 def _schema_profile(cache, row_keys):
@@ -412,8 +447,11 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
     for rr, lst in (rd.dropdown_lists or {}).items():
         rd_dd[rr] = _options(lst)
     rows = []
+    rd_prof = _schema_profile(mdm.load_machine_cache(st.series_id, st.trial_ids), md.row_keys)
     for r, title in enumerate(rd.row_titles):
         cells = []
+        rd_key = rd.row_keys[r] if r < len(rd.row_keys) else ""
+        rd_kb = _row_kb(rd_prof, rd_key)
         for c in keep:
             cell: Dict[str, Any] = {"v": mdm.rd_display_text(rd, r, c, jets.map, housing.map)}
             if rd.cells[r][c][1] is not None:
@@ -435,7 +473,7 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
                 cell["notes"] = [_note_json(n) for n in notes]
             cells.append(cell)
         rows.append({"r": r, "rule": rd.validators[r] if r < len(rd.validators) else None, "options": rd_dd.get(r),
-                     "title": title, "key": rd.row_keys[r] if r < len(rd.row_keys) else "", "readonly": False,
+                     "title": title, "key": rd_key, "kb": kb_url(rd_kb), "readonly": False,
                      "cells": cells})
     return {"mode": mode, "has_groups": bool(md.has_groups), "message": None, "visible": True,
             "columns": columns, "rows": rows,

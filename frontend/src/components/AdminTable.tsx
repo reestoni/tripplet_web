@@ -37,6 +37,8 @@ export type AdminTableProps = {
   narrow?: Set<string>;
   detail?: (row: Row) => ReactNode | null;
   onCount?: (shown: number) => void;
+  /** right-click on a normal cell (e.g. "Learn more in Knowledge Base" on Material / Garntyp) */
+  onCellMenu?: (e: React.MouseEvent, col: string, value: unknown, row: Row) => void;
 };
 
 const FROZEN_W = [70, 170, 40];
@@ -266,6 +268,7 @@ export default function AdminTable(p: AdminTableProps) {
                     return (
                       <td key={c} style={frozenStyle(i)} className={cls}
                         onClick={(e) => !isEdit && clickCell(row, c, e)}
+                        onContextMenu={p.onCellMenu ? (e) => p.onCellMenu!(e, c, value(row, c), row) : undefined}
                         onDoubleClick={() => !canEditCell(c) && p.onOpen?.(id)}>
                         {isEdit ? editor(row, c) : <>{p.prefix?.(c, row, val)}{text(row, c)}</>}
                       </td>

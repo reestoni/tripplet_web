@@ -73,6 +73,20 @@ def _plain(v: Any) -> Any:
     return v
 
 
+def _kb_values(fk: Dict[str, List], sp: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{column: {id: KB route}} for Material / Garntyp values (desktop kb_links.value_target, right-click)."""
+    from ui import kb_links
+    from .series_view import kb_url
+    out: Dict[str, Dict[str, str]] = {}
+    for role in ("material", "garntyp"):
+        col = sp.get(role)
+        if not col:
+            continue
+        m = {str(i): kb_url(kb_links.value_target(role, n)) for i, n in fk.get(col, [])}
+        out[col] = {k: v for k, v in m.items() if v}
+    return out
+
+
 def _editable(headers: List[str], user: Dict[str, Any]) -> List[str]:
     return [c for c in ya.editable_columns(headers, ya.can_edit_minstock(user)) if _canon(c) not in NOT_IN_WEB_EDIT]
 
@@ -120,6 +134,7 @@ def yarns(user: Dict[str, Any] = Depends(require_feature("manage_yarn"))):
         "fk": fk,
         "colour_css": {i: colour_css(n) for i, n in colour_names.items()},
         "rows": out_rows,
+        "kb": _kb_values(fk, sp),
         "can_delete": ya.can_delete(user),
         "can_edit_minstock": ya.can_edit_minstock(user),
         "column_order": load_column_order(SCREEN_KEY) or [],

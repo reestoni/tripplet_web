@@ -941,3 +941,5 @@ a.btn-plain.disabled { opacity: 0.5; cursor: default; }
 
 .se-reports { display: inline-flex; gap: 4px; align-items: center; }
 .se-reports select { max-width: 220px; font: inherit; font-size: 13px; padding: 3px 4px; }
+
+th.jump-flash { outline: 3px solid var(--accent); outline-offset: -3px; background: #e5f2e7 !important; }

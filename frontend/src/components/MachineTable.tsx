@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { api, notesTip, type CellNote, type MachineData } from "../api";
+import { api, kbItem, notesTip, type CellNote, type MachineData } from "../api";
 import { useI18n } from "../i18n";
 import { EditCell, HoverImage, useEdit } from "../edit";
 import type { MenuItem } from "./ContextMenu";
@@ -144,6 +144,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
         items.push({ sep: true }, { label: custom ? t("cm.hideCustom") : t("cm.showCustom"), onClick: () => setCustom((x) => !x) });
       }
     }
+    items.push(...kbItem(t, row.kb));
+    if (items.length && "sep" in items[0]) items.shift();
     menus.open(e, items);
   };
 
@@ -230,7 +232,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
               <tr>
                 <th className="pv-corner" rowSpan={2} />
                 {spans.map((s, k) => (
-                  <th key={k} colSpan={s.n} className={(s.ref ? "ref" : "") + (menus?.selTrials.includes(s.id) ? " th-sel" : "")
+                  <th key={k} colSpan={s.n} data-trial={s.id} className={(s.ref ? "ref" : "") + (menus?.selTrials.includes(s.id) ? " th-sel" : "")
                     + (s.notes.length ? " has-note" : "")}
                     title={[s.ref ? t("se.reference", { name: s.ref }) : "", notesTip(s.notes)].filter(Boolean).join("\n") || undefined}
                     onClick={(e) => menus?.clickTrial(e, s.id)}
@@ -276,8 +278,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                           + (hl && row.key && hl.keys.includes(row.key) && hl.cols.includes(c.c) ? " schema-hl-cell" : "")}
                         title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined}
                         onContextMenu={menus ? (e, a) => menus.cellMenu(e, a, cell, `${c.trial_label}${c.ply ? " · " + c.ply : ""} · ${rowTitle(row.title)}`,
-                          ed?.canWrite && !row.readonly ? [{ label: t("cm.fillRow"), onClick: () => menus.openFill(source, row.r, rowTitle(row.title),
-                            row.options ?? null, cell.v) }, { sep: true }] : []) : undefined} />
+                          [...(ed?.canWrite && !row.readonly ? [{ label: t("cm.fillRow"), onClick: () => menus.openFill(source, row.r, rowTitle(row.title),
+                            row.options ?? null, cell.v) }] : []), ...kbItem(t, cell.kb ?? row.kb), { sep: true as const }]) : undefined} />
                     );
                   })}
                 </tr>

@@ -232,3 +232,31 @@ def test_materials_and_jet_air_sync_plan():
     assert [x["yarn_id"] for x in m] == [x["yarn_id"] for x in series_materials(sid)]
     plan = c.get(f"/api/series/{sid}/jet-air/sync-plan").json()
     assert plan["status"] in ("unavailable", "nothing_found", "in_sync", "changes")
+
+
+def test_knowledge_base_links():
+    """KB routes like the desktop ui/kb_links: lab tabs, Machine Data rows (DTY / ATY stations), the DTY Process
+    cell by its value, Manage Yarn Material / Garntyp values."""
+    from fastapi.testclient import TestClient
+    from app import auth
+    from app.main import app
+    from app.series_view import kb_url
+    from db.connection import fetch_all
+    from ui import kb_links
+    assert kb_url(("man_made_fibres", 2, None, "pes")) == "/knowledge-base/man_made_fibres?scene=2&fibre=pes"
+    assert kb_url(("filament_spinning", None, None)) == "/knowledge-base/filament_spinning"
+    assert kb_url(None) is None
+    user = fetch_all("SELECT u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                     "WHERE ar.AccessLevel >= 4 ORDER BY u.ID LIMIT 1")[0]["Username"]
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(user))
+    sid = fetch_all("SELECT TrialSeriesID AS s FROM tbltrial ORDER BY ID DESC LIMIT 1")[0]["s"]
+    tabs = c.get(f"/api/series/{sid}").json()["tabs"]
+    for t in tabs:
+        assert t.get("kb") == kb_url(kb_links.LAB_TABLE_TARGET.get("tbl_" + t["key"]))
+    y = c.get("/api/admin/yarn").json()
+    sp = y["special"]
+    if sp["material"]:
+        names = dict((str(i), n) for i, n in y["fk"][sp["material"]])
+        for vid, url in y["kb"].get(sp["material"], {}).items():
+            assert url == kb_url(kb_links.value_target("material", names[vid]))
