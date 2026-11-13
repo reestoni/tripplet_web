@@ -36,6 +36,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   `SessionMiddleware` = reines ASGI), `app/nav.py` (Seitenleiste als Daten, Reihenfolge wie
   `sidebar_nav.install_full_sidebar`, Rechte nur über `db/feature_access.py`; `WEB_READY` =
   Routen, die im Web schon gehen – alle anderen zeigen "Not in the web version yet"),
+  `app/deps.py` (`current_user`, `require_feature(key)` = gleiche Regel wie Desktop-Feature-Guards – jede neue Route damit schützen), `app/series_lists.py` (`/api/experiments`, `/api/backlog`),
   `app/main.py` (Routen unter `/api/…`, Bilder `/api/img/<name>` direkt aus
   `tripplet_project/assets/images`, gebautes Frontend aus `frontend/dist` mit SPA-Fallback).
 - `frontend/` – React + TypeScript + Vite (React Router). `src/api.ts` (fetch-Wrapper, Typen),
@@ -61,7 +62,7 @@ My Requests (137/5), Create Experiment Request (87/4). Wenig: Image Compare, TDM
 Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 
 1. ✅ Fundament: Login, Rechte, Seitenleiste, Startskripte (2026-11-13)
-2. All Experiments + Backlog + Show Experiment **nur lesend**
+2. ✅ All Experiments + Backlog nur lesend (2026-11-13; Status ändern, Prio, Drag & Drop, Kontextmenüs, ER-Popup, Report-Symbol folgen) – offen: Show Experiment **nur lesend**
 3. Experiment Requests (Create + My Requests) – erster Schreib-Teil
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines

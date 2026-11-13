@@ -27,6 +27,52 @@ export type Nav = {
   sections: { title: string; icon: string; items: NavItem[] }[];
 };
 
+export type Status = { id: number; name: string };
+
+export type ExperimentRow = {
+  series_id: number;
+  experiment_pk: number;
+  experiment_id: string;
+  series_name: string;
+  machine: string;
+  creation_date: string | null;
+  owner: string | null;
+  status_id: number | null;
+  status: string | null;
+  has_attach: boolean;
+  experiment_request_id: string | number | null;
+  has_notes: boolean;
+  reports: number;
+};
+
+export type BacklogCard = {
+  series_id: number;
+  experiment_pk: number;
+  experiment_id: string;
+  series_name: string;
+  machine: string;
+  status: string;
+  prio: number | null;
+  owner: string;
+  owner_colour: string | null;
+  has_attach: boolean;
+  has_notes: boolean;
+  experiment_request_id: string | number | null;
+  reports: number;
+  retest: { trial: string; lab: string; note: string }[];
+};
+
+export type ArchivedRow = {
+  series_id: number;
+  experiment_pk: number;
+  experiment_id: string;
+  series_name: string;
+  machine: string;
+  experiment_request_id: string | number | null;
+  year: string;
+  xx: string;
+};
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -64,6 +110,13 @@ export const api = {
   nav: () => request<Nav>("GET", "/api/nav"),
   login: (username: string, password: string) =>
     request<{ user: User }>("POST", "/api/auth/login", { username, password }),
+  experiments: (machine?: string) =>
+    request<{ machines: string[]; statuses: Status[]; rows: ExperimentRow[] }>(
+      "GET",
+      "/api/experiments" + (machine && machine !== "All" ? `?machine=${encodeURIComponent(machine)}` : ""),
+    ),
+  backlog: () =>
+    request<{ boxes: (Status & { cards: BacklogCard[] })[]; archived: ArchivedRow[] }>("GET", "/api/backlog"),
   logout: () => request<{ ok: boolean }>("POST", "/api/auth/logout"),
 };
 

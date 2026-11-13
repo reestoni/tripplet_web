@@ -15,19 +15,14 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import core
-from . import auth, nav, user_context
+from . import auth, nav, series_lists, user_context
+from .deps import current_user
 
 from db.usage_log import log_usage_event  # noqa: E402
 
 app = FastAPI(title="TrippleT Web", version=core.APP_VERSION, docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(auth.SessionMiddleware)
-
-
-def current_user() -> Dict[str, Any]:
-    user = user_context.get_user()
-    if not user:
-        raise HTTPException(status_code=401, detail="Not logged in")
-    return user
+app.include_router(series_lists.router)
 
 
 class LoginBody(BaseModel):
