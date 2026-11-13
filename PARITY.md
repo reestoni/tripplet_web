@@ -10,22 +10,25 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 
 ## Summary
 
-| Screen | Done | Partial | Missing | Rows |
-|---|---|---|---|---|
-| 1. All Experiments | 10 | 3 | 9 | 22 |
-| 2. Backlog | 16 | 1 | 15 | 32 |
-| 3. Show Experiment | 53 | 9 | 37 | 99 |
-| 4. Report from Show Experiment | 8 | 1 | 2 | 11 |
-| 5. YarnScope | 9 | 1 | 8 | 18 |
-| 6. Experiment Requests | 11 | 5 | 10 | 26 |
-| 7. Login, sidebar, account | 8 | 3 | 9 | 20 |
-| **Total** | 115 | 23 | 90 | 228 |
+| Screen | Done | Partial | Missing | Not in web (on purpose) | Rows |
+|---|---|---|---|---|---|
+| 1. All Experiments | 21 | 0 | 1 | 0 | 22 |
+| 2. Backlog | 26 | 0 | 6 | 0 | 32 |
+| 3. Show Experiment | 75 | 8 | 16 | 0 | 99 |
+| 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
+| 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
+| 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
+| 7. Login, sidebar, account | 10 | 3 | 7 | 1 | 21 |
+| 8. Create Experiment / Add Trial Series / Add Lab Machines | 16 | 0 | 0 | 0 | 16 |
+| 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
+| 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
+| 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
+| **Total** | 241 | 13 | 33 | 2 | 289 |
 
-Most important gaps (judgement): series-level actions in Backlog/All Experiments (status dropdown,
-priority, rename, change machine, reassign yarn, delete - logic all Qt-free already); Show Experiment
-writing tools beyond cell edits (Statimat/Itemat import, Copy trials, Yarns dialog, references +
-vs Ref/Target, print labels, uploads); Experiment Request popup / assignment / version history;
-YarnScope comparison + trends, ATY YarnScope; KB/help/notifications in the shell.
+Most important gaps (judgement, updated 2026-11-13): Backlog multi-select + move several, Ctrl+double-click = new tab
+(lists), Show Experiment material line with stock symbol, jet / spool / housing tooltips, Jet Air "Sync physical jets" /
+"Apply to all", recycle bin (preview + restore), notifications bell, quick search, recent series, settings (display prefs,
+start screen, accent colour), change password, What's new. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -46,16 +49,16 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Status column = editable dropdown (role-filtered list, saves at once, joker-machine prompt) | `_create_status_combobox` / `_on_status_combo_changed` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | "Copy TrialSeries" button (enabled on row selection) | `_on_copy_trialseries` | **DONE** | right-click menu "Copy trial series…" → `/series/new?copy=<id>` (experiment + jet rows prefilled, 2026-11-13) |
 | AM icon + tooltip "Has attachments" | `_set_attach_cell` | **DONE** | |
-| ER icon click → read-only Experiment Request popup | `_set_er_cell` / `open_experiment_request_popup` | **PARTIAL** | icon + tooltip shown, not clickable. Popup = `_ExperimentRequestReadOnlyDialog` (Qt, `ui/screen_show_experiment.py`); data Qt-free in `db/experiment_requests` (web could link `/requests/:id`) |
+| ER icon click → read-only Experiment Request popup | `_set_er_cell` / `open_experiment_request_popup` | **DONE** | `RequestIcon` → `fe/components/RequestPopup.tsx` (fields, images, version history) |
 | NT icon "Has notes" | `_set_notes_cell` | **DONE** | |
-| RE icon click → saved Smart Chart report (Ctrl = new tab) | `_set_report_cell` / `_open_report_icon_for_series` | **PARTIAL** | icon shown, not clickable; route `/series/:id/report?report=` exists; ids Qt-free `db/series_overview.series_report_map` |
+| RE icon click → saved Smart Chart report (Ctrl = new tab) | `_set_report_cell` / `_open_report_icon_for_series` | **DONE** | `ReportIcon` (`fe/components/SeriesLinks.tsx`), Ctrl = new tab |
 | Context menu: Open in New Tab / Open in New Window | `_on_table_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context menu: Rename Trial Series… (level ≥ 2, prefix kept) | `_rename_trialseries_at_row`, `RenameTrialSeriesDialog` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context menu: Reassign Yarn… (superuser; per ply, add/delete ply, conflicts) | `_reassign_yarn_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context menu: Change Machine… (superuser) | `_reassign_machine_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context menu: Delete Trial Series… (recycle bin, mover rights) | `_delete_trialseries_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Menu entries disabled by permission | `_on_table_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
-| Help button "How does All Experiments work?" (EN/DE/ES) | `_open_help` | **MISSING** | texts are pure data `ui/widgets/help_texts_all_experiments.py`; dialog Qt (`multilang_help`) |
+| Help button "How does All Experiments work?" (EN/DE/ES) | `_open_help` | **DONE** | `HelpButton screen="all_experiments"` |
 | Size-dependent scaling, name column fills width | `_update_scale` / `_fit_name_column` | **DONE** | CSS layout |
 | Reload on show + sidebar refresh | `showEvent` / `_refresh_sidebar` | **DONE** | load on mount |
 
@@ -68,8 +71,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Owner colour stripe (not in Backlog/To Be Cleaned/Archived) | `CardRowDelegate.paint` | **DONE** | `be/series_lists.OWNER_COLOUR_STATUSES` |
 | RETEST badge + tooltip with open retest flags | `_fill_table` / `paint` | **DONE** | `series_overview.retest_flags_map` |
 | AM / ER / NT / RE icons on card | `paint` | **DONE** | display only (`fe/components/Icons.tsx`) |
-| ER icon click → read-only request popup | `BacklogDnDTable.mousePressEvent` | **MISSING** | see All Experiments |
-| RE icon click → saved report (Ctrl = new tab) | `mousePressEvent` / `_open_report_icon_for_series` | **MISSING** | route exists in web |
+| ER icon click → read-only request popup | `BacklogDnDTable.mousePressEvent` | **DONE** | `SeriesIcons` → `RequestIcon` |
+| RE icon click → saved report (Ctrl = new tab) | `mousePressEvent` / `_open_report_icon_for_series` | **DONE** | `SeriesIcons` → `ReportIcon` |
 | Double-click card opens Show Experiment | `_on_cell_double_clicked` | **DONE** | |
 | Ctrl+double-click = new tab | `_on_cell_double_clicked` | **MISSING** | frontend only |
 | Drag & drop card to another status | `startDrag` / `dropEvent` / `_handle_dnd_move` | **DONE** | `POST /api/backlog/move`, `db/backlog_moves` incl. `after_move` (Done notifications) |
@@ -91,7 +94,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Archived: context menu Open / New Tab / New Window | `_ArchivedSeriesRow.contextMenuEvent` | **MISSING** | |
 | Expand a column to full screen (⤢) + Close | `_expand_card` / `_collapse_card` | **MISSING** | pure UI |
 | Welcome message from DB with first name | `_refresh_welcome_message` / `_fetch_welcome_message_from_db` | **MISSING** | small query inside the Qt screen (extract) |
-| Help button "How does the Backlog work?" | `_open_help` | **MISSING** | data `ui/widgets/help_texts_backlog.py` |
+| Help button "How does the Backlog work?" | `_open_help` | **DONE** | `HelpButton screen="backlog"` |
 | Athena sleeping-owl easter egg (5 %) | `_spawn_sleeping_athena` | **MISSING** | cosmetic |
 | Wide/narrow board arrangement | `_arrange_board` | **DONE** | CSS |
 | Reload on show; sidebar badge refresh after move | `showEvent` | **DONE** | `tripplet:nav-changed` event |
@@ -103,15 +106,15 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Feature | Desktop (file:function) | Web status | Notes / logic location |
 |---|---|---|---|
 | Series title, machine, status, owner, created, trial count | `_build_ui` / `_load_record_inner` | **DONE** | `be/series_view.py` |
-| TrialSeriesID label, machine info label | `_build_ui` | **PARTIAL** | ID not shown |
+| TrialSeriesID label, machine info label | `_build_ui` | **DONE** | header `se-sid` (click copies the ID) |
 | Material line (plies/yarns) with stock symbol; hover = stock tooltip, click = storage locations | `_load_materials_summary` / `_on_material_label_link_hovered/_activated` | **MISSING** | `ui/widgets/yarn_locations.load_stock_summary` (Qt file, data part Qt-free-able) |
-| Experiment Request icon → read-only popup (+ images, version history) | `_open_experiment_request_popup`, `_ExperimentRequestReadOnlyDialog` | **MISSING** | data Qt-free `db/experiment_requests`, `db/experiment_request_changes`; dialog Qt |
+| Experiment Request icon → read-only popup (+ images, version history) | `_open_experiment_request_popup`, `_ExperimentRequestReadOnlyDialog` | **DONE** | `RequestIcon` in the header |
 | Save button "Save (n)" + Ctrl+S | `_save_all` / `_sc_save` / `keyPressEvent` | **DONE** | `fe/edit.tsx`, `POST /api/series/{id}/save` → `db/series_save` |
 | Plausibility check before saving (confirm) | `_confirm_plausible_values` | **DONE** | `db/plausibility.check` |
 | Undo Ctrl+Z | `_UndoManager` / `_init_undo` | **DONE** | `fe/edit.tsx` |
-| Redo Ctrl+Y / Ctrl+Shift+Z | `_init_undo` | **MISSING** | frontend only |
+| Redo Ctrl+Y / Ctrl+Shift+Z | `_init_undo` | **DONE** | `fe/edit.tsx` |
 | Discard unsaved | Save/Discard/Cancel prompt | **DONE** | "Discard" button |
-| Unsaved mark on tab (dot) | `_apply_unsaved_tab_mark` | **MISSING** | frontend only |
+| Unsaved mark on tab (dot) | `_apply_unsaved_tab_mark` | **DONE** | `dirty-dot` on the tab |
 | Prompt Save/Discard/Cancel on leaving (tab close, back, series switch, logout, exit) | `confirm_close_with_unsaved` / `_back_all_experiments` / `closeEvent` | **PARTIAL** | `confirmLeave()` + link guard in `edit.tsx` (OK/Cancel instead of Save/Discard/Cancel; browser back not guarded) |
 | Refresh ↻ / F5 | `_on_refresh` | **DONE** | browser reload (warns if unsaved) |
 | Back to list | `_back_all_experiments` | **DONE** | back arrow (`navigate(-1)`) |
@@ -130,7 +133,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **PARTIAL** | RefCompareDialog, `be/series_tools.ref_compare` (same `ui/ref_compare.py`, sources = LAB_TABS, parity 3 series); no 'only passing' filter yet |
 | "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **DONE** | CopyTrialsDialog, `be/series_tools.copy_trials_ep` |
 | "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **PARTIAL** | YarnsDialog, `be/series_tools.yarns_apply` ("+ Trial output" not yet) |
-| Help button (EN/DE/ES) | `_open_help` | **MISSING** | data `ui/widgets/help_texts_show_experiment.py` |
+| Help button (EN/DE/ES) | `_open_help` | **DONE** | `HelpButton screen="show_experiment"` |
 | Read-only for access level ≤ 1 | `_get_access_level` / `_sync_save_button_access` | **DONE** | `canWrite = accessLevel >= 2` |
 | Recycle-bin preview mode (read-only series) | `set_recycle_preview` | **MISSING** | Recycle Bin not in web |
 
@@ -158,8 +161,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Notes tab: series free-text notes, auto-save | `_load_notes` / `_on_notes_text_changed` / `_save_notes` | **DONE** | `SeriesNotes` in SeriesView (auto-save 1.5 s + blur) |
 | Notes tab: list of all notes on values | `cell_notes_ui` (Notes tab list) | **DONE** | `SeriesView.tsx` notes table |
 | Athena (AI advisor) tab: wake, chat, reset | `ui/advisor_tab.py` | **MISSING** | Qt: `ui/advisor_worker.py` (QThread); `collect_advisor_context` could be split out |
-| DTY YarnScope tab | `ui/dty_yarnscope_tab.py` | **PARTIAL** | see section 5 |
-| ATY YarnScope tab | `ui/aty_yarnscope_tab.py` | **MISSING** | see section 5 |
+| DTY YarnScope tab | `ui/dty_yarnscope_tab.py` | **DONE** | see section 5 |
+| ATY YarnScope tab | `ui/aty_yarnscope_tab.py` | **DONE** | see section 5 |
 | Last tab remembered | `_remember_tab` / `_restore_last_tab` | **DONE** | localStorage |
 | Lazy tab population | `_defer_or_populate` | **DONE** | jet air lazy |
 
@@ -233,10 +236,10 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Export PDF | `exportPdf` (save dialog) | **DONE** | server `rs.build_report_pdf`, download |
 | JS error reporting | `jsError` (message box) | **DONE** | logged on server |
 | Open a saved report directly | `load_series(initial_report_id)` | **DONE** | `?report=` |
-| Experiment Request icon in report header → popup | `_refresh_experiment_request_link` / `_open_experiment_request_popup` | **MISSING** | see ER popup |
-| Help button "How does the Report work?" | `_open_help` | **MISSING** | data `help_texts_report` |
+| Experiment Request icon in report header → popup | `_refresh_experiment_request_link` / `_open_experiment_request_popup` | **DONE** | `RequestIcon` in the report header |
+| Help button "How does the Report work?" | `_open_help` | **DONE** | `HelpButton screen="report"` |
 | Back to Show Experiment | `_go_back` | **DONE** | |
-| Open report in new tab (Ctrl+click from lists) | `main._open_report_in_new_tab` | **PARTIAL** | browser tab works by URL; icons in lists not clickable |
+| Open report in new tab (Ctrl+click from lists) | `main._open_report_in_new_tab` | **DONE** | `ReportIcon` (Ctrl / middle click = new tab) |
 
 ## 5. YarnScope (`ui/dty_yarnscope_tab.py`, `ui/aty_yarnscope_tab.py` → `fe/components/YarnScopeView.tsx`, `YarnScopeBatch.tsx`, `be/yarnscope.py`)
 
@@ -267,29 +270,29 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 |---|---|---|---|
 | List (ID, title, project, due date, owner for superusers, status, experiment ID) | `refresh` | **DONE** | `db/experiment_requests` |
 | Search / status / project / owner filters | `_build_filter_row` / `_apply_filters` | **DONE** | |
-| "Reset filters" button | `_reset_filters` | **MISSING** | frontend only |
-| "Show details" (long free-text columns) | `_toggle_detail_columns` | **MISSING** | data already in `row.cells` |
+| "Reset filters" button | `_reset_filters` | **DONE** | `MyRequests.tsx` `resetFilters` |
+| "Show details" (long free-text columns) | `_toggle_detail_columns` | **DONE** | `MyRequests.tsx` details toggle |
 | Refresh button | `refresh` | **DONE** | browser reload / reload on filter |
-| Help "?" | `show_experiment_request_help` | **MISSING** | |
+| Help "?" | `show_experiment_request_help` | **DONE** | `fe/components/RequestHelp.tsx` |
 | Pending change Δ / NEW markers, row tooltip | `refresh` | **DONE** | |
 | Double-click open (user → own pending copy; superuser with pending → review) | `_open_selected_request` | **DONE** | `open_id` / review card in `RequestForm.tsx` |
 | Status dropdown (superuser) with denial reason / confirmation, owner notification | `_update_request_status` / `_notify_owner*` | **DONE** | `set_status` + `StatusDialog`; notify via `db/experiment_requests.notify_owner` (verify it is called on the web path) |
-| Click Experiment ID → series picker → Show Experiment | `_on_cell_clicked` / `_open_experiment_series` | **MISSING** | ID shown as text only |
-| Context: Assign experiment… (superuser, status Approved) | `_assign_experiment_to_request` | **PARTIAL** | backend `/assign-options` + `/assign` exist, no UI |
+| Click Experiment ID → series picker → Show Experiment | `_on_cell_clicked` / `_open_experiment_series` | **DONE** | `/api/experiment-series`, picker when several |
+| Context: Assign experiment… (superuser, status Approved) | `_assign_experiment_to_request` | **DONE** | `AssignDialog` in `MyRequests.tsx` |
 | Context: Review Changes… (side by side, accept/reject) | `_review_pending_change` | **DONE** | review card in `RequestForm.tsx` |
-| Context: View/edit change proposal… | `_on_context_menu` | **PARTIAL** | reachable only via double-click routing |
-| Context: View version history… (all users, own requests) | `show_version_history` (`ui/widgets/experiment_request_version_history.py`) | **MISSING** | `versions` loaded but not shown; data Qt-free `db/experiment_request_changes` |
+| Context: View/edit change proposal… | `_on_context_menu` | **DONE** | right-click menu (Review / View proposal) |
+| Context: View version history… (all users, own requests) | `show_version_history` (`ui/widgets/experiment_request_version_history.py`) | **DONE** | `VersionHistory` (`RequestPopup.tsx`) |
 | Form from schema, required fields marked, FK dropdowns, dates | `_load_schema_and_build_form` / `_mark_required_fields` | **DONE** | |
 | Save (new / edit / proposal for normal users / unchanged) | `_save` | **DONE** | |
 | Denial banner | form | **DONE** | |
-| Unsaved-changes prompt when leaving the form | `_has_unsaved_changes` | **MISSING** | |
-| "History…" button on the form | `_open_version_history` | **MISSING** | |
+| Unsaved-changes prompt when leaving the form | `_has_unsaved_changes` | **DONE** | `RequestForm.tsx` (beforeunload + link guard) |
+| "History…" button on the form | `_open_version_history` | **DONE** | `RequestForm.tsx` |
 | Upload images | `_upload_images` | **PARTIAL** | only after first save (deliberate, see web CLAUDE.md) |
-| Image viewer: zoom, rotate, list | `ExperimentRequestImagesDialog` | **PARTIAL** | thumbnails + open in new tab, no zoom/rotate |
-| Image rename / batch rename / save as | `_rename_original_filename` / `BatchRenameDialog` / `_save_as_file` | **PARTIAL** | rename endpoint exists, no UI; save as = browser |
+| Image viewer: zoom, rotate, list | `ExperimentRequestImagesDialog` | **DONE** | image viewer in `RequestPopup.tsx` |
+| Image rename / batch rename / save as | `_rename_original_filename` / `BatchRenameDialog` / `_save_as_file` | **PARTIAL** | rename in the viewer; batch rename missing; save as = browser |
 | Image delete (own / superuser) | `_delete_selected` | **DONE** | |
 | Request PDFs dialog | `ExperimentRequestPdfsDialog` | **MISSING** | check whether still used on desktop |
-| Read-only request popup from lists / Show Experiment / Report | `_ExperimentRequestReadOnlyDialog` | **MISSING** | see above |
+| Read-only request popup from lists / Show Experiment / Report | `_ExperimentRequestReadOnlyDialog` | **DONE** | `RequestIcon` everywhere |
 | Draft cleanup at login | `main.py` login flow | **MISSING** | web CLAUDE.md: not needed while web saves before images |
 
 ## 7. Login, sidebar, account (`ui/screen_login.py`, `main.py`, `ui/widgets/sidebar*.py` → `fe/pages/Login.tsx`, `fe/components/Shell.tsx`, `be/auth.py`, `be/nav.py`)
