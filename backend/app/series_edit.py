@@ -42,9 +42,12 @@ class SaveBody(BaseModel):
 
 
 class _Tab:
-    def __init__(self, titles, validators, cells, read_only=(), kinds=None, labels=None, wide_rows=()):
+    def __init__(self, titles, validators, cells, read_only=(), kinds=None, labels=None, wide_rows=(),
+                 options=None, col_specs=None):
         self.titles, self.validators, self.cells = titles, validators, cells
         self.read_only, self.kinds, self.labels, self.wide_rows = set(read_only), kinds or {}, labels, set(wide_rows)
+        self.options: Dict[int, Dict[str, str]] = options or {}   # data row -> {stored id: shown name}
+        self.col_specs = col_specs or []                         # machine/rd: trial/ply per column
 
 
 def _load_tabs(series_id: int, keys: set, mode: str, unit: str) -> Tuple[Dict[str, _Tab], Dict[str, Any], Any]:
@@ -56,13 +59,22 @@ def _load_tabs(series_id: int, keys: set, mode: str, unit: str) -> Tuple[Dict[st
     if keys & {"machine", "rd"}:
         md = mdm.build_machine_data(st, mode)
         col_labels = [[c.get("trial_label"), c.get("ply_label")] for c in md.columns]
+        jets, housing = mdm.load_jets_lookup(), mdm.load_housing_lookup()
+
+        def _opts(dd) -> Dict[int, Dict[str, str]]:
+            out = {0: {str(k): str(v) for k, v in housing.list}, 1: {str(k): str(v) for k, v in jets.list}}
+            for rr, lst in (dd or {}).items():
+                out[rr] = {str(k): str(v) for k, v in lst}
+            return out
         if "machine" in keys:
             tabs["machine"] = _Tab(md.row_titles, md.validators, md.cells, md.read_only_rows,
-                                   {mdm.HOUSING_ROW: "housing", mdm.JET_ROW: "jet"}, col_labels, md.trial_wide_rows)
+                                   {mdm.HOUSING_ROW: "housing", mdm.JET_ROW: "jet"}, col_labels, md.trial_wide_rows,
+                                   _opts(md.dropdown_lists), md.col_specs)
         if "rd" in keys:
             rd = mdm.build_rd_machine_data(md, reference_names=st.reference_names)
             tabs["rd"] = _Tab(rd.row_titles, rd.validators, rd.cells, rd.read_only_rows,
-                              {0: "housing", 1: "jet"}, col_labels, rd.trial_wide_rows)
+                              {0: "housing", 1: "jet"}, col_labels, rd.trial_wide_rows,
+                              _opts(rd.dropdown_lists), rd.col_specs)
     for lt in stb.LAB_TABS:
         if lt.key in keys:
             p = lt.build(st)

@@ -106,7 +106,13 @@ export type MachineData = {
     cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null }[] }[];
   filter_labels: string[];
   multi_ply?: boolean;
+  machine_id?: number | null;
+  custom_row?: number | null;
 };
+
+/** What the logged-in user may do in a series (backend/app/series_actions.py rights()). */
+export type SeriesRights = { delete_trials: boolean; delete_series: boolean; move: boolean; history: boolean;
+  retest: boolean; notes: boolean; write: boolean; retention_days: number };
 
 export class ApiError extends Error {
   status: number;
@@ -159,8 +165,9 @@ export const api = {
   moveCard: (series_id: number, to_status: number, machine_id?: number) =>
     request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
   series: (id: number) => request<SeriesData>("GET", `/api/series/${id}`),
-  machine: (id: number, mode: string, source: "machine" | "rd" = "machine") =>
-    request<MachineData>("GET", `/api/series/${id}/${source}?mode=${mode}`),
+  machine: (id: number, mode: string, source: "machine" | "rd" = "machine", custom = false) =>
+    request<MachineData>("GET", `/api/series/${id}/${source}?mode=${mode}${custom ? "&custom=1" : ""}`),
+  rights: (id: number) => request<SeriesRights>("GET", `/api/series/${id}/rights`),
   logout: () => request<{ ok: boolean }>("POST", "/api/auth/logout"),
 };
 

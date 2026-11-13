@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import core
-from . import auth, nav, report, requests_api, series_edit, series_lists, series_view, user_context, yarnscope
+from . import auth, nav, report, requests_api, series_actions, series_edit, series_lists, series_view, user_context, yarnscope
 from .deps import current_user
 
 from db.usage_log import log_usage_event  # noqa: E402
@@ -28,6 +28,7 @@ app.include_router(report.router)
 app.include_router(yarnscope.router)
 app.include_router(requests_api.router)
 app.include_router(series_edit.router)
+app.include_router(series_actions.router)
 
 
 class LoginBody(BaseModel):

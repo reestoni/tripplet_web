@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, ApiError, notesTip, type SeriesData } from "../api";
+import { api, ApiError, notesTip, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
 import { EditCell, EditProvider } from "../edit";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
 import YarnScopeView from "../components/YarnScopeView";
+import { useSeriesMenus } from "../components/seriesMenus";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -27,6 +28,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
   const [tab, setTab] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
   const [reload, setReload] = useState(0);
+  const [rights, setRights] = useState<SeriesRights | null>(null);
   const lastId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -45,6 +47,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
         setTab((cur) => (cur && keys.includes(cur) ? cur : want && keys.includes(want) ? want : "machine"));
       })
       .catch((e) => alive && setError(e instanceof ApiError && e.status === 404 ? t("se.notFound") : e.message));
+    api.rights(Number(id)).then((r) => alive && setRights(r)).catch(() => alive && setRights(null));
     return () => {
       alive = false;
     };
@@ -78,7 +81,6 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
   if (!data) return <div className="page muted">{t("se.loading")}</div>;
 
   const s = data.series;
-  const current = data.tabs.find((x) => x.key === tab) ?? null;
 
   return (
     <div className="page page-wide">
@@ -102,7 +104,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
         </div>
         <div className="se-actions">
           <button className="btn-green" onClick={() => navigate(`/series/${s.id}/report`)}>{t("rep.open")}</button>
-          <span className="muted se-ro">{t("se.readonly")}</span>
+          
         </div>
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
@@ -110,6 +112,25 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
       <EditProvider key={s.id} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
+        <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={rights}
+          onChanged={() => setReload((x) => x + 1)} />
+      </EditProvider>
+    </div>
+  );
+}
+
+function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged }: {
+  data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;
+  accessLevel: number; rights: SeriesRights | null; onChanged: () => void;
+}) {
+  const { t } = useI18n();
+  const s = data.series;
+  const current = data.tabs.find((x) => x.key === tab) ?? null;
+  const menus = useSeriesMenus({ seriesId: s.id, rights, trials: data.trials, onChanged,
+    mode: () => localStorage.getItem("tripplet.machine.mode") || "single" });
+  const trialNotes = (id: number) => data.notes.filter((n) => n.trial_note && n.trial_id === id);
+  return (
+    <>
       <div className="se-tabs" role="tablist">
         <button role="tab" aria-selected={tab === "machine"} className={"se-tab" + (tab === "machine" ? " on" : "")}
           onClick={() => choose("machine")}>
@@ -148,10 +169,10 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
       {tab === "yarnscope" && <YarnScopeView seriesId={s.id} canWrite={accessLevel >= 2} />}
       {data.trials.length > 0 && tab === "rd" && (
-        <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} />
+        <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} menus={menus} />
       )}
       {data.trials.length > 0 && tab === "machine" && (
-        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} />
+        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} />
       )}
       {tab === "notes" && (
         data.notes.length === 0 ? <div className="card muted">{t("nt.none")}</div> : (
@@ -190,7 +211,11 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
                       .filter(Boolean)
                       .join("\n");
                     return (
-                      <th key={tr0.id} className={tr0.reference ? "ref" : ""} title={tip || undefined}>
+                      <th key={tr0.id} className={(tr0.reference ? "ref" : "") + (menus.selTrials.includes(tr0.id) ? " th-sel" : "")
+                        + (trialNotes(tr0.id).length ? " has-note" : "")}
+                        title={[tip, notesTip(trialNotes(tr0.id))].filter(Boolean).join("\n") || undefined}
+                        onClick={(e) => menus.clickTrial(e, tr0.id)}
+                        onContextMenu={(e) => menus.trialMenu(e, tr0, trialNotes(tr0.id), { tab: current.key, title: tr("tab", current.key, current.title) })}>
                         {tr0.label}
                         {flag && <span className="flag-dot" />}
                       </th>
@@ -207,7 +232,9 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
                     ) : (
                       <EditCell key={c} addr={{ tab: current.key, r: row.r, c }} text={cell.v} editable={!!cell.e}
                         className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
-                        title={notesTip(cell.notes) || undefined} />
+                        title={notesTip(cell.notes) || undefined}
+                        onContextMenu={(e, a) => menus.cellMenu(e, a, cell,
+                          `${data.trials[c]?.label ?? ""} · ${tr("tab", current.key, current.title)} · ${tr("row", row.title, row.title)}`)} />
                     )))}
                   </tr>
                 ))}
@@ -219,7 +246,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           )}
         </>
       )}
-      </EditProvider>
-    </div>
+      {menus.dialogs}
+    </>
   );
 }

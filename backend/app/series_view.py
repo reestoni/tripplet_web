@@ -164,7 +164,7 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
 
 # --------------------------------------------------------------------------- Machine Data
 @router.get("/series/{series_id}/machine")
-def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = Depends(current_user)):
+def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: Dict[str, Any] = Depends(current_user)):
     """Machine Data tab (read only) from db/machine_data.py - the desktop builds its model from the same data."""
     from db import machine_data as mdm
     if stb.series_header(series_id) is None:
@@ -179,8 +179,9 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
     jets = mdm.load_jets_lookup()
     housing = mdm.load_housing_lookup()
     hidden = set(md.process_hidden_rows or ())
-    if md.custom_group_row is not None:
-        hidden.add(md.custom_group_row)          # desktop: Custom Group row off by default
+    has_custom = md.custom_group_row is not None and 0 <= md.custom_group_row < len(md.row_titles)
+    if has_custom and not custom:
+        hidden.add(md.custom_group_row)          # desktop: Custom Group row off by default ("Show Custom Group")
     # compact = only the first column of each trial (desktop _apply_mat_column_filter)
     col_hidden = mdm.hidden_columns(md.col_specs, mode == "compact", mode == "groups", None)
     keep = [c for c in range(len(md.columns)) if not col_hidden[c]]
@@ -233,7 +234,8 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
                      "readonly": r in set(md.read_only_rows or ()), "cells": cells})
     return {"mode": mode, "has_groups": has_groups, "message": None, "columns": columns, "rows": rows,
             "filter_labels": list(md.filter_labels or []) if mode != "compact" else [],
-            "multi_ply": bool(md.has_multi_ply)}
+            "multi_ply": bool(md.has_multi_ply), "machine_id": md.machine_id,
+            "custom_row": md.custom_group_row if has_custom else None}
 
 
 # --------------------------------------------------------------------------- Jet Air Consumption
