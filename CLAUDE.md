@@ -215,6 +215,12 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
 - Jet ROI Calculator `/tools/jet-roi`: `app/jet_roi_api.py` auf `ui/jet_roi.py` (Konstanten, Luftformel, Prozessfilter,
   `validate_single`/`calculate_single`/`calculate_multi`, Diagrammreihen, PDF-Berichte - aus `screen_nozzle_calculator.py`
   gezogen, Desktop rechnet jetzt darüber; Vergleich alt/neu identisch). Seite `JetRoi.tsx` (Einzel + Mehrfach, Plotly, PDF).
+- Air Supply Network `/tools/air-supply`: `app/air_supply_api.py` auf `ui/air_network.py` (Physik, Node/NetworkGraph + Solver,
+  Optimierer, Betriebskosten, Quellen-/Tabellen-Zusammenfassung, gespeicherte Netze tblAirNetwork*, PDF/Excel - aus
+  `screen_air_supply.py` gezogen; Desktop ergänzt nur `Node.rect/center` (Qt), Ergebnisse alt/neu identisch). Das Web legt die
+  Tabellen nie an (`ENSURE_TABLES = False`). Seite `AirSupply.tsx`: SVG-Editor (Ziehen auf 20er-Raster, Verbinden, Rechtsklick
+  Umbenennen/Duplizieren/Löschen, Verbindung entfernen, Zoom/Verschieben, Strg+Z, Reiter), jede Änderung löst `/solve` aus.
+  Knotenbeschriftungen kommen vom gemeinsamen Modul (EN).
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
