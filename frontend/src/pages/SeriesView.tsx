@@ -34,7 +34,7 @@ export default function SeriesView() {
       .then((d) => {
         if (!alive) return;
         setData(d);
-        const keys = ["machine", "notes", ...d.tabs.map((x) => x.key)];
+        const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...d.tabs.map((x) => x.key)];
         const want = lastTab();
         setTab(want && keys.includes(want) ? want : "machine");
       })
@@ -113,6 +113,12 @@ export default function SeriesView() {
             {Object.keys(x.flags).length > 0 && <span className="flag-dot" />}
           </button>
         ))}
+        {data.has_rd && (
+          <button role="tab" aria-selected={tab === "rd"} className={"se-tab" + (tab === "rd" ? " on" : "")}
+            onClick={() => choose("rd")}>
+            {tr("tab", "rd", "R&D Machine Data")}
+          </button>
+        )}
         <button role="tab" aria-selected={tab === "notes"} className={"se-tab" + (tab === "notes" ? " on" : "")}
           onClick={() => choose("notes")}>
           {t("nt.tab")}{data.notes.length > 0 && <span className="note-count">{data.notes.length}</span>}
@@ -125,6 +131,9 @@ export default function SeriesView() {
       </div>
 
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
+      {data.trials.length > 0 && tab === "rd" && (
+        <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} />
+      )}
       {data.trials.length > 0 && tab === "machine" && (
         <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} />
       )}

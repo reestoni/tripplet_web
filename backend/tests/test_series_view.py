@@ -160,3 +160,16 @@ def test_attachments(client):
     assert client.get(f"/api/series/{sid + 100000}/attachments/image/{first}").status_code == 404
     assert client.get(f"/api/series/{sid}/attachments/exe/{first}").status_code == 404
     assert TestClient(app).get(f"/api/series/{sid}/attachments/image/{first}").status_code == 401
+
+
+def test_rd_machine_data(client):
+    rows = fetch_all("SELECT S.ID AS S FROM tblTrialSeries S JOIN tblMachineFields MF ON MF.MachineID = S.MachineID "
+                     "JOIN tblTrial T ON T.TrialSeriesID = S.ID WHERE COALESCE(MF.RDSetting, 0) = 1 LIMIT 1")
+    if not rows:
+        pytest.skip("no series with R&D fields")
+    sid = int(rows[0]["S"])
+    assert client.get(f"/api/series/{sid}").json()["has_rd"] is True
+    d = client.get(f"/api/series/{sid}/rd").json()
+    assert d["visible"] and d["rows"][0]["title"] == "Housing"
+    assert all(len(r["cells"]) == len(d["columns"]) for r in d["rows"])
+    assert client.get("/api/series/987654321/rd").status_code == 404

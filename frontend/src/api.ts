@@ -89,6 +89,7 @@ export type SeriesData = {
     notes: string;
   };
   trials: { id: number; label: string; number: number; reference: string | null }[];
+  has_rd: boolean;
   tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; cells: PivotCell[] }[]; flags: Record<string, string> }[];
   pending_tabs: { key: string; title: string }[];
   notes: (CellNote & { where_tab: string | null; where_row: string; trial_note: boolean })[];
@@ -156,7 +157,8 @@ export const api = {
   moveCard: (series_id: number, to_status: number, machine_id?: number) =>
     request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
   series: (id: number) => request<SeriesData>("GET", `/api/series/${id}`),
-  machine: (id: number, mode: string) => request<MachineData>("GET", `/api/series/${id}/machine?mode=${mode}`),
+  machine: (id: number, mode: string, source: "machine" | "rd" = "machine") =>
+    request<MachineData>("GET", `/api/series/${id}/${source}?mode=${mode}`),
   logout: () => request<{ ok: boolean }>("POST", "/api/auth/logout"),
 };
 

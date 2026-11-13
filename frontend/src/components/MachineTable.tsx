@@ -5,7 +5,9 @@ import { useI18n } from "../i18n";
 const MODE_KEY = "tripplet.machine.mode";
 
 /** Machine Data tab (read only): columns = trial x ply, two header rows like the desktop. */
-export default function MachineTable({ seriesId, rowTitle }: { seriesId: number; rowTitle: (t: string) => string }) {
+export default function MachineTable({ seriesId, rowTitle, source = "machine" }: {
+  seriesId: number; rowTitle: (t: string) => string; source?: "machine" | "rd";
+}) {
   const { t } = useI18n();
   const [mode, setMode] = useState<string>(() => {
     try {
@@ -22,13 +24,13 @@ export default function MachineTable({ seriesId, rowTitle }: { seriesId: number;
     let alive = true;
     setData(null);
     api
-      .machine(seriesId, mode)
+      .machine(seriesId, mode, source)
       .then((d) => alive && (setData(d), setError(null)))
       .catch((e) => alive && setError(e.message));
     return () => {
       alive = false;
     };
-  }, [seriesId, mode]);
+  }, [seriesId, mode, source]);
 
   const choose = (m: string) => {
     setMode(m);

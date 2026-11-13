@@ -139,6 +139,7 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
             "notes": head.get("Notes") or "",
         },
         "trials": trials,
+        "has_rd": has_rd_fields(series_id),
         "tabs": tabs,
         # Notes tab: every note of the series, where it sits (lab tab · row, else "Machine Data" / table · field)
         "notes": [dict(_note_json(n), trial_note=cell_notes.is_trial_note(n), **_where(n, seen)) for n in all_notes],
@@ -246,3 +247,62 @@ def attachment_file(series_id: int, kind: str, attachment_id: int, _user: Dict[s
         return JSONResponse(status_code=404, content={"code": "not_found", "detail": "File not found."})
     return FileResponse(path, headers={"Cache-Control": "private, max-age=3600"},
                         content_disposition_type="inline")
+
+
+# --------------------------------------------------------------------------- R&D Machine Data
+@router.get("/series/{series_id}/rd")
+def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = Depends(current_user)):
+    """R&D Machine Data (tblMachineFields.RDSetting = 1) on the same columns as Machine Data."""
+    from db import machine_data as mdm
+    if stb.series_header(series_id) is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "This series does not exist."})
+    if mode not in mdm.VIEW_MODES:
+        mode = "single"
+    st = stb.load_trials(series_id)
+    md = mdm.build_machine_data(st, mode)
+    rd = mdm.build_rd_machine_data(md, reference_names=st.reference_names)
+    if not rd.visible or not rd.row_titles:
+        return {"mode": mode, "has_groups": bool(md.has_groups), "message": None, "visible": False,
+                "columns": [], "rows": [], "filter_labels": []}
+    jets = mdm.load_jets_lookup()
+    housing = mdm.load_housing_lookup()
+    col_hidden = mdm.hidden_columns(rd.col_specs, mode == "compact", mode == "groups", None)
+    keep = [c for c in range(len(rd.columns)) if not col_hidden[c]]
+    all_notes = cell_notes.notes_for_series(series_id, st.trial_ids) if cell_notes.available() else []
+    by_key = cell_notes.by_cell(all_notes)
+    columns = [{
+        "notes": [],
+        "filter": mdm.column_label(rd.col_specs[i], mode == "groups"),
+        "trial_id": c.get("trial_id"), "trial_label": c.get("trial_label"), "reference": c.get("reference"),
+        "ply": c.get("ply_label"), "ply_tooltip": c.get("ply_tooltip") or "",
+        "colour": c.get("yarn_colour_css"), "colour_name": c.get("yarn_colour") or "",
+    } for i, c in enumerate(rd.columns) if not col_hidden[i]]
+    rows = []
+    for r, title in enumerate(rd.row_titles):
+        cells = []
+        for c in keep:
+            cell: Dict[str, Any] = {"v": mdm.rd_display_text(rd, r, c, jets.map, housing.map)}
+            # housing rows: the desktop shows a picture (tblHousing.Link) - not as text here
+            tip = "" if r in rd.housing_rows else mdm.rd_tooltip(rd, r, c, jets.tooltip_map, {})
+            if tip:
+                cell["tip"] = tip
+            notes = cell_notes.notes_for_binding(by_key, rd.cells[r][c][1])
+            if notes:
+                cell["notes"] = [_note_json(n) for n in notes]
+            cells.append(cell)
+        rows.append({"title": title, "key": rd.row_keys[r] if r < len(rd.row_keys) else "", "readonly": False,
+                     "cells": cells})
+    return {"mode": mode, "has_groups": bool(md.has_groups), "message": None, "visible": True,
+            "columns": columns, "rows": rows,
+            "filter_labels": list(md.filter_labels or []) if mode != "compact" else []}
+
+
+def has_rd_fields(series_id: int) -> bool:
+    """Cheap check for the tab bar: does the series' machine have R&D fields?"""
+    from db.connection import fetch_all
+    try:
+        rows = fetch_all("SELECT 1 AS x FROM tblMachineFields MF JOIN tblTrialSeries S ON S.MachineID = MF.MachineID "
+                         "WHERE S.ID = ? AND COALESCE(MF.RDSetting, 0) = 1 LIMIT 1", [series_id])
+        return bool(rows)
+    except Exception:
+        return False
