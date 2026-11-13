@@ -11,6 +11,16 @@ import { errText, OpenViewDialog, PdfDialog, SaveViewDialog, ShareDialog, type A
    them in a dashboard like Power BI. The dashboard is the desktop page (components/SmartFrame); here the header:
    New, Open view, Save view, Share…, Excel, Reload, PDF. ?view=<id> opens a saved view ("Edit in Smart Chart"). */
 
+type Draft = { at: string; view_id: number | null; view_name: string; config: Record<string, unknown> };
+const DRAFT = "tripplet.smart.draft";
+function readDraft(user: string): Draft | null {
+  try { const d = JSON.parse(localStorage.getItem(DRAFT) || "null"); return d && d.user === user ? d.draft : null; } catch { return null; }
+}
+function writeDraft(user: string, draft: Draft) { try { localStorage.setItem(DRAFT, JSON.stringify({ user, draft })); } catch { /* full / private */ } }
+function clearDraft(user: string) {
+  try { const d = JSON.parse(localStorage.getItem(DRAFT) || "null"); if (!d || d.user === user) localStorage.removeItem(DRAFT); } catch { /* ignore */ }
+}
+
 export default function SmartChart() {
   const { t } = useI18n();
   const [params, setParams] = useSearchParams();
@@ -21,15 +31,22 @@ export default function SmartChart() {
   const [dlg, setDlg] = useState<"open" | "save" | "share" | "pdf" | null>(null);
   const [templates, setTemplates] = useState<{ key: string; label: string; tip: string }[]>([]);
   const [viewsOk, setViewsOk] = useState(true);
+  const [draft, setDraft] = useState<Draft | null>(null);
+  const userRef = useRef("");
   const fr = useSmartFrame(sid, false, opened);
   const menu = useContextMenu();
   const newBtn = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const vid = params.get("view");
-    request<{ summary: Summary; view: ViewInfo | null; missing: string[] }>("POST", "/api/smart/open",
+    request<{ summary: Summary; view: ViewInfo | null; missing: string[]; user: string }>("POST", "/api/smart/open",
       { sid, read_only: false, view_id: vid ? Number(vid) : null })
-      .then((d) => { fr.setSummary(d.summary); setView(d.view); if (d.missing?.length) setMsg(t("sc.missing", { names: d.missing.join(", ") })); })
+      .then((d) => {
+        fr.setSummary(d.summary); setView(d.view); userRef.current = d.user;
+        if (d.missing?.length) setMsg(t("sc.missing", { names: d.missing.join(", ") }));
+        const old = readDraft(d.user);
+        if (old && (!vid || old.view_id === Number(vid))) setDraft(old);
+      })
       .catch((e) => {
         setMsg(errText(t, e));
         if (vid) { setParams({}, { replace: true }); request("POST", "/api/smart/open", { sid }).catch(() => undefined); }
@@ -40,9 +57,43 @@ export default function SmartChart() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // unsaved work: kept as a draft in this browser and asked about when leaving (the server forgets it on a restart)
+  const dirty = !!fr.summary?.dirty;
+  useEffect(() => {
+    if (!opened || !userRef.current) return;
+    if (!dirty) { if (!draft) clearDraft(userRef.current); return; }
+    const h = setTimeout(() => {
+      request<{ config: Record<string, unknown>; view_id: number | null; view_name: string }>("GET", `/api/smart/${sid}/config`)
+        .then((c) => writeDraft(userRef.current, { at: new Date().toISOString(), view_id: c.view_id, view_name: c.view_name, config: c.config }))
+        .catch(() => undefined);
+    }, 800);
+    return () => clearTimeout(h);
+  }, [fr.summary, dirty, opened, sid, draft]);
+  useEffect(() => {
+    if (!dirty) return;
+    const onLeave = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank" || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0 || a.origin !== location.origin) return;
+      if (!window.confirm(t("sc.leaveQ"))) { e.preventDefault(); e.stopPropagation(); }
+    };
+    window.addEventListener("beforeunload", onLeave);
+    document.addEventListener("click", onClick, true);
+    return () => { window.removeEventListener("beforeunload", onLeave); document.removeEventListener("click", onClick, true); };
+  }, [dirty, t]);
+  const restoreDraft = () => {
+    if (!draft) return;
+    const d = draft;
+    setDraft(null);
+    run(request<Answer>("POST", `/api/smart/${sid}/restore`, { config: d.config, view_id: d.view_id }));
+  };
+  const discardDraft = () => { clearDraft(userRef.current); setDraft(null); };
+  const askDiscard = () => !dirty || window.confirm(t("sc.leaveQ"));
+
   const run = (p: Promise<Answer>) => p.then((a) => { fr.apply(a); if (a.view !== undefined) setView(a.view ?? null); if (a.missing?.length) setMsg(t("sc.missing", { names: a.missing.join(", ") })); })
     .catch((e) => setMsg(errText(t, e)));
   const startNew = (template: string | null) => {
+    if (!askDiscard()) return;
     setMsg(null);
     setParams({}, { replace: true });
     run(request<Answer>("POST", `/api/smart/${sid}/new`, { template }));
@@ -54,6 +105,7 @@ export default function SmartChart() {
     menu.open(e, items);
   };
   const openView = (v: ViewInfo) => {
+    if (!askDiscard()) return;
     setDlg(null); setMsg(null);
     setParams({ view: String(v.id) }, { replace: true });
     run(request<Answer>("POST", `/api/smart/${sid}/view/open`, { id: v.id }));
@@ -73,7 +125,7 @@ export default function SmartChart() {
       <div className="page-head sc-head">
         <div className="sc-titles">
           <div className="sc-kicker">SMART CHART</div>
-          <h1>{view?.name || t("sc.newTitle")}</h1>
+          <h1>{view?.name || t("sc.newTitle")}{dirty && <span className="sc-dirty" title={t("sc.unsavedTip")}> ●</span>}</h1>
         </div>
         <button ref={newBtn} className="btn-plain" title={t("sc.newTip")} onClick={(e) => openNew(e)}>{t("sc.new")}</button>
         <button className="btn-plain" disabled={!viewsOk} title={viewsOk ? "" : t("sc.err.unavailable")} onClick={() => setDlg("open")}>{t("sc.openView")}</button>
@@ -85,13 +137,20 @@ export default function SmartChart() {
         <HelpButton screen="smart_chart" />
       </div>
       <SummaryBar s={fr.summary} />
+      {draft && (
+        <div className="sc-draft">{t("sc.draftQ", { when: new Date(draft.at).toLocaleString(), name: draft.view_name || t("sc.newTitle") })}
+          <button className="btn-green" onClick={restoreDraft}>{t("sc.draftRestore")}</button>
+          <button className="btn-plain" onClick={discardDraft}>{t("sc.draftDiscard")}</button></div>)}
       {(msg || fr.error) && <div className="mj-msg err sc-msg">{msg || fr.error} <button className="mu-x" onClick={() => { setMsg(null); fr.setError(null); }}>✕</button></div>}
       <div className="smart-body">{fr.element}</div>
       {fr.dialogs}
       {menu.menu}
       {dlg === "open" && <OpenViewDialog onClose={() => setDlg(null)} onOpen={openView} />}
       {dlg === "save" && <SaveViewDialog sid={sid} current={view} onClose={() => setDlg(null)}
-        onSaved={(v) => { setView(v); setParams({ view: String(v.id) }, { replace: true }); setMsg(null); }} />}
+        onSaved={(v) => {
+          setView(v); setParams({ view: String(v.id) }, { replace: true }); setMsg(null); clearDraft(userRef.current); setDraft(null);
+          request<{ summary: Summary }>("GET", `/api/smart/${sid}/state`).then((d) => fr.setSummary(d.summary)).catch(() => undefined);
+        }} />}
       {dlg === "share" && view && <ShareDialog view={view} onClose={() => setDlg(null)}
         onSaved={() => request<{ view: ViewInfo }>("GET", `/api/smart/${sid}/state`).then((d) => setView(d.view))} />}
       {dlg === "pdf" && <PdfDialog pages={fr.summary?.pages || 1} onClose={() => setDlg(null)} onChoose={pdf} />}

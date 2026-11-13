@@ -45,23 +45,28 @@ def _err(status: int, code: str, detail: str, **extra) -> JSONResponse:
 
 # ------------------------------------------------------------------ trials, loaded once per process
 class _Base:
-    def __init__(self) -> None:
-        self.catalog = te.build_catalog()
-        self.trials = te._load_trials()
+    """The trials once per process - without reference samples, and (when a dashboard asks) with them."""
+
+    def __init__(self, refs: bool, catalog: Optional[List[te.Field]] = None) -> None:
+        self.refs = refs
+        self.catalog = catalog if catalog is not None else te.build_catalog()
+        self.trials = te._load_trials(include_refs=refs)
         self.values: Dict[str, Dict[int, Any]] = {}     # field values shared by the sessions
         self.loaded = datetime.datetime.now()
 
 
-_base: Optional[_Base] = None
+_bases: Dict[bool, _Base] = {}
 _base_lock = threading.Lock()
 
 
-def _get_base(force: bool = False) -> _Base:
-    global _base
+def _get_base(refs: bool = False, force: bool = False) -> _Base:
     with _base_lock:
-        if _base is None or force:
-            _base = _Base()
-        return _base
+        if force:
+            _bases.clear()          # Reload: new catalog, the other variant is loaded again when needed
+        if refs not in _bases:
+            other = _bases.get(not refs)
+            _bases[refs] = _Base(refs, other.catalog if other else None)   # same catalog = no new page init
+        return _bases[refs]
 
 
 class _SharedCache(dict):
@@ -91,7 +96,7 @@ class _SharedCache(dict):
 
 
 def _dataset(base: _Base) -> te.TrialDataset:
-    ds = te.TrialDataset(base.catalog, trials=base.trials)
+    ds = te.TrialDataset(base.catalog, trials=base.trials, include_refs=base.refs)
     ds._cache = _SharedCache(base.values)
     return ds
 
@@ -114,18 +119,38 @@ class Host:
         self.files: Dict[str, Any] = {}
         self.used = time.time()
         self.lock = threading.RLock()
+        self.saved_sig = ""          # the dashboard as opened / saved - anything else is unsaved
+        self.folder = ""
 
-    def reload(self, force: bool) -> None:
-        self.base = _get_base(force)
+    @property
+    def include_refs(self) -> bool:
+        return self.base.refs
+
+    def reload(self, force: bool, refs: Optional[bool] = None) -> None:
+        self.base = _get_base(self.base.refs if refs is None else bool(refs), force)
         self.ds = _dataset(self.base)
         self.catalog = self.base.catalog
         known = set(self.ds.fields)
         self.filters = [f for f in self.filters if f.get("key") in known]
 
+    def config(self) -> Dict[str, Any]:
+        return sc.view_settings(self.filters, self.ply_scope, self.session.spec, self.include_refs, self.folder)
+
+    def _sig(self) -> str:
+        import json
+        cfg = self.config()
+        cfg.pop("folder", None)
+        cfg["dashboard"] = {k: v for k, v in (cfg.get("dashboard") or {}).items() if k != "active"}  # page tab
+        return json.dumps(cfg, sort_keys=True, default=str)
+
+    def mark_saved(self) -> None:
+        self.saved_sig = self._sig()
+
     def summary(self) -> Dict[str, Any]:
         res = self.ds.apply(self.filters, self.ply_scope)
         s = self.ds.summary(res)
         return {**s, "filters": en.describe_filters(self.ds, list(self.filters)), "ply_scope": self.ply_scope,
+                "refs": self.include_refs, "dirty": not self.read_only and self._sig() != self.saved_sig,
                 "pages": len(self.session.spec.get("pages") or []), "visuals": len(en.active_page(self.session.spec)["visuals"])}
 
 
@@ -165,12 +190,13 @@ def _answer(h: Host, cmds, **extra) -> Dict[str, Any]:
     return {"cmds": _cmds(cmds), "summary": h.summary(), **extra}
 
 
-def _view_info(v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def _view_info(v: Optional[Dict[str, Any]], favs: Optional[set] = None) -> Optional[Dict[str, Any]]:
     if not v:
         return None
     when = v.get("UpdatedAt") or v.get("CreatedAt")
     cfg = views.config_of(v)
     return {"id": int(v["ID"]), "name": str(v.get("Name") or ""), "owner": v.get("OwnerName") or "",
+            "folder": sc.view_folder(cfg), "favourite": int(v["ID"]) in (favs or set()),
             "right": v.get("MyRight"), "shared": bool(int(v.get("IsShared") or 0)),
             "when": when.strftime("%Y-%m-%d") if hasattr(when, "strftime") else "",
             "kind": sc.view_kind(cfg), "dashboard": cfg.get("mode") == "dashboard",
@@ -213,6 +239,7 @@ def open_session(body: OpenBody, user: Dict[str, Any] = Depends(current_user)):
                 _sessions.pop(k, None)
         h = Host(_username(user), body.read_only)
         _sessions[body.sid] = h
+    h.user_id = user.get("id")
     missing: List[str] = []
     if body.view_id is not None:
         v = views.get_view(int(body.view_id))
@@ -223,15 +250,25 @@ def open_session(body: OpenBody, user: Dict[str, Any] = Depends(current_user)):
                         ("own" if v.get("MyRight") == views.RIGHT_OWNER else "shared") if body.read_only else "")
     else:
         h.session.start_from(body.template if body.template is not None else None)
+        h.mark_saved()
         if not body.read_only:
             log_usage_event("feature", "smart_dashboard_open", "web")
-    return {"summary": h.summary(), "view": _view_info(h.view), "missing": missing}
+    return {"summary": h.summary(), "view": _view_info(h.view), "missing": missing, "user": _username(user)}
+
+
+def _apply_config(h: Host, cfg: Dict[str, Any]) -> List[str]:
+    if sc.view_refs(cfg) != h.include_refs:
+        h.reload(False, sc.view_refs(cfg))
+    h.filters, h.ply_scope, spec, missing = sc.read_view_settings(cfg, set(h.ds.fields))
+    h.folder = sc.view_folder(cfg)
+    h.session.set_spec(spec)
+    return missing
 
 
 def _apply_view(h: Host, v: Dict[str, Any]) -> List[str]:
-    h.filters, h.ply_scope, spec, missing = sc.read_view_settings(views.config_of(v), set(h.ds.fields))
-    h.session.set_spec(spec)
+    missing = _apply_config(h, views.config_of(v))
     h.view = v
+    h.mark_saved()
     return missing
 
 
@@ -247,7 +284,9 @@ def new_dashboard(sid: str, body: NewBody, user: Dict[str, Any] = Depends(curren
         return _err(400, "bad_template", "Unknown template.")
     with h.lock:
         h.view = None
+        h.folder = ""
         h.session.start_from(body.template if body.template is not None else None)
+        h.mark_saved()
         return _answer(h, h.session.init_cmds(), view=None)
 
 
@@ -261,6 +300,7 @@ def reload(sid: str, user: Dict[str, Any] = Depends(current_user)):
     h = _host(sid, user)
     with h.lock:
         h.reload(force=True)
+        h.session.clear_results()
         return _answer(h, h.session.refresh_cmds())
 
 
@@ -268,6 +308,37 @@ def reload(sid: str, user: Dict[str, Any] = Depends(current_user)):
 def state(sid: str, user: Dict[str, Any] = Depends(current_user)):
     h = _host(sid, user)
     return {"summary": h.summary(), "view": _view_info(h.view)}
+
+
+@router.get("/{sid}/config")
+def config(sid: str, user: Dict[str, Any] = Depends(current_user)):
+    """What a saved view would store - the browser keeps it as a draft while it is unsaved."""
+    h = _edit_host(sid, user)
+    with h.lock:
+        return {"config": h.config(), "view_id": int(h.view["ID"]) if h.view else None,
+                "view_name": str((h.view or {}).get("Name") or ""), "dirty": h.summary()["dirty"]}
+
+
+class RestoreBody(BaseModel):
+    config: Dict[str, Any]
+    view_id: Optional[int] = None
+
+
+@router.post("/{sid}/restore")
+def restore(sid: str, body: RestoreBody, user: Dict[str, Any] = Depends(current_user)):
+    """Bring back an unsaved draft (after a reload / a server restart). With view_id it continues that view."""
+    h = _edit_host(sid, user)
+    with h.lock:
+        v = views.get_view(int(body.view_id)) if body.view_id else None
+        if v is not None:
+            _apply_view(h, v)          # saved state first (for "unsaved" afterwards)
+        else:
+            h.view = None
+        missing = _apply_config(h, body.config if isinstance(body.config, dict) else {})
+        if v is None:
+            h.saved_sig = ""
+        log_usage_event("feature", "smart_dashboard_draft_restore", "view" if v else "new")
+        return _answer(h, h.session.init_cmds(), view=_view_info(h.view), missing=missing)
 
 
 # ------------------------------------------------------------------ the page's bridge
@@ -312,6 +383,11 @@ def call(sid: str, body: CallBody, user: Dict[str, Any] = Depends(current_user))
             if s.remove_filter(str(arg(0)), str(arg(1) or ""), int(arg(2, -1))):
                 return _answer(h, s.refresh_cmds() if arg(0) == "all" else s.spec_cmds())
             return _answer(h, [])
+        if m == "setIncludeRefs":
+            if not h.read_only and bool(arg(0)) != h.include_refs:
+                h.reload(False, bool(arg(0)))
+                log_usage_event("feature", "smart_dashboard_refs", "on" if arg(0) else "off")
+            return _answer(h, s.refresh_cmds())
         if m == "setPlyScope":
             if not h.read_only and arg(0) in te.PLY_SCOPES:
                 h.ply_scope = arg(0)
@@ -425,10 +501,12 @@ def calc_get(sid: str, key: str = "", user: Dict[str, Any] = Depends(current_use
         existing = s.calc_def(key)
         k = key if existing else s.next_calc_key()
         from db import formula as fm
+        library = [] if existing else sc.calc_library(h.ds, views.list_views() if views.available() else [],
+                                                       s.spec.get("calc") or [])
         return {"key": k, "exists": existing is not None, "name": (existing or {}).get("name") or "",
                 "unit": (existing or {}).get("unit") or "",
                 "formula": fm.to_display((existing or {}).get("formula") or "", h.ds.fields),
-                "fields": sc.calc_fields_for(h.ds, k)}
+                "fields": sc.calc_fields_for(h.ds, k), "library": library}
 
 
 class CalcBody(BaseModel):
@@ -442,7 +520,7 @@ class CalcBody(BaseModel):
 def calc_preview(sid: str, body: CalcBody, user: Dict[str, Any] = Depends(current_user)):
     h = _edit_host(sid, user)
     with h.lock:
-        return sc.calc_preview(h.ds, body.text, body.key)
+        return sc.calc_preview(h.ds, body.text, body.key, h.filters, h.ply_scope)
 
 
 @router.post("/{sid}/calc/save")
@@ -564,9 +642,23 @@ def file(sid: str, token: str, user: Dict[str, Any] = Depends(current_user)):
 def list_views(kind: str = Query(""), user: Dict[str, Any] = Depends(current_user)):
     if not views.available():
         return {"available": False, "views": [], "smart_chart": can_use(user, "smart_chart")}
+    from db.display_settings import smart_favourites
     rows = views.list_views(kind="dashboard" if kind == "dashboard" else None)
-    return {"available": True, "shares": views.shares_available(), "views": [_view_info(v) for v in rows],
-            "smart_chart": can_use(user, "smart_chart")}
+    favs = set(smart_favourites(user.get("id")))
+    return {"available": True, "shares": views.shares_available(), "views": [_view_info(v, favs) for v in rows],
+            "folders": sc.folders_of(views.list_views()), "smart_chart": can_use(user, "smart_chart")}
+
+
+@router.post("/views/{view_id}/favourite")
+def favourite(view_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Star / unstar a view (stored with the user's display settings, same as the desktop)."""
+    if views.get_view(view_id) is None:
+        return _err(404, "view_gone", "This view no longer exists or is no longer shared with you.")
+    from db.display_settings import toggle_smart_favourite
+    on = toggle_smart_favourite(user.get("id"), view_id)
+    if on is None:
+        return _err(400, "not_saved", "The favourite could not be saved.")
+    return {"favourite": on}
 
 
 class OpenViewBody(BaseModel):
@@ -590,6 +682,7 @@ class SaveViewBody(BaseModel):
     name: str
     shared: bool = False
     as_new: bool = True
+    folder: str = ""
 
 
 @router.post("/{sid}/view/save")
@@ -608,12 +701,13 @@ def view_save(sid: str, body: SaveViewBody, user: Dict[str, Any] = Depends(curre
             shared = None              # edit share: the creator's sharing stays
         elif not overwrite and cur is not None and not views.is_owner(cur):
             shared = body.shared
+        h.folder = (body.folder or "").strip()[:60]
         try:
-            vid = views.save_view(name, sc.view_settings(h.filters, h.ply_scope, h.session.spec), shared,
-                                  view_id=int(cur["ID"]) if overwrite else None)
+            vid = views.save_view(name, h.config(), shared, view_id=int(cur["ID"]) if overwrite else None)
         except ValueError as e:
             return _err(400, "too_big", str(e))
         h.view = views.get_view(vid)
+        h.mark_saved()
     log_usage_event("feature", "smart_chart_view_save",
                     "shared" if shared else "private" if shared is not None else "edit share")
     return {"view": _view_info(h.view)}

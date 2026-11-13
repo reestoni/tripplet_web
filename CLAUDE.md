@@ -199,6 +199,14 @@ auch). Backend `app/smart_chart_api.py`: eine Sitzung pro offener Seite (sid vom
 6 h), Versuche einmal pro Prozess geladen, Feldwerte geteilt, berechnete Felder pro Sitzung (`_SharedCache`). Rechte:
 Feature `smart_chart`; Dashboards (nur lesend) auch mit `dashboards`. Tests `tests/test_smart_chart.py` (gespeicherte
 Ansicht wird angelegt und gelöscht), Desktop `tests/test_smart_dashboard_core.py`.
+Verbesserungen (Nutzerentscheid 2026-11-13, beide Apps): Ergebnis-Cache pro Visual in `DashboardSession.result`
+(Schlüssel = Visual ohne Lage + Filter + Klicks + Ply + Formeln; Reload leert ihn); Referenzmuster wahlweise
+(`TrialDataset(include_refs=)`, Feld "Reference sample", Häkchen im Filterbereich der Seite, `refs` in der Ansicht; Web hält zwei
+Versuchsbestände mit gleichem Katalog); Formelvorschau auch über die gefilterten Versuche; Formeln aus anderen Dashboards
+übernehmen (`calc_library`); Ordner (`folder` in ConfigJSON) und Favoriten (`DisplaySettings.smart_favs`, `group_views`);
+`ConfigJSON` MEDIUMTEXT auf dev_local per `tools/smart_chart_views_migration.py` (dev/prod noch TEXT - nur auf Freigabe,
+`config_limit()` richtet sich nach der Spalte). Nur Web: ungespeicherte Änderungen (`summary.dirty`, Punkt im Titel), Entwurf
+in localStorage `tripplet.smart.draft` (pro Benutzer) mit "Wiederherstellen" (`/restore`), Warnung beim Verlassen.
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

@@ -160,3 +160,51 @@ def test_saved_view_round_trip():
     finally:
         assert c.delete(f"/api/smart/views/{vid}").json()["ok"]
     assert views.get_view(vid) is None
+
+
+def test_unsaved_draft_refs_calc_library_favourites():
+    c, _ = _client()
+    sid, d = _open(c)
+    assert d["summary"]["dirty"] is False and d["summary"]["refs"] is False
+    j = _call(c, sid, "ready", {}, {})
+    spec = j["cmds"][0][1]["spec"]
+    spec["pages"][0]["title"] = "Changed"
+    assert _call(c, sid, "updateSpec", spec)["summary"]["dirty"] is True
+    # reference samples: more (or the same number of) trials
+    r = _call(c, sid, "setIncludeRefs", True)
+    assert r["summary"]["refs"] is True and r["summary"]["trials"] >= d["summary"]["trials"]
+    assert r["cmds"][0][1]["refs"] is True
+    cfg = c.get(f"/api/smart/{sid}/config").json()
+    assert cfg["config"]["refs"] is True and cfg["config"]["dashboard"]["pages"][0]["title"] == "Changed"
+    # the draft comes back in a new session (after a reload / server restart)
+    sid2, _d = _open(c)
+    back = c.post(f"/api/smart/{sid2}/restore", json={"config": cfg["config"]}).json()
+    assert back["summary"]["refs"] is True and back["summary"]["dirty"] is True
+    assert back["cmds"][0][1]["spec"]["pages"][0]["title"] == "Changed"
+    # calc preview: also over the trials of the dashboard
+    g = c.get(f"/api/smart/{sid}/calc").json()
+    assert "library" in g
+    c.post(f"/api/smart/{sid}/filter/put", json={"scope": "all", "key": "machine", "raw": {"values": [
+        c.post(f"/api/smart/{sid}/filter/field", json={"scope": "all", "key": "machine"}).json()["cats"][0][0]]}})
+    p = c.post(f"/api/smart/{sid}/calc/preview", json={"key": g["key"], "text": f"[{g['fields'][0]['name']}] + 0"}).json()
+    assert p["filtered"]["base"] < p.get("n", 0) or p["filtered"]["base"] > 0
+
+
+def test_folder_and_favourite():
+    if not views.available():
+        pytest.skip("no tblSmartChartView on dev_local")
+    c, me = _client()
+    sid, _d = _open(c)
+    _call(c, sid, "ready", {}, {})
+    name = "zz web test " + uuid.uuid4().hex[:6]
+    v = c.post(f"/api/smart/{sid}/view/save", json={"name": name, "folder": "ZZ Test folder"}).json()["view"]
+    try:
+        assert v["folder"] == "ZZ Test folder"
+        assert c.get(f"/api/smart/{sid}/state").json()["summary"]["dirty"] is False
+        lst = c.get("/api/smart/views").json()
+        assert "ZZ Test folder" in lst["folders"]
+        assert c.post(f"/api/smart/views/{v['id']}/favourite").json()["favourite"] is True
+        assert next(x for x in c.get("/api/smart/views").json()["views"] if x["id"] == v["id"])["favourite"]
+        assert c.post(f"/api/smart/views/{v['id']}/favourite").json()["favourite"] is False
+    finally:
+        c.delete(f"/api/smart/views/{v['id']}")

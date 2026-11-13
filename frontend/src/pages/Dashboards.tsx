@@ -4,7 +4,7 @@ import { request } from "../api";
 import { useI18n } from "../i18n";
 import { HelpButton } from "../components/Help";
 import { newSid, useSmartFrame } from "../components/SmartFrame";
-import { errText, PdfDialog, viewMeta, type Answer, type Summary, type ViewInfo } from "../components/SmartDialogs";
+import { errText, PdfDialog, viewGroups, viewMeta, type Answer, type Summary, type ViewInfo } from "../components/SmartDialogs";
 
 /* Dashboards (desktop ui/screen_dashboards.py): LOOK at your own dashboards and the ones shared with you -
    Smart Chart is where they are built. Left the list, right the dashboard read-only (slicers, clicks,
@@ -59,8 +59,16 @@ export default function Dashboards() {
 
   const ql = q.trim().toLowerCase();
   const shown = (list || []).filter((v) => !ql || (v.name + " " + v.owner + " " + viewMeta(t, v)).toLowerCase().includes(ql));
-  const groups: [string, ViewInfo[], string][] = [["dsb.mine", shown.filter((v) => v.right === "owner"), "dsb.noneMine"],
-    ["dsb.shared", shown.filter((v) => v.right !== "owner"), "dsb.noneShared"]];
+  const favs = shown.filter((v) => v.favourite);
+  const groups: [string, ViewInfo[], string][] = [["dsb.mine", shown.filter((v) => v.right === "owner" && !v.favourite), "dsb.noneMine"],
+    ["dsb.shared", shown.filter((v) => v.right !== "owner" && !v.favourite), "dsb.noneShared"]];
+  const star = (v: ViewInfo) => request("POST", `/api/smart/views/${v.id}/favourite`).then(() => loadList(cur?.id)).catch((e) => setMsg(errText(t, e)));
+  const item = (v: ViewInfo) => (
+    <div key={v.id} className={"dsb-item" + (cur?.id === v.id ? " on" : "")} title={viewMeta(t, v)} onClick={() => pick(v)}>
+      <button className={"sc-star" + (v.favourite ? " on" : "")} title={t(v.favourite ? "sc.v.unfav" : "sc.v.fav")}
+        onClick={(e) => { e.stopPropagation(); star(v); }}>{v.favourite ? "★" : "☆"}</button>
+      {v.name}{v.right !== "owner" && <span className="muted"> · {v.owner}</span>}
+    </div>);
   const empty = !available ? t("dsb.unavailable") : list && !list.length ? t("dsb.none") : null;
 
   return (
@@ -81,13 +89,15 @@ export default function Dashboards() {
       <div className="dsb-body">
         <aside className="dsb-list">
           <input className="mj-search" placeholder={t("dsb.search")} value={q} onChange={(e) => setQ(e.target.value)} />
+          {favs.length > 0 && <div><div className="dsb-group">★ {t("sc.v.favourites")}</div>{favs.map(item)}</div>}
           {groups.map(([title, vs, none]) => (
             <div key={title}>
               <div className="dsb-group">{t(title)}</div>
               {!vs.length && <div className="muted small dsb-none">{t(none)}</div>}
-              {vs.map((v) => (
-                <div key={v.id} className={"dsb-item" + (cur?.id === v.id ? " on" : "")} title={viewMeta(t, v)} onClick={() => pick(v)}>
-                  {v.name}{v.right !== "owner" && <span className="muted"> · {v.owner}</span>}
+              {viewGroups(vs).map(([folder, fv]) => (
+                <div key={folder || "-"} className={folder && folder !== "~" ? "dsb-folder" : ""}>
+                  {folder && <div className="dsb-folder-head">{folder === "~" ? t("sc.v.others") : "📁 " + folder}</div>}
+                  {fv.map(item)}
                 </div>))}
             </div>))}
         </aside>

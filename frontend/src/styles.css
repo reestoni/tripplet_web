@@ -1043,3 +1043,12 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .sc-view:hover { background: #F2F7F2; }
 .sc-view.on { background: #E3F1E6; }
 .small { font-size: 12px; }
+
+.sc-dirty { color: #E6A23C; font-size: 18px; }
+.sc-draft { background: #FFF4D6; border: 1px solid #F0D58C; border-radius: 8px; padding: 6px 12px; margin-bottom: 6px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.sc-star { background: none; border: none; cursor: pointer; color: #B0B8B2; font-size: 15px; padding: 0 4px 0 0; }
+.sc-star.on { color: #E6A23C; }
+.sc-vgroup { font-weight: 700; color: #165C2B; margin: 8px 0 2px; }
+.sc-lib { width: 100%; margin-bottom: 8px; }
+.dsb-folder { margin-left: 6px; }
+.dsb-folder-head { color: #165C2B; font-size: 12px; margin: 6px 0 2px; }

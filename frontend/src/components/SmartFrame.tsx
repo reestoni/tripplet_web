@@ -90,7 +90,7 @@ export function SummaryBar({ s }: { s: Summary | null }) {
   return (
     <div className="sc-count">
       <b>{nf(s.trials)}</b> {t("sc.match", { s: nf(s.series), m: s.machines, j: s.jets })}
-      <span className="sc-count-hint">{t("sc.countHint")}</span>
+      <span className="sc-count-hint">{t(s.refs ? "sc.countHintRefs" : "sc.countHint")}</span>
     </div>
   );
 }

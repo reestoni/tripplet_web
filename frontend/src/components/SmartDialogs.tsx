@@ -9,9 +9,9 @@ import { Modal } from "./SeriesTools";
    field names, filter texts and fairness sentences are data from there (English, like the dashboard page). */
 
 export type Summary = { trials: number; series: number; machines: number; jets: number; filters: string[];
-  ply_scope: string; pages: number; visuals: number };
+  ply_scope: string; pages: number; visuals: number; refs: boolean; dirty: boolean };
 export type Answer = { cmds: [string, unknown][]; summary: Summary; view?: ViewInfo | null; missing?: string[]; download?: string };
-export type ViewInfo = { id: number; name: string; owner: string; right: "owner" | "edit" | "view"; shared: boolean;
+export type ViewInfo = { id: number; name: string; owner: string; folder: string; favourite: boolean; right: "owner" | "edit" | "view"; shared: boolean;
   when: string; kind: { pages: number; visuals: number }; dashboard: boolean; can_change: boolean; can_delete: boolean; can_share: boolean };
 
 const nf = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
@@ -257,10 +257,12 @@ export function FilterDialog({ sid, scope, vid, index, onClose, onDone }: { sid:
 /* ------------------------------------------------------------------ calculated field */
 export function CalcDialog({ sid, calcKey, onClose, onDone }: { sid: string; calcKey: string; onClose: () => void; onDone: (a: Answer) => void }) {
   const { t } = useI18n();
-  const [d, setD] = useState<{ key: string; exists: boolean; name: string; unit: string; formula: string; fields: { name: string; label: string; group: string }[] } | null>(null);
+  const [d, setD] = useState<{ key: string; exists: boolean; name: string; unit: string; formula: string; fields: { name: string; label: string; group: string }[];
+    library: { name: string; unit: string; formula: string; view: string }[] } | null>(null);
   const [name, setName] = useState(""); const [unit, setUnit] = useState(""); const [text, setText] = useState("");
   const [q, setQ] = useState("");
-  const [prev, setPrev] = useState<{ error?: string; n?: number; min?: number; avg?: number; max?: number } | null>(null);
+  const [prev, setPrev] = useState<{ error?: string; n?: number; min?: number; avg?: number; max?: number;
+    filtered?: { base: number; n: number; min?: number; avg?: number; max?: number } } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const ta = useRef<HTMLTextAreaElement | null>(null);
 
@@ -303,11 +305,21 @@ export function CalcDialog({ sid, calcKey, onClose, onDone }: { sid: string; cal
           <div>
             <label className="sc-lab">{t("sc.c.name")}<input value={name} placeholder={t("sc.c.namePh")} onChange={(e) => setName(e.target.value)} autoFocus /></label>
             <label className="sc-lab">{t("sc.c.unit")}<input value={unit} placeholder={t("sc.c.unitPh")} onChange={(e) => setUnit(e.target.value)} /></label>
+            {!d.exists && d.library.length > 0 && (
+              <select className="sc-lib" value="" onChange={(e) => {
+                const c = d.library[Number(e.target.value)];
+                if (c) { setName(c.name); setUnit(c.unit); setText(c.formula); }
+              }}>
+                <option value="">{t("sc.c.copyFrom", { n: d.library.length })}</option>
+                {d.library.map((c, i) => <option key={i} value={i}>{c.name} · {c.view}</option>)}
+              </select>)}
             <label className="sc-lab">{t("sc.c.formula")}
               <textarea ref={ta} rows={4} value={text} placeholder="[Intermingling Points (FP/m)] / [Air Consumption (m3/h)]" onChange={(e) => setText(e.target.value)} /></label>
             <div className="sc-ops">{ops.map(([l, s]) => <button key={l} className="btn-plain" onClick={() => insert(s)}>{l}</button>)}</div>
             <div className="sc-preview">{!prev ? "" : prev.error ? <span className="err">{prev.error}</span>
-              : !prev.n ? t("sc.c.noTrial") : t("sc.c.preview", { n: nf(prev.n), min: fmt(prev.min), avg: fmt(prev.avg), max: fmt(prev.max) })}</div>
+              : !prev.n ? t("sc.c.noTrial") : t("sc.c.preview", { n: nf(prev.n), min: fmt(prev.min), avg: fmt(prev.avg), max: fmt(prev.max) })}
+              {prev?.filtered && !prev.error && <div>{t("sc.c.previewFiltered", { n: nf(prev.filtered.n), base: nf(prev.filtered.base) })}
+                {prev.filtered.n ? " · " + t("sc.c.stats", { min: fmt(prev.filtered.min), avg: fmt(prev.filtered.avg), max: fmt(prev.filtered.max) }) : ""}</div>}</div>
             <p className="muted">{t("sc.c.hint")}</p>
             {err && <div className="login-error">{err}</div>}
             <div className="modal-buttons">
@@ -386,6 +398,19 @@ export function FairDialog({ sid, vid, onClose, onDone }: { sid: string; vid: st
 }
 
 /* ------------------------------------------------------------------ views */
+/** Favourites first ("★"), then per folder, then the rest ("") - like ui/smart_dashboard_core.group_views. */
+export function viewGroups(vs: ViewInfo[]): [string, ViewInfo[]][] {
+  const byName = (a: ViewInfo, b: ViewInfo) => a.name.localeCompare(b.name);
+  const out: [string, ViewInfo[]][] = [];
+  const favs = vs.filter((v) => v.favourite);
+  if (favs.length) out.push(["★", [...favs].sort(byName)]);
+  const folders = [...new Set(vs.filter((v) => !v.favourite && v.folder).map((v) => v.folder))].sort((a, b) => a.localeCompare(b));
+  folders.forEach((f) => out.push([f, vs.filter((v) => !v.favourite && v.folder === f).sort(byName)]));
+  const rest = vs.filter((v) => !v.favourite && !v.folder);
+  if (rest.length) out.push([out.length ? "~" : "", rest]);     // "~" = "Other views" heading
+  return out;
+}
+
 export function viewMeta(t: (k: string, v?: Record<string, string | number>) => string, v: ViewInfo): string {
   const who = v.right === "owner" ? t("sc.v.yours") : t("sc.v.by", { name: v.owner || "?" });
   const can = v.right === "edit" ? " · " + t("sc.v.canEdit") : v.right === "view" ? " · " + t("sc.v.viewOnly") : v.shared ? " · " + t("sc.v.shared") : "";
@@ -401,7 +426,8 @@ export function OpenViewDialog({ onClose, onOpen }: { onClose: () => void; onOpe
   const load = () => request<{ views: ViewInfo[] }>("GET", "/api/smart/views").then((d) => setList(d.views)).catch((e) => setErr(errText(t, e)));
   useEffect(() => { load(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   const ql = q.trim().toLowerCase();
-  const shown = (list || []).filter((v) => !ql || (v.name + " " + v.owner).toLowerCase().includes(ql));
+  const shown = (list || []).filter((v) => !ql || (v.name + " " + v.owner + " " + v.folder).toLowerCase().includes(ql));
+  const star = (v: ViewInfo) => request<{ favourite: boolean }>("POST", `/api/smart/views/${v.id}/favourite`).then(load).catch((e) => setErr(errText(t, e)));
   const del = () => {
     if (!sel || !window.confirm(t("sc.v.deleteAsk", { name: sel.name }))) return;
     request("DELETE", `/api/smart/views/${sel.id}`).then(() => { setSel(null); load(); }).catch((e) => setErr(errText(t, e)));
@@ -411,9 +437,15 @@ export function OpenViewDialog({ onClose, onOpen }: { onClose: () => void; onOpe
       <input className="mj-search" placeholder={t("sc.v.search")} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
       <div className="sc-views">
         {list && !list.length && <p className="muted">{t("sc.v.none")}</p>}
-        {shown.map((v) => (
-          <div key={v.id} className={"sc-view" + (sel?.id === v.id ? " on" : "")} onClick={() => setSel(v)} onDoubleClick={() => onOpen(v)}>
-            <b>{v.name}</b><div className="muted">{viewMeta(t, v)}</div>
+        {viewGroups(shown).map(([title, vs]) => (
+          <div key={title || "-"}>
+            {title && <div className="sc-vgroup">{title === "★" ? "★ " + t("sc.v.favourites") : title === "~" ? t("sc.v.others") : "📁 " + title}</div>}
+            {vs.map((v) => (
+              <div key={v.id} className={"sc-view" + (sel?.id === v.id ? " on" : "")} onClick={() => setSel(v)} onDoubleClick={() => onOpen(v)}>
+                <button className={"sc-star" + (v.favourite ? " on" : "")} title={t(v.favourite ? "sc.v.unfav" : "sc.v.fav")}
+                  onClick={(e) => { e.stopPropagation(); star(v); }}>{v.favourite ? "★" : "☆"}</button>
+                <b>{v.name}</b><div className="muted">{viewMeta(t, v)}</div>
+              </div>))}
           </div>))}
       </div>
       {err && <div className="login-error">{err}</div>}
@@ -429,18 +461,24 @@ export function OpenViewDialog({ onClose, onOpen }: { onClose: () => void; onOpe
 
 export function SaveViewDialog({ sid, current, onClose, onSaved }: { sid: string; current: ViewInfo | null; onClose: () => void; onSaved: (v: ViewInfo) => void }) {
   const { t } = useI18n();
+  const [folder, setFolder] = useState(current?.folder || "");
+  const [folders, setFolders] = useState<string[]>([]);
+  useEffect(() => { request<{ folders?: string[] }>("GET", "/api/smart/views").then((d) => setFolders(d.folders || [])).catch(() => undefined); }, []);
   const mine = !current || current.right === "owner";
   const canOverwrite = !!current && current.can_change;
   const [name, setName] = useState(current?.name || "");
   const [shared, setShared] = useState(mine ? !!current?.shared : false);
   const [asNew, setAsNew] = useState(!canOverwrite);
   const [err, setErr] = useState<string | null>(null);
-  const save = () => request<{ view: ViewInfo }>("POST", `/api/smart/${sid}/view/save`, { name, shared, as_new: asNew })
+  const save = () => request<{ view: ViewInfo }>("POST", `/api/smart/${sid}/view/save`, { name, shared, as_new: asNew, folder })
     .then((d) => { onSaved(d.view); onClose(); }).catch((e) => setErr(errText(t, e)));
   return (
     <Modal title={t("sc.v.saveTitle")} onClose={onClose}>
       <label className="sc-lab">{t("sc.c.name")}<input value={name} placeholder={t("sc.v.namePh")} onChange={(e) => setName(e.target.value)} autoFocus
         onKeyDown={(e) => { if (e.key === "Enter" && name.trim()) save(); }} /></label>
+      <label className="sc-lab">{t("sc.v.folder")}<input list="sc-folders" value={folder} placeholder={t("sc.v.folderPh")} maxLength={60}
+        onChange={(e) => setFolder(e.target.value)} /></label>
+      <datalist id="sc-folders">{folders.map((f) => <option key={f} value={f} />)}</datalist>
       <label className="st-check" title={!mine && !asNew ? t("sc.v.onlyCreator") : ""}>
         <input type="checkbox" checked={shared} disabled={!mine && !asNew} onChange={() => setShared(!shared)} /> {t("sc.v.shareAll")}</label>
       <label className="st-check"><input type="checkbox" checked={asNew} disabled={!canOverwrite} onChange={() => setAsNew(!asNew)} /> {t("sc.v.asNew")}</label>

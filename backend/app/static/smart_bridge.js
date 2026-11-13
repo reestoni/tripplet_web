@@ -19,6 +19,8 @@
   var MULTI_ARG = { focusRows: 1, modelFields: 1 };
   function run(cmds) {
     (cmds || []).forEach(function (c) {
+      // a new init (calculated field, other data) keeps the panes as this browser remembers them
+      if (c[0] === "init" && c[1] && !c[1].readonly) { c[1].panes = load(PANE_KEY); c[1].pane_widths = load(WIDTH_KEY); }
       var fn = window[c[0]];
       if (typeof fn !== "function") { console.error("smart page: no function " + c[0]); return; }
       try { fn.apply(window, MULTI_ARG[c[0]] ? c[1] : [c[1]]); } catch (e) { console.error("smart page " + c[0], e); }
@@ -62,6 +64,7 @@
     focusRows: function (vid) { call("focusRows", [vid]); },
     removeFilter: function (scope, vid, i) { call("removeFilter", [scope, vid, i]); },
     setPlyScope: function (scope) { call("setPlyScope", [scope]); },
+    setIncludeRefs: function (on) { call("setIncludeRefs", [!!on]); },
     imagesReady: function (json) { call("imagesReady", [json]); },
     // dialogs: the React page
     editFilter: function (scope, vid, i) { toParent({ type: "smart-filter", scope: scope, vid: vid, index: i }); },

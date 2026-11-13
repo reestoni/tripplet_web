@@ -24,8 +24,8 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
 | 12. Manage User | 7 | 0 | 0 | 1 | 8 |
-| 13. Smart Chart / Dashboards | 17 | 1 | 0 | 0 | 18 |
-| **Total** | 292 | 7 | 11 | 5 | 315 |
+| 13. Smart Chart / Dashboards | 22 | 1 | 0 | 0 | 23 |
+| **Total** | 297 | 7 | 11 | 5 | 320 |
 
 Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, recycle bin (preview + restore),
 notifications bell, quick search, recent series, What's new, then the tools. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
@@ -440,4 +440,9 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Reload (F5) | `load_data(force)` | **PARTIAL** | button only (F5 reloads the browser page) |
 | Dashboards: my / shared list, search, read-only, last one remembered | `DashboardsScreen` | **DONE** | localStorage |
 | Dashboards: "Edit in Smart Chart" | `_edit` | **DONE** | `/tools/smart-chart?view=<id>` |
+| Include reference samples (Filters pane), field "Reference sample" | `set_include_refs` (new 2026-11-13) | **DONE** | both apps |
+| Result cache per visual (moving / resizing costs nothing) | `DashboardSession.result` (new) | **DONE** | both apps |
+| Calculated field: preview over the dashboard's trials, copy from another dashboard | `calc_preview`, `calc_library` (new) | **DONE** | both apps |
+| Folders and favourites for views | `group_views`, `smart_favs` (new) | **DONE** | both apps |
+| Unsaved changes: draft + restore, warning when leaving | – | **DONE (web only)** | the desktop keeps the screen open |
 
