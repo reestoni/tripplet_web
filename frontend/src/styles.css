@@ -1083,3 +1083,41 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .yc-desig { background: #E6F2EA; border-radius: 6px; padding: 8px 10px; font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
 .yc-fold { border: none; background: none; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; }
 .yc-formulas td { padding: 2px 14px 2px 0; font-size: 12px; }
+
+/* Jet ROI Calculator (pages/JetRoi.tsx) */
+.jr-page { max-width: 1400px; }
+.jr-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 14px; align-items: start; }
+.jr-inputs { display: flex; flex-direction: column; gap: 12px; }
+.jr-card { background: #fff; border: 1px solid #DADFD8; border-radius: 8px; padding: 12px 16px; }
+.jr-card h2 { font-size: 15px; margin: 0 0 8px; }
+.jr-form { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.jr-form label { display: grid; grid-template-columns: minmax(120px, 180px) 1fr; align-items: center; gap: 8px; font-size: 13px; color: #5A6460; }
+.jr-form input, .jr-form select { border: 1px solid #C9D1C8; border-radius: 5px; padding: 5px 8px; font-size: 14px; min-width: 0; }
+.jr-form-row { flex-direction: row; flex-wrap: wrap; gap: 12px; }
+.jr-form-row label { grid-template-columns: auto 1fr; }
+.jr-unit { display: flex; align-items: center; gap: 6px; }
+.jr-unit input { width: 110px; }
+.jr-press { display: flex; gap: 4px; }
+.jr-press input { width: 90px; border: 1px solid #C9D1C8; border-radius: 5px; padding: 5px 8px; }
+.jr-seg { display: inline-flex; border: 1px solid #C9D1C8; border-radius: 6px; overflow: hidden; }
+.jr-seg button { border: none; background: #fff; padding: 5px 12px; cursor: pointer; font: inherit; }
+.jr-seg button.on { background: var(--accent); color: #fff; font-weight: 600; }
+.page-head .jr-seg { margin-left: 16px; }
+.jr-placeholder { padding: 40px 10px; text-align: center; }
+.jr-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.jr-kpi { border: 1px solid #DADFD8; border-radius: 8px; padding: 8px 10px; background: #F7FAF7; }
+.jr-kpi-l { font-size: 11px; color: #5A6460; }
+.jr-kpi-v { font-size: 22px; font-weight: 700; color: #1F7A3A; }
+.jr-kpi-u { font-size: 11px; color: #5A6460; }
+.jr-chart-title { font-weight: 600; font-size: 12px; margin: 6px 0 2px; }
+.jr-detail td { padding: 2px 10px 2px 0; font-size: 12px; }
+.jr-detail td:first-child { color: #666; }
+.jr-detail td:last-child { font-weight: 600; }
+.jr-summary { background: #F8FAF8; border-top: 2px solid #E0EDE0; padding: 8px 10px; margin-top: 8px; font-size: 13px; }
+.jr-summary b { color: var(--accent); }
+.jr-multi { display: flex; flex-direction: column; gap: 10px; }
+.jr-ab { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.jr-abcol { display: flex; flex-direction: column; gap: 4px; }
+.jr-abcol select, .jr-abcol > input { border: 1px solid #C9D1C8; border-radius: 5px; padding: 5px 8px; }
+.jr-mtable td, .jr-mtable th { text-align: center; }
+.jr-total td { font-weight: 700; background: #E6F2EA; }

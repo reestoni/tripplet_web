@@ -212,6 +212,9 @@ in localStorage `tripplet.smart.draft` (pro Benutzer) mit "Wiederherstellen" (`/
 Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requirement Hub):
 - Yarn Count Converter `/tools/yarn-count`: `app/yarn_count_api.py` auf `ui/yarn_count.py` (neu `filament_values`, Desktop nutzt
   es), Seite `YarnCount.tsx`, letzte Eingabe in localStorage `tripplet.yarnCount`. Einheiten-/Materialnamen bleiben technisch (EN).
+- Jet ROI Calculator `/tools/jet-roi`: `app/jet_roi_api.py` auf `ui/jet_roi.py` (Konstanten, Luftformel, Prozessfilter,
+  `validate_single`/`calculate_single`/`calculate_multi`, Diagrammreihen, PDF-Berichte - aus `screen_nozzle_calculator.py`
+  gezogen, Desktop rechnet jetzt darüber; Vergleich alt/neu identisch). Seite `JetRoi.tsx` (Einzel + Mehrfach, Plotly, PDF).
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

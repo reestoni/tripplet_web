@@ -15,7 +15,8 @@ from db.connection import fetch_all  # noqa: E402
 # feature key -> web route (only screens that exist in the web)
 WEB_ROUTES = {"backlog": "/backlog", "all_experiments": "/experiments", "my_requests": "/requests",
               "yarn_stock": "/tools/yarn-stock", "manage_jets": "/admin/jets", "manage_yarn": "/admin/yarn",
-              "smart_chart": "/tools/smart-chart", "dashboards": "/tools/dashboards"}
+              "smart_chart": "/tools/smart-chart", "dashboards": "/tools/dashboards",
+              "jet_roi": "/tools/jet-roi"}
 
 
 def preferred_start(user_id: Any) -> str:

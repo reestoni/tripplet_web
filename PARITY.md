@@ -451,4 +451,4 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Tool | Desktop | Web status | Notes / logic location |
 |---|---|---|---|
 | Yarn Count Converter (all systems, filaments & plies, diameter, designation, notation reader, formulas, copy) | `ui/screen_yarn_count.py` | **DONE** | `be/yarn_count_api.py` on `ui/yarn_count.py`; last input in localStorage |
-
+| Jet ROI Calculator (single: competitor vs Heberlein, DB jet or manual, bar/PSI, currencies, KPIs, chart, details, summary, PDF; multi-jet comparison + PDF) | `ui/screen_nozzle_calculator.py` | **DONE** | `be/jet_roi_api.py` on `ui/jet_roi.py` |
