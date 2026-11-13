@@ -13,6 +13,7 @@ import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
 import { HelpButton } from "../components/Help";
+import { StockDialog } from "./CreateExperiment";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -115,6 +116,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
             <span><b>{t("se.owner")}:</b> {s.owner || "–"}</span>
             <span><b>{t("se.created")}:</b> {s.creation_date ? s.creation_date.replace("T", " ").slice(0, 16) : "–"}</span>
             <span><b>{t("se.trials")}:</b> {data.trials.length}</span>
+            <MaterialLine seriesId={s.id} />
             {s.notes && (
               <button className="link-btn" onClick={() => setShowNotes((v) => !v)}>
                 {t("se.notes")} {showNotes ? "▾" : "▸"}
@@ -135,6 +137,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
             </>
           )}
           <span className="tb-sep" />
+          <SavedReports seriesId={s.id} />
           <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
             <img src="/api/img/analytics.png" alt={t("rep.open")} />
           </button>
@@ -345,6 +348,9 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
       {current?.lazy && current.key === "jet_air" && <JetAirView seriesId={s.id} />}
       {current && !current.lazy && (
         <>
+          {(current.retest ?? []).length > 0 && (
+            <div className="se-retest">🏳 {t("se.retestBanner")} — {current.retest!.map((x) => x.trial + (x.note ? `: "${x.note}"` : "")).join("; ")}</div>
+          )}
           <div className="table-wrap pivot-wrap">
             <table className="pivot">
               <thead>
@@ -393,5 +399,68 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
       )}
       {menus.dialogs}
     </>
+  );
+}
+
+
+/* Material line (desktop _load_materials_summary): per ply the most frequent yarn with colour square and
+   spool symbol - green = in stock (tooltip: spools / kg / locations), click on yarn or symbol = storage
+   locations, spools of this series in bold. */
+type Mat = { ply: string; yarn_id: number | null; name: string; colour: string | null; css: string | null;
+  stock: { spools: number; kg: number; locations: number } | null };
+
+function MaterialLine({ seriesId }: { seriesId: number }) {
+  const { t } = useI18n();
+  const [mats, setMats] = useState<Mat[] | null>(null);
+  const [open, setOpen] = useState<{ id: number; name: string } | null>(null);
+  useEffect(() => {
+    request<{ materials: Mat[] }>("GET", `/api/series/${seriesId}/materials`).then((r) => setMats(r.materials)).catch(() => setMats([]));
+  }, [seriesId]);
+  if (!mats || !mats.length) return null;
+  return (
+    <span className="se-mats"><b>{t("se.material")}:</b>{" "}
+      {mats.map((m, i) => {
+        const tip = m.stock ? t("se.stockTip", { n: m.stock.spools, kg: m.stock.kg.toFixed(1), locs: m.stock.locations }) : t("ce.notInStock");
+        const click = m.yarn_id !== null && m.stock ? () => setOpen({ id: m.yarn_id!, name: m.name }) : undefined;
+        return (
+          <span key={i} className="se-mat">
+            {i > 0 && <span className="muted"> • </span>}
+            {m.css && <span className="ce-dot" style={{ background: m.css }} title={m.colour ?? ""} />}
+            <span className={click ? "se-mat-link" : ""} onClick={click} title={tip}>{m.ply ? `${m.ply}: ` : ""}{m.name}</span>
+            {m.yarn_id !== null && <span className={"ce-stock" + (m.stock ? " on" : "")} title={tip} onClick={click} />}
+          </span>
+        );
+      })}
+      {open && <StockDialog yarn={open} chosen={new Set()} seriesId={seriesId} onClose={() => setOpen(null)} />}
+    </span>
+  );
+}
+
+
+/* Saved reports of the series + "Go!" (desktop _refresh_saved_reports_dropdown / _open_selected_saved_report);
+   only shown when the series has saved reports. Ctrl+click on Go = new tab. */
+function SavedReports({ seriesId }: { seriesId: number }) {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const [list, setList] = useState<{ id: number; title: string; author: string }[]>([]);
+  const [sel, setSel] = useState<number | "">("");
+  useEffect(() => {
+    request<{ reports: { id: number; title: string; author: string }[] }>("GET", `/api/series/${seriesId}/reports`)
+      .then((r) => { setList(r.reports); setSel(r.reports[0]?.id ?? ""); }).catch(() => setList([]));
+  }, [seriesId]);
+  if (!list.length) return null;
+  const go = (e: React.MouseEvent) => {
+    if (sel === "") return;
+    const url = `/series/${seriesId}/report?report=${sel}`;
+    if (e.ctrlKey || e.metaKey) window.open(url, "_blank");
+    else if (confirmLeave()) navigate(url);
+  };
+  return (
+    <span className="se-reports" title={t("se.savedReportsTip")}>
+      <select value={sel} onChange={(e) => setSel(Number(e.target.value))}>
+        {list.map((r) => <option key={r.id} value={r.id}>{r.title}{r.author ? ` (${r.author})` : ""}</option>)}
+      </select>
+      <button className="btn-plain" onClick={go}>{t("se.go")}</button>
+    </span>
   );
 }

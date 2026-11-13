@@ -41,6 +41,33 @@ def _lookup(m: Dict[Any, Any], key: Any) -> Any:
     return (m or {}).get(k) or (m or {}).get(str(k))
 
 
+@router.get("/series/{series_id}/materials")
+def materials(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """Material line (desktop _load_materials_summary): per ply the most frequent yarn, colour square and
+    stock summary (spool symbol: green = in stock, click = storage locations)."""
+    from db.yarn_spools import load_stock_summary, series_materials
+    from db.yarn_colours import colour_css, load_yarn_colours
+    mats = series_materials(series_id)
+    stock = load_stock_summary(m["yarn_id"] for m in mats)
+    colours, _n = load_yarn_colours()
+    out = []
+    for m in mats:
+        yid = m["yarn_id"]
+        sm = stock.get(int(yid)) if yid is not None else None
+        out.append({"ply": m["ply"], "yarn_id": yid, "name": m["name"],
+                    "colour": colours.get(yid) if yid is not None else None,
+                    "css": colour_css(colours.get(yid)) if yid is not None else None,
+                    "stock": {"spools": sm.spools, "kg": round(sm.kg, 1), "locations": sm.locations} if sm else None})
+    return {"materials": out}
+
+
+@router.get("/series/{series_id}/stock/{yarn_id}")
+def yarn_stock_of_series(series_id: int, yarn_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """Storage locations of a yarn; the spools assigned to this series are marked (desktop YarnLocationsDialog)."""
+    from .create_api import stock_payload
+    return stock_payload(yarn_id, series_id)
+
+
 @router.get("/housing-image/{housing_id}")
 def housing_image(housing_id: int, _user: Dict[str, Any] = Depends(current_user)):
     """Picture of a housing (tblHousing.Link) - the hover picture of the Housing row. Only the path
@@ -88,8 +115,9 @@ def _options(pairs) -> List[List[Any]]:
     return out
 
 
-def _flags(series_id: int, lab_source: str, trial_col: Dict[int, int]) -> Dict[int, str]:
-    """Column -> tooltip for open retest flags (same text as the desktop)."""
+def _flags(series_id: int, lab_source: str, trial_col: Dict[int, int], banner: Optional[List[Dict[str, str]]] = None) -> Dict[int, str]:
+    """Column -> tooltip for open retest flags (same text as the desktop); ``banner`` collects
+    trial + note for the "Retest pending" banner above the table (desktop _apply_lab_retest_flags)."""
     out: Dict[int, str] = {}
     try:
         flags = get_open_retest_flags_for_series_and_source(int(series_id), lab_source)
@@ -110,6 +138,8 @@ def _flags(series_id: int, lab_source: str, trial_col: Dict[int, int]) -> Dict[i
         if who:
             tip += f" (flagged by {who})"
         out[col] = tip
+        if banner is not None:
+            banner.append({"trial": label, "note": note})
     return out
 
 
@@ -137,8 +167,10 @@ def _tab_json(lt: stb.LabTab, p: stb.LabPivot, info: list, series_id: int, trial
                         seen.setdefault(int(n["ID"]), (lt.key, title))
             cells.append(cell)
         rows.append({"title": title, "r": r, "cells": cells})
+    banner: List[Dict[str, str]] = []
     return {"key": lt.key, "title": lt.title, "rows": rows,
-            "flags": {str(c): tip for c, tip in _flags(series_id, lt.lab_source, trial_col).items()}}
+            "flags": {str(c): tip for c, tip in _flags(series_id, lt.lab_source, trial_col, banner).items()},
+            "retest": banner}
 
 
 @router.get("/series/{series_id}")
@@ -288,6 +320,28 @@ def _grid(p: stb.LabPivot) -> Dict[str, Any]:
     return {"columns": list(p.col_titles or []),
             "rows": [{"title": t, "r": r, "cells": [dict({"v": _text(v)}, **({"e": 1} if b is not None else {}))
                                                      for v, b in p.cells[r]]} for r, t in enumerate(p.row_titles)]}
+
+
+@router.get("/series/{series_id}/jet-air/sync-plan")
+def jet_air_sync_plan(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """"Sync physical jets" (desktop _sync_jet_air_physical_jets): what would be added / deleted (db/jet_air_sync)."""
+    from db import jet_air_sync
+    plan = jet_air_sync.plan_sync(series_id)
+    return {"status": plan["status"], "to_insert": len(plan["to_insert"]),
+            "orphans": [{k: o[k] for k in ("jet", "plate", "has_data")} for o in plan["orphans"]]}
+
+
+@router.post("/series/{series_id}/jet-air/sync")
+def jet_air_sync_apply(series_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Writes the sync (plan made again on the server; empty orphan rows only)."""
+    from db import jet_air_sync
+    if int(user.get("access_level") or 0) < 2:
+        return JSONResponse(status_code=403, content={"code": "read_only", "detail": "No write access."})
+    plan = jet_air_sync.plan_sync(series_id)
+    if plan["status"] != "changes":
+        return {"status": plan["status"], "added": 0, "deleted": 0}
+    jet_air_sync.apply_sync(series_id, plan, user.get("id"))
+    return {"status": "synced", "added": len(plan["to_insert"]), "deleted": len(plan["delete_ids"])}
 
 
 @router.get("/series/{series_id}/jet-air")

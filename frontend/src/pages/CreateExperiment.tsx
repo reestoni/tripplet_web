@@ -588,7 +588,7 @@ function MaterialTab({ setup, mats, setMats, errText, seriesCtx }: {
 }
 
 /** "+ Trial" (desktop TrialPickerDialog): live search over experiment ID / series / machine, one trial. */
-function TrialPicker({ onCancel, onOk }: { onCancel: () => void; onOk: (trialId: number) => void }) {
+export function TrialPicker({ onCancel, onOk, searchUrl = "/api/create/trials-search" }: { onCancel: () => void; onOk: (trialId: number) => void; searchUrl?: string }) {
   const { t } = useI18n();
   const [q, setQ] = useState("");
   const [rows, setRows] = useState<{ id: number; label: string }[] | null>(null);
@@ -596,11 +596,11 @@ function TrialPicker({ onCancel, onOk }: { onCancel: () => void; onOk: (trialId:
   useEffect(() => {
     if (!q.trim()) { setRows(null); return; }
     const h = window.setTimeout(() => {
-      request<{ trials: { id: number; label: string }[] }>("GET", `/api/create/trials-search?q=${encodeURIComponent(q)}`)
+      request<{ trials: { id: number; label: string }[] }>("GET", `${searchUrl}?q=${encodeURIComponent(q)}`)
         .then((r) => { setRows(r.trials); setSel(null); }).catch(() => setRows([]));
     }, 250);
     return () => window.clearTimeout(h);
-  }, [q]);
+  }, [q, searchUrl]);
   return (
     <Modal title={t("ce.trialPickTitle")} onClose={onCancel} wide>
       <p className="muted">{t("ce.trialPickHint")}</p>
@@ -623,13 +623,13 @@ type StockSpool = { id: number; location: string; batch: string; kg: number | nu
 
 /** Where are the spools of this yarn (desktop YarnLocationsDialog): spools in stock by location,
  *  alternating background per location, the spools chosen in the form in bold. */
-function StockDialog({ yarn, chosen, onClose }: { yarn: Yarn; chosen: Set<number>; onClose: () => void }) {
+export function StockDialog({ yarn, chosen, onClose, seriesId }: { yarn: Pick<Yarn, "id" | "name">; chosen: Set<number>; onClose: () => void; seriesId?: number }) {
   const { t } = useI18n();
   const [spools, setSpools] = useState<StockSpool[] | null>(null);
   const [picked, setPicked] = useState<number | null>(null);
   useEffect(() => {
-    request<{ spools: StockSpool[] }>("GET", `/api/create/stock/${yarn.id}`).then((r) => setSpools(r.spools)).catch(() => setSpools([]));
-  }, [yarn.id]);
+    request<{ spools: StockSpool[] }>("GET", seriesId ? `/api/series/${seriesId}/stock/${yarn.id}` : `/api/create/stock/${yarn.id}`).then((r) => setSpools(r.spools)).catch(() => setSpools([]));
+  }, [yarn.id, seriesId]);
   const locs = spools ? [...new Set(spools.map((s) => s.location))] : [];
   const kg = (spools ?? []).reduce((a, s) => a + (s.kg ?? 0), 0);
   const tubeCss = (parts: string[][]) => parts.map((w) => w.find((x) => CSS.supports("color", x))).filter(Boolean) as string[];

@@ -173,3 +173,62 @@ def test_rd_machine_data(client):
     assert d["visible"] and d["rows"][0]["title"] == "Housing"
     assert all(len(r["cells"]) == len(d["columns"]) for r in d["rows"])
     assert client.get("/api/series/987654321/rd").status_code == 404
+
+
+def test_retest_banner_lists_open_flags():
+    """Open retest flag on a lab tab -> "retest" list of that tab (banner above the table). The flag row is
+    inserted directly (no backlog move) and deleted again."""
+    import pytest
+    from fastapi.testclient import TestClient
+    from app import auth
+    from app.main import app
+    from db import retest_flags, series_tables as stb
+    from db.connection import execute, fetch_all
+    if not retest_flags.flags_table_ready():
+        pytest.skip("no retest table")
+    user = fetch_all("SELECT u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                     "WHERE ar.AccessLevel >= 1 ORDER BY u.ID LIMIT 1")[0]["Username"]
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(user))
+    found = None
+    for row in fetch_all("SELECT DISTINCT t.TrialSeriesID AS sid FROM tbltrial t ORDER BY t.TrialSeriesID DESC LIMIT 40"):
+        d = c.get(f"/api/series/{row['sid']}").json()
+        tab = next((t for t in d.get("tabs", []) if not t.get("lazy") and t["key"] in {x.key for x in stb.LAB_TABS}), None)
+        if tab and d["trials"]:
+            found = (row["sid"], tab["key"], d["trials"][0])
+            break
+    if not found:
+        pytest.skip("no series with a lab tab")
+    sid, key, trial = found
+    src = next(x.lab_source for x in stb.LAB_TABS if x.key == key)
+    execute("INSERT INTO tblTrialRetestFlag (TrialID, TrialSeriesID, LabSource, Status, Note, CreatedAt) "
+            "VALUES (?, ?, ?, 'open', '__webtest', NOW())", [trial["id"], sid, src])
+    try:
+        tab = next(t for t in c.get(f"/api/series/{sid}").json()["tabs"] if t["key"] == key)
+        assert {"trial": trial["label"], "note": "__webtest"} in tab["retest"] or any(
+            x["note"] == "__webtest" for x in tab["retest"])
+    finally:
+        execute("DELETE FROM tblTrialRetestFlag WHERE Note = '__webtest'")
+
+
+def test_materials_and_jet_air_sync_plan():
+    """Material line (most frequent yarn per ply + stock summary) and the read-only sync plan of Jet Air."""
+    import pytest
+    from fastapi.testclient import TestClient
+    from app import auth
+    from app.main import app
+    from db.connection import fetch_all
+    from db.yarn_spools import series_materials
+    user = fetch_all("SELECT u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                     "WHERE ar.AccessLevel >= 1 ORDER BY u.ID LIMIT 1")[0]["Username"]
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(user))
+    row = fetch_all("SELECT t.TrialSeriesID AS sid FROM tbltrialsettings ts JOIN tbltrial t ON t.ID = ts.TrialID "
+                    "WHERE ts.YarnID IS NOT NULL ORDER BY t.ID DESC LIMIT 1")
+    if not row:
+        pytest.skip("no series with yarns")
+    sid = row[0]["sid"]
+    m = c.get(f"/api/series/{sid}/materials").json()["materials"]
+    assert [x["yarn_id"] for x in m] == [x["yarn_id"] for x in series_materials(sid)]
+    plan = c.get(f"/api/series/{sid}/jet-air/sync-plan").json()
+    assert plan["status"] in ("unavailable", "nothing_found", "in_sync", "changes")

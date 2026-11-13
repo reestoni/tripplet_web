@@ -17,6 +17,9 @@ export default function Attachments({ seriesId }: { seriesId: number }) {
   const [data, setData] = useState<Data | null>(null);
   const [open, setOpen] = useState<Kind | null>(null);
   const [big, setBig] = useState<Item | null>(null);
+  const [zoom, setZoom] = useState<number | null>(null);   // null = fit (desktop images dialog: zoom / rotate)
+  const [rot, setRot] = useState(0);
+  const showBig = (it: Item | null) => { setBig(it); setZoom(null); setRot(0); };
   const [progress, setProgress] = useState<number | null>(null);
   const [msg, setMsg] = useState<Msg | null>(null);
   const [drag, setDrag] = useState(false);
@@ -105,13 +108,13 @@ export default function Attachments({ seriesId }: { seriesId: number }) {
     try {
       const r = await request<{ deleted: number[]; errors: string[] }>("POST", `/api/series/${seriesId}/attachments/${kind}/delete`, { ids: [it.id] });
       if (r.errors.length) setMsg({ kind: "err", text: t("up.deleteProblems"), errors: r.errors });
-      if (big && big.id === it.id) setBig(null);
+      if (big && big.id === it.id) showBig(null);
       load();
     } catch (e) { caught(e); }
   };
 
   const url = (kind: string, id: number) => `/api/series/${seriesId}/attachments/${kind}/${id}`;
-  const close = () => { setOpen(null); setBig(null); };
+  const close = () => { setOpen(null); showBig(null); };
   const actions = (kind: Kind, it: Item) => (
     <span className="up-actions">
       <button className="link-btn" onClick={() => rename(kind, it)}>{t("up.rename")}</button>
@@ -175,7 +178,7 @@ export default function Attachments({ seriesId }: { seriesId: number }) {
               <div className="at-grid">
                 {images.map((im) => (
                   <div key={im.id} className="up-tile">
-                    <button className="at-thumb" onClick={() => setBig(im)} title={im.name}>
+                    <button className="at-thumb" onClick={() => showBig(im)} title={im.name}>
                       <img src={url("image", im.id)} alt={im.name} loading="lazy" />
                       <span>{im.name}</span>
                     </button>
@@ -186,10 +189,33 @@ export default function Attachments({ seriesId }: { seriesId: number }) {
             )}
             {open === "image" && big && (
               <div className="at-big">
-                <button className="btn-plain" onClick={() => setBig(null)}>← {t("at.all")}</button>
-                <a href={url("image", big.id)} target="_blank" rel="noreferrer" title={t("at.newTab")}>
-                  <img src={url("image", big.id)} alt={big.name} />
-                </a>
+                <div className="rqp-imgbar">
+                  <button className="btn-plain" onClick={() => showBig(null)}>← {t("at.all")}</button>
+                  {(() => {
+                    const list = data?.images ?? [];
+                    const i = list.findIndex((x) => x.id === big.id);
+                    const go = (d: number) => list.length > 1 && showBig(list[(i + d + list.length) % list.length]);
+                    return (
+                      <>
+                        <button className="btn-plain" onClick={() => go(-1)} disabled={list.length < 2}>‹</button>
+                        <button className="btn-plain" onClick={() => go(1)} disabled={list.length < 2}>›</button>
+                        <span className="muted">{i + 1}/{list.length}</span>
+                      </>
+                    );
+                  })()}
+                  <button className="btn-plain" onClick={() => setZoom((z) => Math.max(0.1, (z ?? 1) / 1.25))} title={t("rqp.zoomOut")}>−</button>
+                  <button className="btn-plain" onClick={() => setZoom((z) => Math.min(8, (z ?? 1) * 1.25))} title={t("rqp.zoomIn")}>+</button>
+                  <button className="btn-plain" onClick={() => setZoom(null)}>{t("rqp.fit")}</button>
+                  <button className="btn-plain" onClick={() => setZoom(1)}>100 %</button>
+                  <button className="btn-plain" onClick={() => setRot((r) => (r + 270) % 360)} title={t("rqp.rotL")}>⟲</button>
+                  <button className="btn-plain" onClick={() => setRot((r) => (r + 90) % 360)} title={t("rqp.rotR")}>⟳</button>
+                  <a className="btn-plain" href={url("image", big.id)} download={big.name}>{t("rqp.saveAs")}</a>
+                  <a className="btn-plain" href={url("image", big.id)} target="_blank" rel="noreferrer">{t("at.newTab")}</a>
+                </div>
+                <div className={"rqp-canvas" + (zoom == null ? " fit" : "")}>
+                  <img src={url("image", big.id)} alt={big.name}
+                    style={{ transform: `rotate(${rot}deg)`, ...(zoom == null ? {} : { width: "auto", maxWidth: "none", maxHeight: "none", zoom }) }} />
+                </div>
                 <div className="muted">{big.name} {actions("image", big)}</div>
               </div>
             )}

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
+import { TrialPicker } from "../pages/CreateExperiment";
 
 /* Show Experiment tools like the desktop: Print labels, Copy trials, Yarns… dialog, reference samples,
    Statimat / Itemat PDF import. Rules + writes on the server (backend/app/series_tools.py,
@@ -232,6 +233,15 @@ export function YarnsDialog({ seriesId, onClose, onDone }: { seriesId: number; o
   const [rows, setRows] = useState<YRow[]>([]);
   const [catalog, setCatalog] = useState<Yarn[] | null>(null);
   const [pick, setPick] = useState<{ row: number | null; q: string } | null>(null);
+  const [trialPick, setTrialPick] = useState(false);
+  // "+ Trial output" (desktop _add_trial_output): the semi-finished yarn of another trial as a new ply
+  const addTrialOutput = async (trialId: number) => {
+    setTrialPick(false);
+    try {
+      const y = await request<{ id: number; name: string }>("POST", `/api/series/${seriesId}/yarns/trial-output`, { trial_id: trialId });
+      choose(y, true);
+    } catch (e) { setErr(errText(e)); }
+  };
   const [confirm, setConfirm] = useState<string[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -244,16 +254,16 @@ export function YarnsDialog({ seriesId, onClose, onDone }: { seriesId: number; o
   }, [pick, catalog]);
   const ed = !!st?.editable;
   const nextPly = (rs: YRow[]) => { const used = new Set(rs.map((r) => plyNo(r.ply))); let n = 1; while (used.has(n)) n++; return `Ply ${n}`; };
-  const choose = (y: Yarn) => {
-    if (!pick || !st) return;
+  const choose = (y: Pick<Yarn, "id" | "name">, newRow = false) => {
+    if ((!pick && !newRow) || !st) return;
     setErr(null);
-    if (pick.row === null) {   // new row: the ply of its yarn, else the next free one (series rule)
+    if (newRow || pick!.row === null) {   // new row: the ply of its yarn, else the next free one (series rule)
       const same = rows.find((r) => r.yarn_id === y.id);
       if (same && !window.confirm(t("tl.yarnAgain", { yarn: y.name, ply: same.ply }))) return;
       setRows((rs) => [...rs, { ply: same ? same.ply : nextPly(rs), yarn_id: y.id, yarn: y.name, use_id: null,
         ends: Object.fromEntries(st.trials.map((x) => [String(x.id), x.ref ? 0 : 1])) }]);
     } else {
-      const pr = rows[pick.row];
+      const pr = rows[pick!.row!];
       const other = rows.find((r) => r.ply !== pr.ply && r.yarn_id === y.id);
       if (other) { setErr(t("tl.yarnHasPly", { yarn: y.name, ply: other.ply })); return; }
       setRows((rs) => rs.map((r) => (r.ply === pr.ply && r.yarn_id === pr.yarn_id ? { ...r, yarn_id: y.id, yarn: y.name } : r)));
@@ -346,9 +356,11 @@ export function YarnsDialog({ seriesId, onClose, onDone }: { seriesId: number; o
       {err && <div className="login-error">{err}</div>}
       <div className="modal-buttons">
         {ed && <button className="btn-plain" onClick={() => setPick({ row: null, q: "" })}>{t("tl.addPly")}</button>}
+        {ed && <button className="btn-plain" title={t("tl.trialOutputTip")} onClick={() => setTrialPick(true)}>{t("tl.trialOutput")}</button>}
         <button className="btn-plain" onClick={onClose}>{ed ? t("cm.cancel") : t("cm.close")}</button>
         {ed && !confirm && <button className="btn-green" disabled={busy} onClick={() => send(false)}>{t("tl.apply")}…</button>}
       </div>
+      {trialPick && <TrialPicker searchUrl="/api/series/yarns/trial-search" onCancel={() => setTrialPick(false)} onOk={addTrialOutput} />}
     </Modal>
   );
 }
@@ -476,6 +488,7 @@ export function RefCompareDialog({ seriesId, refId, onClose }: { seriesId: numbe
     } catch (e) { setErr(errText(e)); }
   };
   const dirLabel: Record<string, string> = { higher: t("tl.cmpHigher"), lower: t("tl.cmpLower"), close: t("tl.cmpClose") };
+  const [onlyPass, setOnlyPass] = useState(false);   // desktop "Only trials that meet all criteria"
   return (
     <Modal title={t("tl.cmpTitle")} onClose={onClose} wide>
       {setup && (
@@ -527,12 +540,13 @@ export function RefCompareDialog({ seriesId, refId, onClose }: { seriesId: numbe
               </tbody>
             </table>
           </div>
+          <label className="st-check"><input type="checkbox" checked={onlyPass} onChange={(e) => setOnlyPass(e.target.checked)} /> {t("tl.cmpOnlyPass")}</label>
           <div className="table-wrap cmp-res">
             {counted.length === 0 ? <p className="muted">{t("tl.cmpNone")}</p> : (
               <table className="grid">
                 <thead><tr><th>{t("nt.trial")}</th><th>{t("tl.cmpPassed")}</th>{counted.map((m) => <th key={m.key} title={m.tab}>{m.title}</th>)}</tr></thead>
                 <tbody>
-                  {res.rows.map((r) => (
+                  {res.rows.filter((r) => !onlyPass || r.all_pass).map((r) => (
                     <tr key={r.trial_id} className={r.all_pass ? "cmp-all" : ""} title={r.failing.length ? t("tl.cmpMisses", { list: r.failing.join(", ") }) : undefined}>
                       <td className="nowrap"><b>{r.label}</b></td>
                       <td className="nowrap">{r.passed}/{r.total}</td>

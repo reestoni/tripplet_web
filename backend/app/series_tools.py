@@ -139,6 +139,36 @@ def yarns_state(series_id: int, user: Dict[str, Any] = Depends(current_user)):
     }
 
 
+@router.get("/yarns/trial-search")
+def yarns_trial_search(q: str = "", user: Dict[str, Any] = Depends(current_user)):
+    """"+ Trial output" of the Yarns dialog: trials whose experiment ID / series name / machine contain every word
+    (desktop TrialPickerDialog, db/experiment_create.search_trials)."""
+    from db import experiment_create as ec
+    if not sy.can_edit(user):
+        return _err(403, "forbidden", "No write access.")
+    rows = ec.search_trials(q.strip()) if q.strip() else []
+    return {"trials": [{"id": int(r["TrialID"]), "label": ec.trial_label(r)} for r in rows]}
+
+
+class TrialOutput(BaseModel):
+    trial_id: int
+
+
+@router.post("/{series_id}/yarns/trial-output")
+def yarns_trial_output(series_id: int, body: TrialOutput, user: Dict[str, Any] = Depends(current_user)):
+    """The semi-finished yarn of a trial as a new ply (desktop _add_trial_output: get_or_create_shadow_yarn)."""
+    from db import experiment_create as ec
+    if not sy.can_edit(user):
+        return _err(403, "forbidden", "No write access.")
+    try:
+        yid = ec.get_or_create_shadow_yarn(body.trial_id)
+    except Exception as e:
+        return _err(500, "trial_yarn_failed", f"The yarn entry for this trial could not be created: {e}")
+    if yid is None:
+        return _err(404, "no_trial", "This trial could not be found.")
+    return {"id": int(yid), "name": ec.yarn_name(yid)}
+
+
 @router.get("/yarns/catalog")
 def yarn_catalog(_user: Dict[str, Any] = Depends(current_user)):
     return {"yarns": [{"id": y["id"], "name": y["name"], "colour": y["colour"], "search": y["search"]} for y in sy.load_yarns()]}

@@ -205,6 +205,11 @@ def stock(yarn_id: int, series: Optional[int] = None, user: Dict[str, Any] = Dep
     bad = _any_allowed(user)
     if bad:
         return bad
+    return stock_payload(yarn_id, series)
+
+
+def stock_payload(yarn_id: int, series: Optional[int] = None) -> Dict[str, Any]:
+    """Spools in stock of a yarn by location (also used by Show Experiment's material line)."""
     rows = load_spools_in_stock(yarn_id)
     assigned = load_series_spool_ids(series) if series else set()
     return {"yarn": ec.yarn_name(yarn_id), "spools": [{

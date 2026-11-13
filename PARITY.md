@@ -14,7 +14,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 |---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
 | 2. Backlog | 31 | 0 | 0 | 1 | 32 |
-| 3. Show Experiment | 75 | 8 | 15 | 1 | 99 |
+| 3. Show Experiment | 87 | 3 | 8 | 1 | 99 |
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
@@ -23,7 +23,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
-| **Total** | 247 | 13 | 25 | 4 | 289 |
+| **Total** | 259 | 8 | 18 | 4 | 289 |
 
 Most important gaps (judgement, updated 2026-11-13): Backlog multi-select + move several, Ctrl+double-click = new tab
 (lists), Show Experiment material line with stock symbol, jet / spool / housing tooltips, Jet Air "Sync physical jets" /
@@ -107,7 +107,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 |---|---|---|---|
 | Series title, machine, status, owner, created, trial count | `_build_ui` / `_load_record_inner` | **DONE** | `be/series_view.py` |
 | TrialSeriesID label, machine info label | `_build_ui` | **DONE** | header `se-sid` (click copies the ID) |
-| Material line (plies/yarns) with stock symbol; hover = stock tooltip, click = storage locations | `_load_materials_summary` / `_on_material_label_link_hovered/_activated` | **MISSING** | `ui/widgets/yarn_locations.load_stock_summary` (Qt file, data part Qt-free-able) |
+| Material line (plies/yarns) with stock symbol; hover = stock tooltip, click = storage locations | `_load_materials_summary` / `_on_material_label_link_hovered/_activated` | **DONE** | `MaterialLine` in `SeriesView.tsx`; `/api/series/{id}/materials` (`db/yarn_spools.series_materials` + `load_stock_summary`), click → `StockDialog` (spools of the series bold) |
 | Experiment Request icon → read-only popup (+ images, version history) | `_open_experiment_request_popup`, `_ExperimentRequestReadOnlyDialog` | **DONE** | `RequestIcon` in the header |
 | Save button "Save (n)" + Ctrl+S | `_save_all` / `_sc_save` / `keyPressEvent` | **DONE** | `fe/edit.tsx`, `POST /api/series/{id}/save` → `db/series_save` |
 | Plausibility check before saving (confirm) | `_confirm_plausible_values` | **DONE** | `db/plausibility.check` |
@@ -118,21 +118,21 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Prompt Save/Discard/Cancel on leaving (tab close, back, series switch, logout, exit) | `confirm_close_with_unsaved` / `_back_all_experiments` / `closeEvent` | **PARTIAL** | `confirmLeave()` + link guard in `edit.tsx` (OK/Cancel instead of Save/Discard/Cancel; browser back not guarded) |
 | Refresh ↻ / F5 | `_on_refresh` | **DONE** | browser reload (warns if unsaved) |
 | Back to list | `_back_all_experiments` | **DONE** | back arrow (`navigate(-1)`) |
-| Show attached images (gallery) | `_open_series_images_dialog` | **PARTIAL** | `fe/components/Attachments.tsx` views only; desktop dialog (`ExperimentRequestImagesDialog`) also zoom/rotate/rename/batch rename/delete/save as |
-| Show attached PDFs | `_open_series_pdfs_dialog` | **PARTIAL** | list + open in browser; no rename/delete |
+| Show attached images (gallery) | `_open_series_images_dialog` | **DONE** | `Attachments.tsx`: upload, rename, delete, big view with prev/next, zoom, fit, 100 %, rotate, save as |
+| Show attached PDFs | `_open_series_pdfs_dialog` | **DONE** | `Attachments.tsx`: upload, rename, delete, open |
 | Upload images | `_upload_series_images` / `_insert_trialseries_image_row` | **DONE** | `be/uploads.py`, `fe/components/Attachments.tsx`, `db/series_uploads.py` (2026-11-13) |
 | Garnspiegel CV analysis of uploaded images | `_analyze_and_save_garnspiegel` | **DONE** | `db/series_uploads.analyze_garnspiegel` on upload (2026-11-13) |
 | Upload PDFs | `_upload_series_pdfs` / `_insert_trialseries_pdf_row` | **DONE** | `be/uploads.py` (2026-11-13) |
 | Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **DONE** | `fe/components/SeriesTools.tsx` PdfImportDialog, `be/series_tools.pdf_import` (write access like the desktop buttons) |
 | Itemat import | `_itemat_import` | **DONE** | same as Statimat |
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
-| Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **PARTIAL** | report page has its own load list; no picker in header (`?report=` supported) |
+| Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **DONE** | `SavedReports` in the header (only with saved reports; Ctrl+click = new tab) |
 | Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **DONE** | LabelsDialog (range, start cell, template, save template) → PDF in new tab |
 | Add empty trial (→ Create Experiment "add trials") | `_add_empty_trial` | **DONE** | "+T" button in the Machine Data tool bar (2026-11-13) |
 | "+ Ref" add reference sample | `_add_reference_sample` | **DONE** | header button + trial menu |
-| "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **PARTIAL** | RefCompareDialog, `be/series_tools.ref_compare` (same `ui/ref_compare.py`, sources = LAB_TABS, parity 3 series); no 'only passing' filter yet |
+| "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **DONE** | RefCompareDialog, `be/series_tools.ref_compare` (same `ui/ref_compare.py`); "Only trials that meet all criteria" filter |
 | "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **DONE** | CopyTrialsDialog, `be/series_tools.copy_trials_ep` |
-| "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **PARTIAL** | YarnsDialog, `be/series_tools.yarns_apply` ("+ Trial output" not yet) |
+| "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **DONE** | YarnsDialog, `be/series_tools.yarns_apply`; "+ Trial output" = `/yarns/trial-search` + `/yarns/trial-output` (`get_or_create_shadow_yarn`) |
 | Help button (EN/DE/ES) | `_open_help` | **DONE** | `HelpButton screen="show_experiment"` |
 | Read-only for access level ≤ 1 | `_get_access_level` / `_sync_save_button_access` | **DONE** | `canWrite = accessLevel >= 2` |
 | Recycle-bin preview mode (read-only series) | `set_recycle_preview` | **MISSING** | Recycle Bin not in web |
@@ -153,11 +153,11 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Red/orange CV-limit alerts + legend | `cell_alert` / `cv_limit_alert` | **DONE** | |
 | Titer alert carried to Statimat DS | `_apply_titer_alert_to_stat_ds` | **DONE** | assumed via `LAB_TABS` (web CLAUDE.md: 0 deviations) |
 | Retest flag: dot on tab + header tooltip | `_apply_lab_retest_flags` | **DONE** | |
-| Retest banner above lab table | `_make_retest_banner` | **PARTIAL** | no banner, only dot/tooltip |
+| Retest banner above lab table | `_make_retest_banner` | **DONE** | `se-retest` banner from the tab's `retest` list (`series_view._flags`) |
 | Itemat recompute after save | `_recompute_itemat_intermingling` / `_recompute_itemat_plus` | **DONE** | server `series_save.save_series_edits` |
 | Jet Air Consumption: 3 grids, unit Nm³/h ↔ l/min, editable | `_build_jet_air_tab` / `_on_jet_air_unit_changed` | **DONE** | `fe/components/JetAirView.tsx` |
-| Jet Air: "Sync physical jets" | `_sync_jet_air_physical_jets` | **MISSING** | Qt-free `db/trial_actions.physical_jets_for_series/save_jet_air_consumption_rows` |
-| Jet Air: "Apply to all" for atm / temperature | `_fill_all_jet_air` | **MISSING** | frontend only (marks dirty) |
+| Jet Air: "Sync physical jets" | `_sync_jet_air_physical_jets` | **DONE** | `/jet-air/sync-plan` + `/jet-air/sync` on `db/jet_air_sync`; only with no unsaved jet air values |
+| Jet Air: "Apply to all" for atm / temperature | `_fill_all_jet_air` | **DONE** | `JetAirView` fill field per grid (marks the cells unsaved) |
 | Notes tab: series free-text notes, auto-save | `_load_notes` / `_on_notes_text_changed` / `_save_notes` | **DONE** | `SeriesNotes` in SeriesView (auto-save 1.5 s + blur) |
 | Notes tab: list of all notes on values | `cell_notes_ui` (Notes tab list) | **DONE** | `SeriesView.tsx` notes table |
 | Athena (AI advisor) tab: wake, chat, reset | `ui/advisor_tab.py` | **NOT IN WEB** | AI stays out of the web (user decision 2026-11-13, like "Ask AI") |
@@ -218,10 +218,10 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Violet note triangle + note tooltip | `_GridView` / `notes_at` | **DONE** | `has-note` class + `notesTip` |
 | Ply header tooltip + yarn colour box | `header_rows["colours"]`, `colour_tooltip` | **DONE** | `MachineTable.tsx` |
 | Generic cell tooltips (`md.cell_tooltips`) | `machine_tab` | **DONE** | `cell.tip` |
-| Jet tooltip (jet details on JetID rows) | `jets_tooltip_map` | **MISSING** | not sent by `be/series_view.machine_data` |
-| Spool row tooltips (single plies) | `md.spool_tooltips` | **MISSING** | not sent |
-| Housing row: picture tooltip | `_HousingImageTooltipFilter` / `_RDHousingTooltipFilter` | **MISSING** | Qt filter; image path lookup in `machine_tab` |
-| Live OF speed tooltip | `machine_tab` ("live OF speed tooltip") | **MISSING** | |
+| Jet tooltip (jet details on JetID rows) | `jets_tooltip_map` | **DONE** | `machine_data` sends `tip` from `jets_lookup.tooltip_map` |
+| Spool row tooltips (single plies) | `md.spool_tooltips` | **DONE** | via `md.cell_tooltips` (`db/machine_data`) |
+| Housing row: picture tooltip | `_HousingImageTooltipFilter` / `_RDHousingTooltipFilter` | **DONE** | `img` on housing cells → `/api/housing-image/{id}` |
+| Live OF speed tooltip | `machine_tab` ("live OF speed tooltip") | **PARTIAL** | R&D OF row tooltip from `rd_tooltip` (computed on load, not live while editing) |
 | Retest flag tooltip on header | `_apply_lab_retest_flags` | **DONE** | |
 | Single-ply-trial merge cells locked with tooltip | `machine_tab` | **DONE** | non-editable cells (no tooltip text) |
 

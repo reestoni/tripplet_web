@@ -926,3 +926,18 @@ a.btn-plain.disabled { opacity: 0.5; cursor: default; }
 .board.board-expanded { grid-template-columns: 1fr; }
 .board.board-expanded .bl-box { max-height: none; }
 .bl-welcome { margin-left: auto; font-weight: 700; color: #555; font-size: 13px; }
+.se-mats { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px; }
+.se-mat { display: inline-flex; align-items: center; gap: 4px; }
+.se-mat-link { cursor: pointer; }
+.se-mat-link:hover { text-decoration: underline; }
+.se-mat .ce-stock { display: inline-block; }
+
+.ja-head { display: flex; align-items: center; gap: 12px; }
+.ja-fill { display: inline-flex; gap: 6px; font-weight: normal; font-size: 13px; }
+.ja-fill input { font: inherit; width: 140px; padding: 3px 6px; border: 1px solid var(--border); border-radius: 4px; }
+.ja-sync { margin-left: 16px; }
+
+.se-retest { background: #FBE4DC; color: #8A2E17; border: 1px solid #D6432E; border-radius: 6px; padding: 6px 10px; font-weight: 600; margin-bottom: 8px; }
+
+.se-reports { display: inline-flex; gap: 4px; align-items: center; }
+.se-reports select { max-width: 220px; font: inherit; font-size: 13px; padding: 3px 4px; }
