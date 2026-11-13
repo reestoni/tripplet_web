@@ -37,7 +37,7 @@ WEB_ROUTES: Dict[str, str] = {
 }
 
 # help windows without a search entry (own format on the desktop)
-EXTRA_HELP = {"experiment_request"}
+EXTRA_HELP = {"experiment_request", "yarn_stock"}
 
 LOG_EVENTS = {"help_search_open", "help_search_noclick", "help_search_noresult",
               "help_feedback_up", "help_feedback_down"}
@@ -102,11 +102,48 @@ def _experiment_request_help() -> Dict[str, Any]:
     return {lang: page for lang in HELP_LANGS}
 
 
+def _yarn_stock_help() -> Dict[str, Any]:
+    """The Yarn Stock help (desktop ui/widgets/yarn_stock_help_dialog.py, own format: tasks / screen guide with
+    sketch / background with spool life cycle / stock take) in the block format of the web dialog - same texts
+    (ui/widgets/yarn_stock_help_texts.py), same tab keys for the direct jump (tab="stocktake")."""
+    from ui.widgets import yarn_stock_help_texts as ys
+    muted = lambda html: {"t": "p", "html": f"<span class='muted'>{html}</span>"}  # noqa: E731
+    out = {}
+    for lang, t in ys.TEXTS.items():
+        def task(q, steps, note):
+            return {"t": "task", "q": q, "steps": list(steps), "note": note or ""}
+        tasks = [{"t": "p", "html": t["tasks_intro"]}, {"t": "h", "text": t["h_find"]}]
+        tasks += [task(*x) for x in t["tasks_find"]]
+        tasks += [{"t": "h", "text": t["h_change"]}, muted(t["change_note"])]
+        tasks += [task(*x) for x in t["tasks_change"]]
+        screen = [{"t": "svg", "src": _svg("assets/images/yarn_stock_screen_map.svg", t["svg_map"]), "w": 940, "h": 470},
+                  muted(t["screen_caption"]),
+                  {"t": "areas", "rows": [[a, b] for a, b in t["screen_areas"]]},
+                  {"t": "h", "text": t["h_elsewhere"]}, {"t": "p", "html": t["elsewhere"]}]
+        background = [{"t": "h", "text": t["h_levels"]}, {"t": "p", "html": t["levels"]},
+                      {"t": "h", "text": t["h_life"]},
+                      {"t": "svg", "src": _svg("assets/images/yarn_stock_spool_flow.svg", t["svg_flow"]), "w": 940, "h": 250},
+                      {"t": "note", "html": t["life_note"]},
+                      {"t": "h", "text": t["h_status"]}, {"t": "p", "html": t["status"]},
+                      {"t": "h", "text": t["h_good"]}, {"t": "p", "html": t["good"]}]
+        stocktake = [{"t": "p", "html": t["st_intro"]}]
+        for heading, html in t["stocktake"]:
+            stocktake += [{"t": "h", "text": heading}, {"t": "p", "html": html}]
+        stocktake.append({"t": "note", "html": t["st_note"]})
+        out[lang] = {"window_title": t["window_title"], "close": t["close"], "tabs": [
+            {"key": "tasks", "title": t["tab_tasks"], "blocks": tasks},
+            {"key": "screen", "title": t["tab_screen"], "blocks": screen},
+            {"key": "background", "title": t["tab_background"], "blocks": background},
+            {"key": "stocktake", "title": t["tab_stocktake"], "blocks": stocktake}]}
+    return out
+
+
 @router.get("/screen/{screen}")
 def screen_help(screen: str, _user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
     """All languages at once - the flag switch needs no round trip."""
     if screen in EXTRA_HELP:
-        return {"screen": screen, "langs": list(HELP_LANGS), "texts": _experiment_request_help()}
+        texts = _yarn_stock_help() if screen == "yarn_stock" else _experiment_request_help()
+        return {"screen": screen, "langs": list(texts), "texts": texts}
     mod = _module(screen)
     if mod is None:
         raise HTTPException(status_code=404, detail="No help for this screen")
@@ -137,7 +174,7 @@ def hit_json(h: hi.SearchHit) -> Dict[str, Any]:
     out.update(kb=False, screen_name=hi.SCREEN_NAMES.get(h.screen, h.screen), route=route,
                web_ready=bool(route) and _web_ready(route), needs_series=h.screen in hi.NEEDS_SERIES,
                has_areas=bool(re.search(r"\(\d\)|\([A-F]\)", text)),
-               full_help=_module(h.screen) is not None)
+               full_help=_module(h.screen) is not None or h.screen in EXTRA_HELP)
     return out
 
 

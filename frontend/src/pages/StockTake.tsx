@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Modal } from "../components/SeriesTools";
+import { HelpButton } from "../components/Help";
 
 /* Stock take (desktop ui/widgets/stock_take_round_dialog.py + stock_take_dialog.py) on
    backend/app/stock_take_api.py / db/stock_take.py.
@@ -117,6 +118,7 @@ export default function StockTake() {
               {data.rounds.map((x) => <option key={x.id} value={x.id}>{x.name} ({x.open ? t("stk.open") : t("stk.closed_on", { d: (x.closed ?? "").slice(0, 10) })})</option>)}
             </select></label>
         )}
+        <HelpButton screen="yarn_stock" tab="stocktake" />
       </div>
       <p className="stk-info">
         {!data.available ? t("stk.not_available")
@@ -427,6 +429,7 @@ function CheckView({ location, round, prefix, onDone }: { location: string; roun
     <div className="stk-page stk-check">
       <div className="page-head">
         <h1>{t("stk.check_title")}{exact ? ` – ${location}` : ""}{round ? ` (${round.name})` : ""}</h1>
+        <HelpButton screen="yarn_stock" tab="stocktake" />
       </div>
       <div className="toolbar">
         <label className="st-goto">{t("stk.loc_label")}

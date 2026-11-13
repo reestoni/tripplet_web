@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Modal } from "../components/SeriesTools";
+import { HelpButton } from "../components/Help";
 
 /* Yarn Stock (desktop ui/screen_yarn_stock.py) on backend/app/yarn_stock_api.py / db/yarn_stock.py.
    Overview yarn x batch (status per yarn), spools of the chosen batch (edit, new, discard, used in,
@@ -290,6 +291,7 @@ export default function YarnStock() {
             onKeyDown={(e) => { if (e.key === "Enter") doGoto(); }} />
         </label>
         <button className="btn-plain" onClick={doGoto}>{t("st.go")}</button>
+        <HelpButton screen="yarn_stock" />
       </div>
       {msg && (
         <div className={"st-msg" + (msg.kind === "err" ? " err" : "")}>

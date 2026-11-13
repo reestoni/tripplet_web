@@ -182,7 +182,9 @@ Platz, Ergebnisse, Excel; Superuser starten/schliessen Runden und lassen Plätze
 Umlagern/Wieder-Einlagern sofort, Fehlende nur beim Abschluss auf Klick ausbuchen). Die Scan-Liste hält der Browser
 (wie der Desktop-Dialog), den Scan-Text wertet der Server aus (`/parse`). Tests `tests/test_stock_take_api.py` (echte
 Test-Runde mit Test-Spulen auf ZZ97, wird übersprungen, wenn eine echte Runde offen ist; räumt alles ab).
-Noch offen: die eigene Yarn-Stock-Hilfe (Desktop `ui/widgets/yarn_stock_help_dialog.py`, Reiter + Skizzen).
+**Yarn-Stock-Hilfe** (2026-11-13): eigenes Desktop-Format (`ui/widgets/yarn_stock_help_dialog.py` + `yarn_stock_help_texts.py`)
+-> `help._yarn_stock_help()` baut daraus Reiter/Bausteine für den normalen Hilfe-Dialog (`EXTRA_HELP`); "?" auf Yarn Stock,
+Inventur springt auf Reiter `stocktake`. Knopfnamen in den Texten bleiben die englischen des Desktops.
 
 **Hilfe** (2026-11-13): `backend/app/help.py` (`/api/help/screen/<screen>` = Kontext-Hilfe aller Sprachen aus den
 Desktop-Textmodulen `ui/widgets/help_texts_*.py` als Bausteine, Skizzen als data-URL; `/api/help/search` = Suche aus
@@ -199,8 +201,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur (siehe unten;
-  offen dort: Yarn-Stock-Hilfe). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
   Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen

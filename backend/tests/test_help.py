@@ -61,3 +61,26 @@ def test_no_ask_ai_in_web(c):
     assert c.post("/api/help/ai", json={"q": "x", "lang": "de"}).status_code in (404, 405)
     hits = c.get("/api/help/search", params={"q": "label"}).json()["hits"]
     assert hits and all("ai_answer" not in h for h in hits)
+
+
+def test_yarn_stock_help_has_the_desktop_tabs():
+    """Own desktop format (yarn_stock_help_dialog.py) -> same four tabs, sketches filled in, all languages."""
+    import base64
+    from fastapi.testclient import TestClient
+    from app import auth
+    from app.main import app
+    from db.connection import fetch_all
+    user = fetch_all("SELECT Username FROM tblUser WHERE COALESCE(Active, 1) <> 0 ORDER BY ID LIMIT 1")[0]["Username"]
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(user))
+    d = c.get("/api/help/screen/yarn_stock").json()
+    assert set(d["langs"]) == {"en", "de", "es"}
+    for lang in d["langs"]:
+        tabs = d["texts"][lang]["tabs"]
+        assert [t["key"] for t in tabs] == ["tasks", "screen", "background", "stocktake"]
+        svgs = [b for t in tabs for b in t["blocks"] if b["t"] == "svg"]
+        assert len(svgs) == 2
+        for b in svgs:
+            src = base64.b64decode(b["src"].split(",", 1)[1]).decode("utf-8")
+            body = src.split("-->", 1)[-1]           # the comment on top mentions {{key}}
+            assert "{{" not in body

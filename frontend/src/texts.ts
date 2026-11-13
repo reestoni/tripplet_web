@@ -1267,6 +1267,9 @@ const en = {
   "stk.err.bad_spool": "This spool cannot be changed (reload).",
   "stk.err.read_only": "No write access (read-only).",
   "stk.err.no_round": "Round not found.",
+  "help.tip.manage_jets": "How does Manage Jets work?",
+  "help.tip.manage_yarn": "How does Manage Yarn work?",
+  "help.tip.yarn_stock": "How does Yarn Stock work?",
 };
 
 export type TextKey = keyof typeof en;
@@ -2527,6 +2530,9 @@ const de: Texts = {
   "stk.err.bad_spool": "Diese Spule kann nicht geändert werden (neu laden).",
   "stk.err.read_only": "Keine Schreibrechte (nur lesen).",
   "stk.err.no_round": "Runde nicht gefunden.",
+  "help.tip.manage_jets": "Wie funktioniert Manage Jets?",
+  "help.tip.manage_yarn": "Wie funktioniert Manage Yarn?",
+  "help.tip.yarn_stock": "Wie funktioniert das Garnlager?",
 };
 
 const es: Texts = {
@@ -3785,6 +3791,9 @@ const es: Texts = {
   "stk.err.bad_spool": "Esta bobina no se puede cambiar (recarga).",
   "stk.err.read_only": "Sin permiso de escritura (solo lectura).",
   "stk.err.no_round": "Ronda no encontrada.",
+  "help.tip.manage_jets": "¿Cómo funciona Manage Jets?",
+  "help.tip.manage_yarn": "¿Cómo funciona Manage Yarn?",
+  "help.tip.yarn_stock": "¿Cómo funciona el stock de hilo?",
 };
 
 const zh: Texts = {
@@ -5039,6 +5048,9 @@ const zh: Texts = {
   "stk.err.bad_spool": "无法更改此线轴（请重新加载）。",
   "stk.err.read_only": "无写入权限（只读）。",
   "stk.err.no_round": "未找到轮次。",
+  "help.tip.manage_jets": "Manage Jets 如何使用？",
+  "help.tip.manage_yarn": "Manage Yarn 如何使用？",
+  "help.tip.yarn_stock": "纱线库存如何使用？",
 };
 
 export const TEXTS = { en, de, es, zh } as const;
