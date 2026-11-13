@@ -283,3 +283,40 @@ table.grid td.icon-col img { width: 16px; height: 16px; vertical-align: middle; 
 .modal select { width: 100%; }
 .modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .btn-plain { font: inherit; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+
+/* show experiment */
+.se-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px; }
+.se-head .btn-plain { padding: 6px 12px; }
+.se-title { flex: 1; min-width: 0; }
+.se-title h1 { margin: 0 0 4px; font-size: 20px; }
+.se-facts { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.se-facts b { color: var(--text); font-weight: 600; }
+.se-ro { font-size: 12px; white-space: nowrap; padding-top: 6px; }
+.link-btn { font: inherit; background: none; border: none; padding: 0; color: var(--accent); cursor: pointer; font-weight: 600; }
+.se-notes { white-space: pre-wrap; margin-bottom: 10px; font-size: 13px; }
+.se-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+.se-tab {
+  font: inherit; font-size: 13px; font-weight: 600; padding: 7px 13px; cursor: pointer;
+  background: var(--card-bg); color: var(--accent); border: 1px solid #cfcfcf; border-radius: 8px 8px 0 0;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.se-tab:hover { background: #ececec; }
+.se-tab.on { background: #000; color: var(--accent); border-color: #000; }
+.se-tab.soon { color: #9aa29b; cursor: default; background: #f1f3f1; }
+.flag-dot { width: 8px; height: 8px; border-radius: 50%; background: #d62d20; display: inline-block; margin-left: 4px; vertical-align: middle; }
+.pivot-wrap { flex: 1; min-height: 0; }
+table.pivot { border-collapse: separate; border-spacing: 0; font-size: 13px; }
+table.pivot th, table.pivot td { border-right: 1px solid #d3e6d3; border-bottom: 1px solid #d3e6d3; padding: 5px 10px; white-space: nowrap; }
+table.pivot thead th { position: sticky; top: 0; z-index: 2; background: #e9f6e9; font-weight: 600; text-align: center; min-width: 80px; }
+table.pivot thead th.ref { background: #ffe9b8; }
+table.pivot tbody th { position: sticky; left: 0; z-index: 1; background: #f7faf7; text-align: left; font-weight: 600; }
+table.pivot .pv-corner { left: 0; z-index: 3; min-width: 200px; }
+table.pivot td { text-align: center; background: #fff; }
+table.pivot tbody tr:nth-child(even) td { background: #f6faf6; }
+table.pivot tr.info td, table.pivot tr.info th { background: #eef1ee; color: #5b625c; font-style: italic; }
+table.pivot td.ref { background: #fff6df; }
+table.pivot tbody tr:nth-child(even) td.ref { background: #fdf0cf; }
+table.pivot td.red { background: #ffd0d0 !important; color: #cc0000; font-weight: 700; }
+table.pivot td.orange { background: #ffe5b4 !important; color: #b85c00; font-weight: 700; }
+table.pivot tbody tr:hover td, table.pivot tbody tr:hover th { box-shadow: inset 0 0 0 9999px rgba(57, 166, 80, 0.07); }
+.se-legend { font-size: 12px; margin-top: 6px; }

@@ -74,6 +74,12 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 
 1. ✅ Fundament: Login, Rechte, Seitenleiste, Startskripte (2026-11-13)
 2. ✅ All Experiments + Backlog (2026-11-13; Backlog-Karten per Drag & Drop verschiebbar = `POST /api/backlog/move`, Regeln aus `db/backlog_moves.py`, Joker-Maschine fragt per Dialog; noch offen: Prio, Mehrfachauswahl, Kontextmenüs, ER-Popup, Report-Symbol, Status in All Experiments) – offen: Show Experiment **nur lesend**
+2b. 🟡 Show Experiment nur lesend (`/series/:id`, `app/series_view.py`, Seite `SeriesView.tsx`, 2026-11-13):
+   Kopf, Versuchsspalten (Referenzen amber), Labor-Reiter aus `db/series_tables.LAB_TABS` mit Info-Zeilen
+   Jet/Jet Plate/Air Pressure, rot/orange Markierungen, Retest-Punkt; Zeilen-/Reiternamen übersetzt
+   (`row.<Desktop-Titel>`, `tab.<key>`). Noch offen (`PENDING_TABS`, im Web ausgegraut): Machine Data,
+   Jet Air, Itemat Lab/Plus, DTYoMat, ATYoMat - jeweils zuerst im Desktop nach `db/series_tables.py`
+   ziehen (Zellvergleich vorher/nachher), dann hier anzeigen. Danach R&D, YarnScope, Notizen an Werten.
 3. Experiment Requests (Create + My Requests) – erster Schreib-Teil
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines

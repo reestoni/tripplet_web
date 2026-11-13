@@ -1,0 +1,78 @@
+"""Show Experiment (read only): same cells as db/series_tables, login required."""
+from __future__ import annotations
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app import auth
+from app.main import app
+
+from db import series_tables as stb
+from db.connection import fetch_all
+
+
+@pytest.fixture()
+def client():
+    rows = fetch_all("SELECT u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                     "WHERE ar.AccessLevel >= 4 AND COALESCE(u.Active, 1) <> 0 ORDER BY u.ID")
+    if not rows:
+        pytest.skip("no superuser on dev_local")
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(rows[0]["Username"]))
+    return c
+
+
+def _series_with_lab_data(n=5):
+    table = stb._first_table(("tbltiter", "tblLaborTiter"))
+    if not table:
+        pytest.skip("no titer table")
+    rows = fetch_all(f"SELECT DISTINCT T.TrialSeriesID AS S FROM {table} L JOIN tblTrial T ON T.ID = L.TrialID "
+                     "ORDER BY S DESC LIMIT ?", [n])
+    if not rows:
+        pytest.skip("no titer data on dev_local")
+    return [r["S"] for r in rows]
+
+
+def test_needs_login():
+    assert TestClient(app).get("/api/series/1").status_code == 401
+
+
+def test_unknown_series(client):
+    r = client.get("/api/series/987654321")
+    assert r.status_code == 404 and r.json()["code"] == "not_found"
+
+
+def test_cells_match_shared_builders(client):
+    for sid in _series_with_lab_data():
+        d = client.get(f"/api/series/{sid}").json()
+        st = stb.load_trials(sid)
+        assert [t["label"] for t in d["trials"]] == st.labels
+        info = stb.jet_info_rows(st.trial_ids)
+        for tab in d["tabs"]:
+            lt = next(x for x in stb.LAB_TABS if x.key == tab["key"])
+            p = lt.build(st)
+            assert [r["title"] for r in tab["rows"]] == [t for t, _ in info] + p.row_titles
+            for r, row in enumerate(tab["rows"][len(info):]):
+                assert [c["v"] for c in row["cells"]] == ["" if v is None else str(v) for v, _b in p.cells[r]]
+
+
+def test_titer_out_of_tolerance_marks_stat_ds_orange(client):
+    for sid in _series_with_lab_data(20):
+        st = stb.load_trials(sid)
+        titer, ds = stb.build_titer(st), stb.build_stat_ds(st)
+        if titer and ds and titer.extra.get("out_of_tolerance"):
+            d = client.get(f"/api/series/{sid}").json()
+            tab = next(t for t in d["tabs"] if t["key"] == "stat_ds")
+            ten = tab["rows"][3 + 2]["cells"]                    # 3 info rows, Tenacity = data row 2
+            for c in titer.extra["out_of_tolerance"]:
+                assert ten[c].get("alert") in ("orange", "red")
+            return
+    pytest.skip("no series with titer deviation and Statimat DS")
+
+
+def test_cv_limit_rule():
+    assert stb.cv_limit_alert("Elongation CV (%)", "10")
+    assert stb.cv_limit_alert("Tenacity CV (%)", "12,5")
+    assert not stb.cv_limit_alert("Tenacity CV (%)", "9.99")
+    assert not stb.cv_limit_alert("Elongation (%)", "40")
+    assert not stb.cv_limit_alert("Elongation CV (%)", "")

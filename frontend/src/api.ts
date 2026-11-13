@@ -73,6 +73,25 @@ export type ArchivedRow = {
   xx: string;
 };
 
+export type PivotCell = { v: string; alert?: "red" | "orange" };
+export type SeriesData = {
+  series: {
+    id: number;
+    name: string;
+    experiment_id: string;
+    experiment_pk: number;
+    machine: string;
+    machine_type: number | null;
+    status_id: number | null;
+    owner: string;
+    creation_date: string | null;
+    notes: string;
+  };
+  trials: { id: number; label: string; number: number; reference: string | null }[];
+  tabs: { key: string; title: string; rows: { title: string; info?: boolean; cells: PivotCell[] }[]; flags: Record<string, string> }[];
+  pending_tabs: { key: string; title: string }[];
+};
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -123,6 +142,7 @@ export const api = {
     request<{ boxes: (Status & { cards: BacklogCard[] })[]; archived: ArchivedRow[] }>("GET", "/api/backlog"),
   moveCard: (series_id: number, to_status: number, machine_id?: number) =>
     request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
+  series: (id: number) => request<SeriesData>("GET", `/api/series/${id}`),
   logout: () => request<{ ok: boolean }>("POST", "/api/auth/logout"),
 };
 
