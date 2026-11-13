@@ -326,3 +326,12 @@ table.pivot tbody tr:hover td, table.pivot tbody tr:hover th { box-shadow: inset
 .report-page { display: flex; flex-direction: column; height: 100%; }
 .report-bar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--card-bg); }
 .report-frame { flex: 1; width: 100%; border: 0; background: white; }
+
+/* machine data */
+.md-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-bottom: 8px; font-size: 13px; }
+.md-radio { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.md-filter { display: inline-flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; margin-left: 12px; }
+table.pivot.machine thead tr.ply-row th { top: 31px; font-weight: 500; font-size: 12px; background: #f1f8f1; }
+table.pivot.machine thead tr.ply-row th.ref { background: #fff0cc; }
+table.pivot.machine .pv-corner { z-index: 4; }
+.yarn-dot { display: inline-block; width: 10px; height: 10px; border: 1px solid #888; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }

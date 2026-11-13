@@ -76,3 +76,35 @@ def test_cv_limit_rule():
     assert not stb.cv_limit_alert("Tenacity CV (%)", "9.99")
     assert not stb.cv_limit_alert("Elongation (%)", "40")
     assert not stb.cv_limit_alert("Elongation CV (%)", "")
+
+
+# --- Machine Data -------------------------------------------------------------------
+def _multi_ply_series():
+    rows = fetch_all("SELECT T.TrialSeriesID AS S FROM tblTrialSettings TS JOIN tblTrial T ON T.ID = TS.TrialID "
+                     "GROUP BY T.TrialSeriesID HAVING COUNT(*) > COUNT(DISTINCT TS.TrialID) ORDER BY S DESC LIMIT 1")
+    if not rows:
+        pytest.skip("no multi-ply series on dev_local")
+    return int(rows[0]["S"])
+
+
+def test_machine_modes(client):
+    from db import machine_data as mdm
+    sid = _multi_ply_series()
+    st = stb.load_trials(sid)
+    single = client.get(f"/api/series/{sid}/machine?mode=single").json()
+    compact = client.get(f"/api/series/{sid}/machine?mode=compact").json()
+    md = mdm.build_machine_data(st, "single")
+    assert len(single["columns"]) == len(md.columns) > len(st.trials)
+    assert len(compact["columns"]) == len(st.trials)          # one column per trial
+    hidden = set(md.process_hidden_rows or ()) | ({md.custom_group_row} if md.custom_group_row is not None else set())
+    assert [r["title"] for r in single["rows"]] == [t for i, t in enumerate(md.row_titles) if i not in hidden]
+    jets, housing = mdm.load_jets_lookup(), mdm.load_housing_lookup()
+    r0 = next(i for i in range(len(md.row_titles)) if i not in hidden)
+    assert [c["v"] for c in single["rows"][0]["cells"]] == \
+        [mdm.display_text(md, r0, c, jets.map, housing.map) for c in range(len(md.columns))]
+    assert client.get(f"/api/series/{sid}/machine?mode=bogus").json()["mode"] == "single"
+
+
+def test_machine_needs_login_and_series(client):
+    assert TestClient(app).get("/api/series/1/machine").status_code == 401
+    assert client.get("/api/series/987654321/machine").status_code == 404

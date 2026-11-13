@@ -77,7 +77,10 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 2b. 🟡 Show Experiment nur lesend (`/series/:id`, `app/series_view.py`, Seite `SeriesView.tsx`, 2026-11-13):
    Kopf, Versuchsspalten (Referenzen amber), Labor-Reiter aus `db/series_tables.LAB_TABS` mit Info-Zeilen
    Jet/Jet Plate/Air Pressure, rot/orange Markierungen, Retest-Punkt; Zeilen-/Reiternamen übersetzt
-   (`row.<Desktop-Titel>`, `tab.<key>`). Noch offen (`PENDING_TABS`, im Web ausgegraut): Machine Data,
+   (`row.<Desktop-Titel>`, `tab.<key>`). Machine Data seit 2026-11-13: `GET /api/series/{id}/machine?mode=single|compact|groups`
+   aus `db/machine_data.py` (`display_text`, `hidden_columns`; Custom-Group- und ungenutzte DTY-Verfahrenszeilen
+   ausgeblendet wie im Desktop; Feldnamen aus `tblMachineFields` werden nur übersetzt, wenn `row.<Titel>` existiert),
+   Komponente `MachineTable.tsx`. Noch offen (`PENDING_TABS`, im Web ausgegraut):
    Jet Air, Itemat Lab/Plus, DTYoMat, ATYoMat - jeweils zuerst im Desktop nach `db/series_tables.py`
    ziehen (Zellvergleich vorher/nachher), dann hier anzeigen. Danach R&D, YarnScope, Notizen an Werten.
 2c. ✅ Serien-Report (2026-11-13): **dieselbe Desktop-Seite** (`ui/report_html_template.py`, gebaut von

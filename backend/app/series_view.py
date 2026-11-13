@@ -18,7 +18,6 @@ router = APIRouter(prefix="/api")
 
 # desktop tabs that are not in the web version yet (shown greyed out)
 PENDING_TABS = [
-    ("machine", "Machine Data"),
     ("jet_air", "Jet Air Consumption"),
     ("itemat", "Itemat Lab"),
     ("itemat_plus", "Itemat Plus"),
@@ -107,3 +106,56 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
         "tabs": tabs,
         "pending_tabs": [{"key": k, "title": t} for k, t in PENDING_TABS],
     }
+
+
+# --------------------------------------------------------------------------- Machine Data
+@router.get("/series/{series_id}/machine")
+def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = Depends(current_user)):
+    """Machine Data tab (read only) from db/machine_data.py - the desktop builds its model from the same data."""
+    from db import machine_data as mdm
+    if stb.series_header(series_id) is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "This series does not exist."})
+    if mode not in mdm.VIEW_MODES:
+        mode = "single"
+    st = stb.load_trials(series_id)
+    md = mdm.build_machine_data(st, mode)
+    has_groups = bool(md.has_groups)
+    if md.message or not st.trials:
+        return {"mode": mode, "has_groups": has_groups, "message": md.message, "columns": [], "rows": [], "spans": []}
+    jets = mdm.load_jets_lookup()
+    housing = mdm.load_housing_lookup()
+    hidden = set(md.process_hidden_rows or ())
+    if md.custom_group_row is not None:
+        hidden.add(md.custom_group_row)          # desktop: Custom Group row off by default
+    # compact = only the first column of each trial (desktop _apply_mat_column_filter)
+    col_hidden = mdm.hidden_columns(md.col_specs, mode == "compact", mode == "groups", None)
+    keep = [c for c in range(len(md.columns)) if not col_hidden[c]]
+    columns = [{
+        "filter": mdm.column_label(md.col_specs[i], mode == "groups"),
+        "trial_id": c.get("trial_id"),
+        "trial_label": c.get("trial_label"),
+        "reference": c.get("reference"),
+        "ply": c.get("ply_label"),
+        "ply_tooltip": c.get("ply_tooltip") or "",
+        "colour": c.get("yarn_colour_css"),
+        "colour_name": c.get("yarn_colour") or "",
+    } for i, c in enumerate(md.columns) if not col_hidden[i]]
+    rows = []
+    for r, title in enumerate(md.row_titles):
+        if r in hidden:
+            continue
+        cells = []
+        for c in keep:
+            cell: Dict[str, Any] = {"v": mdm.display_text(md, r, c, jets.map, housing.map)}
+            tip = md.cell_tooltips.get((r, c))
+            if tip:
+                cell["tip"] = tip
+            alert = md.cell_alerts.get((r, c))
+            if alert:
+                cell["alert"] = alert
+            cells.append(cell)
+        rows.append({"title": title, "key": md.row_keys[r] if r < len(md.row_keys) else "",
+                     "readonly": r in set(md.read_only_rows or ()), "cells": cells})
+    return {"mode": mode, "has_groups": has_groups, "message": None, "columns": columns, "rows": rows,
+            "filter_labels": list(md.filter_labels or []) if mode != "compact" else [],
+            "multi_ply": bool(md.has_multi_ply)}

@@ -92,6 +92,17 @@ export type SeriesData = {
   pending_tabs: { key: string; title: string }[];
 };
 
+export type MachineData = {
+  mode: "single" | "compact" | "groups";
+  has_groups: boolean;
+  message: string | null;
+  columns: { filter: string; trial_id: number; trial_label: string; reference: string | null; ply: string;
+    ply_tooltip: string; colour: string | null; colour_name: string }[];
+  rows: { title: string; key: string; readonly: boolean; cells: { v: string; tip?: string; alert?: string }[] }[];
+  filter_labels: string[];
+  multi_ply?: boolean;
+};
+
 export class ApiError extends Error {
   status: number;
   code?: string;
@@ -143,6 +154,7 @@ export const api = {
   moveCard: (series_id: number, to_status: number, machine_id?: number) =>
     request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
   series: (id: number) => request<SeriesData>("GET", `/api/series/${id}`),
+  machine: (id: number, mode: string) => request<MachineData>("GET", `/api/series/${id}/machine?mode=${mode}`),
   logout: () => request<{ ok: boolean }>("POST", "/api/auth/logout"),
 };
 

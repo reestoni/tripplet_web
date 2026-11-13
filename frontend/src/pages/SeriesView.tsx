@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, type SeriesData } from "../api";
 import { useI18n } from "../i18n";
+import MachineTable from "../components/MachineTable";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -31,9 +32,9 @@ export default function SeriesView() {
       .then((d) => {
         if (!alive) return;
         setData(d);
-        const keys = d.tabs.map((x) => x.key);
+        const keys = ["machine", ...d.tabs.map((x) => x.key)];
         const want = lastTab();
-        setTab(want && keys.includes(want) ? want : keys[0] ?? null);
+        setTab(want && keys.includes(want) ? want : "machine");
       })
       .catch((e) => alive && setError(e instanceof ApiError && e.status === 404 ? t("se.notFound") : e.message));
     return () => {
@@ -98,6 +99,10 @@ export default function SeriesView() {
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
 
       <div className="se-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === "machine"} className={"se-tab" + (tab === "machine" ? " on" : "")}
+          onClick={() => choose("machine")}>
+          {tr("tab", "machine", "Machine Data")}
+        </button>
         {data.tabs.map((x) => (
           <button key={x.key} role="tab" aria-selected={x.key === tab}
             className={"se-tab" + (x.key === tab ? " on" : "")} onClick={() => choose(x.key)}>
@@ -113,7 +118,9 @@ export default function SeriesView() {
       </div>
 
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
-      {data.trials.length > 0 && !current && <div className="card muted">{t("se.noLab")}</div>}
+      {data.trials.length > 0 && tab === "machine" && (
+        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} />
+      )}
       {current && (
         <>
           <div className="table-wrap pivot-wrap">
