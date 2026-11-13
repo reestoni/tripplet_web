@@ -104,6 +104,7 @@ export default function YarnStock() {
     try {
       const d = await request<Data>("GET", "/api/yarn-stock");
       setData(d);
+      window.dispatchEvent(new Event("tripplet:bell"));   // Low/Empty messages may have changed
       setLoadErr(null);
       return d;
     } catch (e) { setLoadErr(errText(t, e)); return null; }

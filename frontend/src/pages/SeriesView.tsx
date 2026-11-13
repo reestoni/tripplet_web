@@ -43,6 +43,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
     return () => window.clearTimeout(id);
   }, [toast]);
   const lastId = useRef<string | undefined>(undefined);
+  const lastRecent = useRef<number | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -54,6 +55,11 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       .then((d) => {
         if (!alive) return;
         setData(d);
+        // "Recent" list (desktop ui/recent_series.py) - not for a series opened from the recycle bin
+        if (!d.recycle_preview && lastRecent.current !== d.series.id) {
+          lastRecent.current = d.series.id;
+          request("POST", "/api/recent", { series_id: d.series.id }).catch(() => undefined);
+        }
         const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []), ...(d.has_yarnscope_aty ? ["yarnscope_aty"] : []),
           ...d.tabs.map((x) => x.key)];
         const want = lastTab();

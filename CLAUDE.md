@@ -277,6 +277,13 @@ Vorschauen leben im Serverprozess - nach einem Neustart bleibt die Serie einfach
 **Lab Assistant** (KI-Chat) ist bewusst nicht im Web (keine KI im Web) und fehlt in der Seitenleiste wie Offline Sync.
 Tests `tests/test_usage_stats.py`, `tests/test_recycle_bin_api.py` (echte Testserie, wird endgültig gelöscht).
 
+**Seitenleiste: Glocke, Suche, Zuletzt geöffnet, Seitenprotokoll** (2026-11-13): Glocke im Seitenleisten-Fuss
+(`components/Notifications.tsx`, `app/notifications_api.py` auf `ui/notifications.py`; nur eigene Meldungen, Zähler alle 2 min,
+bei Fokus und nach Yarn-Stock-Laden über das Ereignis `tripplet:bell`). Schnellsuche Strg+F / "Suche" (`components/QuickSearch.tsx`,
+`app/search_api.py` auf `db/quick_search.py`). "Zuletzt geöffnet" = dieselbe Liste wie im Desktop (`DisplaySettings.recent_series`,
+`push_recent`; Show Experiment meldet `POST /api/recent`, nicht bei Papierkorb-Vorschau). `ScreenLog` schreibt pro Seitenaufruf
+`screen_open` mit dem Desktop-Klassennamen (Usage Stats zählt beide Apps zusammen; Zuordnung `SCREENS` in `QuickSearch.tsx`).
+
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,

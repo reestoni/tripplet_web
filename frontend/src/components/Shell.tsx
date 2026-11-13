@@ -3,6 +3,8 @@ import { NavLink } from "react-router-dom";
 import { api, img, type Me, type Nav, type NavItem } from "../api";
 import { LangFlags, useI18n } from "../i18n";
 import { HelpHost, openHelp } from "./Help";
+import Bell from "./Notifications";
+import { openQuickSearch, QuickSearchHost, RecentMenu, ScreenLog } from "./QuickSearch";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
 const NARROW_KEY = "tripplet.sidebar.narrow";
@@ -100,6 +102,12 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
         {me.mode !== "prod" && <div className="sb-env">{me.mode.toUpperCase()} · {me.db}</div>}
         <nav className="sb-scroll">
           {nav?.pinned.map((it) => <Item key={it.key} it={it} />)}
+          {nav && (<>
+            <button type="button" className="sb-item sb-btn" onClick={openQuickSearch} title={t("qsr.title") + " (Ctrl+F)"}>
+              <img src={img("quick_Search.png")} alt="" /><span className="sb-label">{t("qsr.title")} (Ctrl+F)</span>
+            </button>
+            <RecentMenu label={t("recent.title")} icon={img("recent.png")} />
+          </>)}
           {nav?.sections.map((s) => {
             const isClosed = closed.includes(s.title);
             return (
@@ -120,6 +128,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
               <img src={img("user_white.png")} alt="" />
               <span>{name}</span>
             </div>
+            <Bell />
             <NavLink className="sb-settings" to="/settings" title={t("sb.settings")}>⚙</NavLink>
             <button className="sb-logout" onClick={onLogout}>{t("sb.logout")}</button>
           </div>
@@ -128,6 +137,8 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
       </aside>
       <main className="content">{children}</main>
       <HelpHost />
+      <QuickSearchHost />
+      <ScreenLog />
     </div>
   );
 }

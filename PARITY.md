@@ -18,7 +18,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
-| 7. Login, sidebar, account | 14 | 1 | 5 | 1 | 21 |
+| 7. Login, sidebar, account | 18 | 0 | 1 | 2 | 21 |
 | 8. Create Experiment / Add Trial Series / Add Lab Machines | 16 | 0 | 0 | 0 | 16 |
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
@@ -28,10 +28,9 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 14. Tools | 9 | 0 | 0 | 0 | 9 |
 | 15. Admin master tables | 4 | 0 | 0 | 0 | 4 |
 | 16. Superuser pages | 2 | 0 | 0 | 1 | 3 |
-| **Total** | 314 | 7 | 9 | 6 | 336 |
+| **Total** | 318 | 6 | 5 | 7 | 336 |
 
-Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips,
-notifications bell, quick search, recent series, What's new (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, What's new (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -310,9 +309,9 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Feature access (hide items) | `feature_access` / `_allowed` | **DONE** | `be/nav.py`, `require_feature` |
 | Badges (Backlog, approved requests) | `nav_counts` | **DONE** | |
 | Ctrl+click sidebar = new tab | `_wire_tab_capable_click` | **DONE** | browser (NavLink) |
-| Notifications bell + panel (mark read, click opens series) | `notification_panel.py`, `ui/notifications.py` | **MISSING** | `ui/notifications.py` is Qt-free (create only; reading in panel/main) |
-| Search (Ctrl+F quick search) | `main.py` `_sc_search` | **MISSING** | |
-| Recent series menu | `show_recent_menu` | **MISSING** | Qt-free `ui/recent_series.py` |
+| Notifications bell + panel (mark read, click opens series) | `notification_panel.py`, `ui/notifications.py` | **DONE** | `fe/components/Notifications.tsx`, `be/notifications_api.py` on `ui/notifications.py` (own notifications only), 2026-11-13 |
+| Search (Ctrl+F quick search) | `main.py` `_sc_search` | **DONE** | `fe/components/QuickSearch.tsx`, `be/search_api.py` on `db/quick_search.py`, 2026-11-13 |
+| Recent series menu | `show_recent_menu` | **DONE** | same list as the desktop (`DisplaySettings.recent_series`, `push_recent`), 2026-11-13 |
 | Knowledge Base | `screen_onboarding.py` | **DONE** | `pages/KnowledgeBase.tsx`, `backend/app/kb.py` (same HTML pages, tree, scene tabs, quiz → usage log, open:/tool: links). Popup from app cells (kb_popup) still missing, see Show Experiment |
 | Help (F1) search | `help_search.py` | **DONE** | `fe/components/Help.tsx` (`HelpHost` in the Shell: F1 + sidebar entry), `be/help.py` on `ui/help_index`, `ui/kb_search`; same help_* usage events. KB hits navigate to the KB page (desktop: popup) |
 | Ask AI in the help search | `help_ai.py` | **NOT IN WEB** | deliberately left out (user decision 2026-11-13) |
@@ -321,8 +320,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | "Fresh off the Spool" (What's new) + auto popup after login | `ui/whats_new.py` | **MISSING** | data `ui/widgets/whats_new_texts.py` |
 | Log Out | `on_logout` | **DONE** | |
 | Mode/DB banner (non-prod), version | footer / title | **DONE** | |
-| Usage tracking of screen opens (`currentChanged` hook) | `main.py` | **PARTIAL** | web logs login + some features, no screen opens |
-| Athena token reset at login | `main.py` | **MISSING** | only relevant with AI features |
+| Usage tracking of screen opens (`currentChanged` hook) | `main.py` | **DONE** | `ScreenLog` logs the desktop screen name per page (`/api/screen-open`), 2026-11-13 |
+| Athena token reset at login | `main.py` | **NOT IN WEB (on purpose)** | no AI in the web |
 
 ## 8. Create Experiment / Add Trial Series / Add Lab Machines (`ui/screen_create_experiment.py` → `fe/pages/CreateExperiment.tsx`, `be/create_api.py`, logic `db/experiment_create.py`) – added 2026-11-13
 
