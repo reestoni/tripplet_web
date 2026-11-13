@@ -188,6 +188,18 @@ neu/zurücksetzen = Argon2. Bewusst nicht im Web: API-Key/Tokens (KI). Strenger 
 höchstens so lang wie die Spalte (`UserName` ist auf dev_local VARCHAR(5)!), eigenes Konto nicht löschbar.
 Tests `tests/test_user_admin.py` (Test-Benutzer wird angelegt und gelöscht, Zugriffsregeln danach exakt wiederhergestellt).
 
+**Smart Chart / Dashboards** (2026-11-13, erste Werkzeuge): `/tools/smart-chart` (`?view=<id>`), `/tools/dashboards`.
+Nutzerentscheid: die Desktop-Seite `ui/smart_dashboard_html.py` (Power-BI-Editor, Plotly) wird **eingebettet**, nicht neu
+gebaut - iframe `/smart-page?sid=…`, `backend/app/static/smart_bridge.js` ersetzt qwebchannel (Seiten-Aufrufe -> `POST
+/api/smart/<sid>/call`, Antwort = "Kommandos" = Seitenfunktionen init/renderResults/setSpec/…; Dialog-Aufrufe -> postMessage
+an React). Die Dashboard-Fläche bleibt dadurch Englisch wie im Desktop (bewusst); Rahmen + Dialoge (Filter, berechnetes
+Feld, Farbe, Fairness, Ansicht öffnen/speichern/teilen, PDF-Frage) sind React und 4-sprachig. Logik der Qt-Brücke Qt-frei in
+`ui/smart_dashboard_core.py` (`DashboardSession` + Filter-/Formel-Helfer; Desktop-Widget und -Dialoge nutzen es jetzt
+auch). Backend `app/smart_chart_api.py`: eine Sitzung pro offener Seite (sid vom Browser, an den Benutzer gebunden, max 40,
+6 h), Versuche einmal pro Prozess geladen, Feldwerte geteilt, berechnete Felder pro Sitzung (`_SharedCache`). Rechte:
+Feature `smart_chart`; Dashboards (nur lesend) auch mit `dashboards`. Tests `tests/test_smart_chart.py` (gespeicherte
+Ansicht wird angelegt und gelöscht), Desktop `tests/test_smart_dashboard_core.py`.
+
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,
@@ -218,7 +230,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
   2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, ✅ Settings, dann
-  nacheinander die Werkzeuge. **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
+  nacheinander die Werkzeuge (✅ Smart Chart + Dashboards zuerst, Nutzerwunsch). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
   Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen

@@ -53,8 +53,8 @@ def report_page(series_pk: int, report_id: Optional[int] = Query(None),
 
 @router.get("/report-assets/{name}")
 def report_asset(name: str) -> FileResponse:
-    if name == "web_bridge.js":
-        return FileResponse(_STATIC / "web_bridge.js", media_type="text/javascript",
+    if name in ("web_bridge.js", "smart_bridge.js"):        # smart_bridge.js: app/smart_chart_api.py
+        return FileResponse(_STATIC / name, media_type="text/javascript",
                             headers={"Cache-Control": "no-store"})
     if name == "plotly-2.32.0.min.js":
         return FileResponse(_CORE_JS / name, media_type="text/javascript",

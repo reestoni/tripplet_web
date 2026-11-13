@@ -24,7 +24,8 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
 | 12. Manage User | 7 | 0 | 0 | 1 | 8 |
-| **Total** | 275 | 6 | 11 | 5 | 297 |
+| 13. Smart Chart / Dashboards | 17 | 1 | 0 | 0 | 18 |
+| **Total** | 292 | 7 | 11 | 5 | 315 |
 
 Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, recycle bin (preview + restore),
 notifications bell, quick search, recent series, What's new, then the tools. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
@@ -412,3 +413,31 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Access… (tools / screens per group or person) | `FeatureAccessDialog` | **DONE** | `feature_access.load_all/save_all`; labels = sidebar texts |
 | User names unique and within the column length | (desktop does not check) | **DONE (stricter)** | `UserName` is VARCHAR(5) on dev_local |
 | 🔑 API key + token limit (AI) | `_on_set_api_key` | **NOT IN WEB (on purpose)** | AI stays out of the web like "Ask AI" / Athena |
+
+## 13. Smart Chart / Dashboards (`ui/screen_smart_chart.py`, `ui/screen_dashboards.py`, `ui/smart_dashboard.py` → `fe/pages/SmartChart.tsx`, `fe/pages/Dashboards.tsx`, `be/smart_chart_api.py`, logic `ui/smart_dashboard_core.py` + `ui/smart_dashboard_engine.py`) – added 2026-11-13
+
+The dashboard surface is the desktop page `ui/smart_dashboard_html.py` itself, in an iframe with `smart_bridge.js`
+instead of Qt's web channel (Nutzerentscheid 2026-11-13: embed, not rebuild) - so everything inside it is the same
+as the desktop (and English, like the desktop). The Qt bridge logic was moved to `ui/smart_dashboard_core.py`.
+
+| Feature | Desktop (file:function) | Web status | Notes / logic location |
+|---|---|---|---|
+| Pages, visuals, Visualizations / Fields / Filters panes, Format, Analytics, Model view, undo/redo | `smart_dashboard_html.py` | **DONE** | same page; panes remembered in localStorage (desktop QSettings) |
+| Count of matching trials | `SmartChartScreen.refresh` | **DONE** | `Host.summary` |
+| Filters on all pages / page / visual (add, edit, remove; histogram, step, pick values, periods) | `AddFilterDialog` | **DONE** | React dialog; `field_overview`, `make_filter`, `filter_hits`, `number_values` |
+| Ply scope | `set_ply_scope` | **DONE** | |
+| Cross-filter clicks, lasso selection, slicers, highlight | `_on_click`, `_on_select` | **DONE** | `DashboardSession.click/select` |
+| Drill-down, drill-through + back | `_on_drill_through/_back` | **DONE** | |
+| Focus mode (trials below a visual), double-click opens Show Experiment | `_on_focus_rows`, `_on_open` | **DONE** | opens in a new tab |
+| Calculated fields | `CalcFieldDialog` | **DONE** | `calc_preview`, `calc_definition` |
+| Colour of a series / visual | `_on_pick_colour` | **DONE** | colour input |
+| Fairness details + "Make it fairer" | `_FairnessDialog` | **DONE** | `fairness_json`, `apply_fair_fix`; condition texts English (data) |
+| New: empty / example / template | `_on_new` | **DONE** | template names English (engine data) |
+| Open / save / delete view, save as new, overwrite with edit share | `_OpenViewDialog`, `_SaveViewDialog` | **DONE** | `db/smart_chart_views.py` |
+| Share with people / groups (view / edit) | `ShareDialog` | **DONE** | |
+| Excel of the page / of one visual | `_export_excel`, `_on_export_visual` | **DONE** | |
+| PDF (this page / all pages) | `export_pdf` | **DONE** | images rendered by the page, PDF by `smart_dashboard_pdf.write_pdf` |
+| Reload (F5) | `load_data(force)` | **PARTIAL** | button only (F5 reloads the browser page) |
+| Dashboards: my / shared list, search, read-only, last one remembered | `DashboardsScreen` | **DONE** | localStorage |
+| Dashboards: "Edit in Smart Chart" | `_edit` | **DONE** | `/tools/smart-chart?view=<id>` |
+

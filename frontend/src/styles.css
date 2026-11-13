@@ -986,3 +986,60 @@ body.pv-marks table.pivot td.orange::before { content: "▲ "; font-size: 10px; 
 body.pv-cb { --xh-colour: rgba(33, 120, 230, 0.15); }
 body.pv-cb table.pivot td.red { background: #ffcf99 !important; color: #8a4200; }
 body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a00; }
+
+/* Smart Chart + Dashboards (pages/SmartChart.tsx, Dashboards.tsx, components/SmartFrame.tsx, SmartDialogs.tsx) */
+.smart-page { display: flex; flex-direction: column; height: calc(100vh - 32px); max-width: none; }
+.sc-head { align-items: center; gap: 8px; flex-wrap: wrap; }
+.sc-titles { flex: 1; min-width: 200px; }
+.sc-titles h1 { margin: 0; }
+.sc-kicker { color: #1F7A3A; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.sc-count { background: #E6F2E9; border: 1px solid #BFDCC7; border-radius: 10px; padding: 7px 14px; color: #165C2B; margin: 6px 0 8px; font-size: 14px; }
+.sc-count b { font-size: 19px; }
+.sc-count-hint { color: #2F4A37; font-size: 12px; margin-left: 12px; }
+.sc-msg { margin-bottom: 6px; }
+.smart-body { flex: 1; min-height: 420px; display: flex; }
+.smart-frame { flex: 1; width: 100%; border: 1px solid #DADFD8; border-radius: 8px; background: #F4F6F3; }
+.dsb-body { flex: 1; display: flex; gap: 10px; min-height: 0; }
+.dsb-list { width: 250px; flex: none; overflow: auto; background: #fff; border: 1px solid #DADFD8; border-radius: 6px; padding: 8px; }
+.dsb-list .mj-search { width: 100%; box-sizing: border-box; }
+.dsb-group { font-weight: 700; margin: 10px 0 4px; }
+.dsb-item { padding: 5px 6px; border-radius: 4px; cursor: pointer; }
+.dsb-item:hover { background: #EEF4EE; }
+.dsb-item.on { background: #E3F1E6; font-weight: 600; }
+.dsb-none { padding: 2px 6px; }
+.dsb-empty { flex: 1; display: grid; place-items: center; color: #5A6460; font-size: 14px; text-align: center; padding: 30px; }
+.modal-wide:has(.sc-filter), .modal-wide:has(.sc-calc) { max-width: 1000px; width: 94vw; }
+.sc-filter { display: grid; grid-template-columns: 280px 1fr; gap: 14px; min-height: 460px; }
+.sc-fields { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.sc-tree { flex: 1; overflow: auto; max-height: 60vh; border: 1px solid #DADFD8; border-radius: 4px; padding: 4px; }
+.sc-top { font-weight: 700; color: #165C2B; cursor: pointer; padding: 3px 2px; }
+.sc-sub { margin-left: 10px; }
+.sc-subhead { color: #165C2B; font-size: 12px; padding: 2px; }
+.sc-field { padding: 2px 6px 2px 14px; cursor: pointer; border-radius: 3px; }
+.sc-field:hover { background: #EEF4EE; }
+.sc-field.on { background: #D6EBDC; font-weight: 600; }
+.sc-field.dis { cursor: default; }
+.sc-editor h3 { margin: 0; }
+.sc-hist { width: 100%; height: 150px; display: block; cursor: crosshair; border-bottom: 1px solid #9AA59C; user-select: none; }
+.sc-hist-empty { height: 120px; display: grid; place-items: center; color: #5A6460; }
+.sc-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 6px 0; }
+.sc-row input:not([type]), .sc-row input[type=text] { width: 100px; }
+.sc-step { width: 60px; }
+.sc-list { max-height: 160px; overflow: auto; border: 1px solid #DADFD8; border-radius: 4px; padding: 4px 6px; display: flex; flex-direction: column; }
+.sc-list.tall { max-height: 320px; }
+.sc-list.dis { opacity: .5; }
+.sc-hits { background: #E6F2E9; border: 1px solid #BFDCC7; border-radius: 6px; padding: 8px 10px; color: #165C2B; margin-top: 8px; }
+.sc-calc { display: grid; grid-template-columns: 3fr 2fr; gap: 14px; }
+.sc-lab { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; font-size: 13px; }
+.sc-ops { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+.sc-preview { background: #F3EFFA; border: 1px solid #D6CCEB; border-radius: 6px; padding: 8px; margin: 8px 0; min-height: 20px; }
+.sc-preview .err { color: #C62828; }
+.sc-fair-wrap { max-height: 46vh; overflow: auto; }
+.sc-fair td { vertical-align: top; }
+.sc-fair .lv-green { background: #E6F2E9; } .sc-fair .lv-amber { background: #FFF4D6; } .sc-fair .lv-red { background: #FDECEA; }
+.sc-fair-head { font-size: 15px; }
+.sc-views { max-height: 50vh; overflow: auto; margin-top: 6px; }
+.sc-view { padding: 6px 8px; border-radius: 4px; cursor: pointer; border-bottom: 1px solid #EEF1ED; }
+.sc-view:hover { background: #F2F7F2; }
+.sc-view.on { background: #E3F1E6; }
+.small { font-size: 12px; }

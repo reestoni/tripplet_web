@@ -18,6 +18,8 @@ import YarnStock from "./pages/YarnStock";
 import StockTake from "./pages/StockTake";
 import ManageUsers from "./pages/ManageUsers";
 import Settings from "./pages/Settings";
+import SmartChart from "./pages/SmartChart";
+import Dashboards from "./pages/Dashboards";
 import { DisplayProvider } from "./display";
 
 export default function App() {
@@ -77,6 +79,8 @@ export default function App() {
         <Route path="/tools/yarn-stock/stock-take" element={<StockTake />} />
         <Route path="/superuser/users" element={<ManageUsers />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
+        <Route path="/tools/dashboards" element={<Dashboards />} />
         <Route path="/knowledge-base" element={<KnowledgeBase />} />
         <Route path="/knowledge-base/:key" element={<KnowledgeBase />} />
         <Route path="*" element={<NotYet />} />
