@@ -63,7 +63,7 @@ export default function RecycleBin() {
           <button className="btn-plain danger" disabled={!cur || busy} onClick={remove}>{t("rb.delete")}</button>
         </div>
         {!data.entries.length ? <p className="muted">{t("rb.empty")}</p> : (
-          <div className="us-wrap">
+          <div className="rb-wrap">
             <table className="pp-table">
               <thead><tr><th>{t("rb.col.when")}</th><th>{t("rb.col.by")}</th><th>{t("rb.col.type")}</th><th>{t("rb.col.what")}</th><th>{t("rb.col.summary")}</th></tr></thead>
               <tbody>{data.entries.map((e) => (

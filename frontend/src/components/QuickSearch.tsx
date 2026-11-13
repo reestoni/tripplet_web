@@ -126,7 +126,7 @@ const SCREENS: [RegExp, string][] = [
   [/^\/requests\/new/, "CreateExperimentRequestScreen"], [/^\/requests\/\d+/, "ExperimentRequestScreen"], [/^\/requests/, "MyRequestsScreen"],
   [/^\/admin\/jets/, "ManageJetsScreen"], [/^\/admin\/yarn/, "ManageYarnScreen"], [/^\/admin\/top-plates/, "ManageTopPlatesScreen"],
   [/^\/admin\/order-types/, "ManageOrderTypeScreen"], [/^\/admin\/product-groups/, "ManageProductGroupsScreen"],
-  [/^\/admin\/material/, "ManageMaterialScreen"], [/^\/superuser\/users/, "ManageUserScreen"], [/^\/superuser\/usage-stats/, "UsageStatsScreen"],
+  [/^\/admin\/material/, "ManageMaterialScreen"], [/^\/superuser\/users/, "ManageUserScreen"],
   [/^\/tools\/yarn-stock/, "YarnStockScreen"], [/^\/tools\/smart-chart/, "SmartChartScreen"], [/^\/tools\/dashboards/, "DashboardsScreen"],
   [/^\/tools\/yarn-count/, "YarnCountScreen"], [/^\/tools\/jet-roi/, "NozzleCalculatorScreen"], [/^\/tools\/air-supply/, "AirSupplyScreen"],
   [/^\/tools\/image-compare/, "ImageCompareScreen"], [/^\/tools\/label-generator/, "LabelGeneratorScreen"],

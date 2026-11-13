@@ -27,8 +27,8 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 13. Smart Chart / Dashboards | 22 | 1 | 0 | 0 | 23 |
 | 14. Tools | 9 | 0 | 0 | 0 | 9 |
 | 15. Admin master tables | 4 | 0 | 0 | 0 | 4 |
-| 16. Superuser pages | 2 | 0 | 0 | 1 | 3 |
-| **Total** | 319 | 6 | 4 | 7 | 336 |
+| 16. Superuser pages | 1 | 0 | 0 | 2 | 3 |
+| **Total** | 318 | 6 | 4 | 8 | 336 |
 
 Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
@@ -475,6 +475,6 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 
 | Feature | Desktop | Web status | Notes |
 |---|---|---|---|
-| Usage Stats: ranking + logins per day, tables Logins / Screens / Features / Help | `ui/screen_usage_stats.py` | **DONE** | `be/usage_stats_api.py` on `db/usage_stats.py`; tables sortable + filter |
+| Usage Stats: ranking + logins per day, tables Logins / Screens / Features / Help | `ui/screen_usage_stats.py` | **NOT IN WEB (on purpose)** | not needed in the web (user decision 2026-11-13); the web logs its page opens, the desktop Usage Stats shows them |
 | Recycle Bin: list, restore, delete permanently, preview in Show Experiment (read only, banner: keep / back / delete; leaving = back) | `ui/widgets/recycle_bin_dialog.py`, `ui/recycle_preview.py` | **DONE** | `be/recycle_bin_api.py` on `db/recycle_bin.py` |
 | Lab Assistant (AI chat over the database) | `ui/screen_lab_assistant.py` | **NOT IN WEB (on purpose)** | no AI in the web (user decision); left out of the sidebar like Offline Sync |

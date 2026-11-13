@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import whats_new_api, search_api, notifications_api, recycle_bin_api, usage_stats_api, admin_master, quick_scan_api, process_playground_api, tdms_inspector, label_generator_api, image_compare_api, air_supply_api, core
+from . import whats_new_api, search_api, notifications_api, recycle_bin_api, admin_master, quick_scan_api, process_playground_api, tdms_inspector, label_generator_api, image_compare_api, air_supply_api, core
 from . import jet_roi_api, yarn_count_api, admin_jets, admin_yarn, auth, create_api, help, kb, nav, report, requests_api, series_actions, series_edit, series_manage, series_tools, series_lists, series_view, settings_api, smart_chart_api, stock_take_api, user_admin_api, user_context, yarn_stock_api, yarnscope, yarnscope_aty
 from .deps import current_user
 
@@ -41,7 +41,6 @@ app.include_router(whats_new_api.router)
 app.include_router(search_api.router)
 app.include_router(notifications_api.router)
 app.include_router(recycle_bin_api.router)
-app.include_router(usage_stats_api.router)
 app.include_router(admin_master.router)
 app.include_router(quick_scan_api.router)
 app.include_router(process_playground_api.router)

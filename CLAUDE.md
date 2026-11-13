@@ -267,22 +267,21 @@ Admin-Karte. Material: "In Garn verwendet" klappt die Garne auf; Top Plates: Neu
 Dateiliste `JetFiles` aus `ManageJets.tsx` mit `base`). Korrigiert in beiden Apps: "New" ohne AUTO_INCREMENT auf der ID
 (dev_local `tblBestellungstyp`) vergibt MAX+1 statt abzubrechen. Tests `tests/test_admin_master.py`.
 
-**Superuser: Usage Stats + Papierkorb** (2026-11-13): Usage Stats `/superuser/usage-stats` (`UsageStats.tsx`, Plotly) über
-`app/usage_stats_api.py` auf neu `db/usage_stats.py` (Abfragen + Hilfe-Zusammenfassung aus `ui/screen_usage_stats.py`). Papierkorb
+**Superuser: Papierkorb** (2026-11-13): Papierkorb
 `/superuser/recycle-bin` (`RecycleBin.tsx`) über `app/recycle_bin_api.py` auf `db/recycle_bin.py` (neu `preview_start`/`preview_back`/
 `preview_delete`, auch von `ui/recycle_preview.py` genutzt): Wiederherstellen, endgültig löschen, Vorschau = Serie vorübergehend
 zurück, Show Experiment nur lesend mit Banner (`recycle_preview` in `/api/series/{id}`, nur für den Superuser, der sie geöffnet hat):
 endgültig wiederherstellen / zurück (Originaldatum) / endgültig löschen; Seite verlassen = zurück (wie Tab schliessen). Offene
 Vorschauen leben im Serverprozess - nach einem Neustart bleibt die Serie einfach wiederhergestellt (wie Absturz im Desktop).
-**Lab Assistant** (KI-Chat) ist bewusst nicht im Web (keine KI im Web) und fehlt in der Seitenleiste wie Offline Sync.
-Tests `tests/test_usage_stats.py`, `tests/test_recycle_bin_api.py` (echte Testserie, wird endgültig gelöscht).
+**Lab Assistant** (KI-Chat, keine KI im Web) und **Usage Stats** (Nutzerentscheid 2026-11-13: im Web nicht nötig) sind bewusst
+nicht im Web und fehlen in der Seitenleiste wie Offline Sync. Tests `tests/test_recycle_bin_api.py` (echte Testserie, wird endgültig gelöscht).
 
 **Seitenleiste: Glocke, Suche, Zuletzt geöffnet, Seitenprotokoll** (2026-11-13): Glocke im Seitenleisten-Fuss
 (`components/Notifications.tsx`, `app/notifications_api.py` auf `ui/notifications.py`; nur eigene Meldungen, Zähler alle 2 min,
 bei Fokus und nach Yarn-Stock-Laden über das Ereignis `tripplet:bell`). Schnellsuche Strg+F / "Suche" (`components/QuickSearch.tsx`,
 `app/search_api.py` auf `db/quick_search.py`). "Zuletzt geöffnet" = dieselbe Liste wie im Desktop (`DisplaySettings.recent_series`,
 `push_recent`; Show Experiment meldet `POST /api/recent`, nicht bei Papierkorb-Vorschau). `ScreenLog` schreibt pro Seitenaufruf
-`screen_open` mit dem Desktop-Klassennamen (Usage Stats zählt beide Apps zusammen; Zuordnung `SCREENS` in `QuickSearch.tsx`).
+`screen_open` mit dem Desktop-Klassennamen (die Desktop-Usage-Stats zählen beide Apps zusammen; Zuordnung `SCREENS` in `QuickSearch.tsx`).
 
 **Fresh off the Spool** (2026-11-13): `components/WhatsNew.tsx` (🧵 im Seitenleisten-Fuss, öffnet sich nach dem Login einmal von
 selbst, wenn die neueste Version ungesehen ist), `app/whats_new_api.py` auf `ui/whats_new_data.py` + `ui/widgets/whats_new_texts.py`

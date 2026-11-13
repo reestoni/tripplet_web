@@ -54,10 +54,9 @@ SECTIONS: List[Tuple[str, str, List[Item]]] = [
 ]
 
 # superuser-only, not switchable (as on the desktop); left out on purpose: Offline Sync (no meaning in the web
-# app) and Lab Assistant (an AI chat - no AI in the web, user decision 2026-11-13)
+# app), Lab Assistant (an AI chat - no AI in the web) and Usage Stats (not needed in the web; user decisions 2026-11-13)
 SUPERUSER_ITEMS: List[Item] = [
     (None, "Manage User", "", "/superuser/users", None),
-    (None, "Usage Stats", "", "/superuser/usage-stats", None),
     (None, "Recycle Bin", "", "/superuser/recycle-bin", None),
 ]
 
@@ -68,7 +67,7 @@ PINNED: List[Item] = [
 
 # routes that already work in the web app
 WEB_READY: set = {"/experiments", "/backlog", "/requests", "/requests/new", "/knowledge-base",
-                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/admin/top-plates", "/admin/order-types", "/admin/product-groups", "/admin/material", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/superuser/recycle-bin", "/superuser/usage-stats", "/tools/requirement-hub", "/tools/process-playground", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
+                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/admin/top-plates", "/admin/order-types", "/admin/product-groups", "/admin/material", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/superuser/recycle-bin", "/tools/requirement-hub", "/tools/process-playground", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
 
 
 def _badges(keys: set) -> Dict[str, int]:
