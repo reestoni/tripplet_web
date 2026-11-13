@@ -1367,3 +1367,6 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .qs-label { width: 130px; }
 .qs-num { width: 58px; }
 .qs-grid { grid-template-columns: minmax(520px, 600px) 22px 1fr; }
+
+/* Admin master tables (pages/ManageMaster.tsx) */
+.mm-usage { margin: 2px 0 4px 20px; padding: 0; list-style: none; font-size: 12px; color: #444; }

@@ -20,6 +20,7 @@ import ManageUsers from "./pages/ManageUsers";
 import Settings from "./pages/Settings";
 import SmartChart from "./pages/SmartChart";
 import Dashboards from "./pages/Dashboards";
+import ManageMaster from "./pages/ManageMaster";
 import QuickScan, { RequirementHub } from "./pages/QuickScan";
 import ProcessPlayground from "./pages/ProcessPlayground";
 import Canvas from "./pages/Canvas";
@@ -90,6 +91,10 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
+        <Route path="/admin/top-plates" element={<ManageMaster key="top_plates" kind="top_plates" />} />
+        <Route path="/admin/order-types" element={<ManageMaster key="order_types" kind="order_types" />} />
+        <Route path="/admin/product-groups" element={<ManageMaster key="product_groups" kind="product_groups" />} />
+        <Route path="/admin/material" element={<ManageMaster key="material" kind="material" />} />
         <Route path="/tools/requirement-hub" element={<RequirementHub />} />
         <Route path="/tools/requirement-hub/quick-scan" element={<QuickScan />} />
         <Route path="/tools/process-playground" element={<ProcessPlayground />} />

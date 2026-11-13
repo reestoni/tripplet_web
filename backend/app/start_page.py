@@ -14,7 +14,7 @@ from db.connection import fetch_all  # noqa: E402
 
 # feature key -> web route (only screens that exist in the web)
 WEB_ROUTES = {"backlog": "/backlog", "all_experiments": "/experiments", "my_requests": "/requests",
-              "yarn_stock": "/tools/yarn-stock", "manage_jets": "/admin/jets", "manage_yarn": "/admin/yarn",
+              "yarn_stock": "/tools/yarn-stock", "manage_jets": "/admin/jets", "manage_yarn": "/admin/yarn", "top_plates": "/admin/top-plates", "order_type": "/admin/order-types", "product_groups": "/admin/product-groups", "material": "/admin/material",
               "smart_chart": "/tools/smart-chart", "dashboards": "/tools/dashboards",
               "jet_roi": "/tools/jet-roi", "air_supply": "/tools/air-supply", "image_compare": "/tools/image-compare",
               "label_generator": "/tools/label-generator", "tdms_inspector": "/tools/tdms-inspector",

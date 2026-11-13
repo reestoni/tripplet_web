@@ -259,6 +259,14 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   (gewichtete Regeln tragen die Richtung in sort_order = n*10+Code); Lookup-Auswahlen werden ohne Werte gespeichert
   (Desktop brach das Speichern ab).
 
+**Admin-Stammtabellen** (2026-11-13): Order Type `/admin/order-types`, Product Groups `/admin/product-groups`, Material
+`/admin/material`, Top Plates `/admin/top-plates` - eine Seite `ManageMaster.tsx` (`kind`) auf `AdminTable`, Backend
+`app/admin_master.py` (`/api/admin/master/<kind>…`) auf neu `db/master_tables.py` (aus den drei Desktop-Screens und den
+Top-Plate-Funktionen in `main.py`/`screen_new_top_plate.py` gezogen, Desktop nutzt es). Lesen = Feature der Tabelle, Schreiben =
+Admin-Karte. Material: "In Garn verwendet" klappt die Garne auf; Top Plates: Neu/Kopieren mit eindeutigem Namen, Dateien (die
+Dateiliste `JetFiles` aus `ManageJets.tsx` mit `base`). Korrigiert in beiden Apps: "New" ohne AUTO_INCREMENT auf der ID
+(dev_local `tblBestellungstyp`) vergibt MAX+1 statt abzubrechen. Tests `tests/test_admin_master.py`.
+
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,

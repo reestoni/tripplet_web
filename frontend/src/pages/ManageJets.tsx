@@ -417,15 +417,16 @@ function JetForm(props: { data: JetsData; mode: "new" | "copy" | "edit"; row: Ro
 
 const IMG = /\.(png|jpe?g|bmp|gif|webp)$/i;
 
-function JetFiles({ jetId, readOnly }: { jetId: number; readOnly: boolean }) {
+/** file list + upload + preview; also used by Top Plates (pages/ManageMaster.tsx) with another base URL */
+export function JetFiles({ jetId, readOnly, base = "/api/admin/jets" }: { jetId: number; readOnly: boolean; base?: string }) {
   const { t } = useI18n();
   const [files, setFiles] = useState<JetFile[] | null>(null);
   const [sel, setSel] = useState<JetFile | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const load = useCallback(() => {
-    request<{ files: JetFile[] }>("GET", `/api/admin/jets/${jetId}/files`).then((r) => setFiles(r.files)).catch((e) => setErr(errText(t, e)));
-  }, [jetId, t]);
+    request<{ files: JetFile[] }>("GET", `${base}/${jetId}/files`).then((r) => setFiles(r.files)).catch((e) => setErr(errText(t, e)));
+  }, [jetId, t, base]);
   useEffect(() => { load(); }, [load]);
 
   const upload = async (list: FileList | null) => {
@@ -434,7 +435,7 @@ function JetFiles({ jetId, readOnly }: { jetId: number; readOnly: boolean }) {
     Array.from(list).forEach((f) => fd.append("files", f));
     setBusy(true);
     try {
-      const res = await fetch(`/api/admin/jets/${jetId}/files`, { method: "POST", body: fd, credentials: "same-origin" });
+      const res = await fetch(`${base}/${jetId}/files`, { method: "POST", body: fd, credentials: "same-origin" });
       const j = await res.json();
       if (!res.ok) throw new ApiError(res.status, j.detail ?? res.statusText, j.code, j);
       setErr(j.errors?.length ? j.errors.join("\n") : null);
@@ -445,13 +446,13 @@ function JetFiles({ jetId, readOnly }: { jetId: number; readOnly: boolean }) {
   const remove = async () => {
     if (!sel || !window.confirm(t("mj.file_confirm_delete", { name: sel.name }))) return;
     try {
-      await request("DELETE", `/api/admin/jets/files/${sel.id}`);
+      await request("DELETE", `${base}/files/${sel.id}`);
       setSel(null);
       load();
     } catch (e) { setErr(errText(t, e)); }
   };
 
-  const url = (f: JetFile) => `/api/admin/jets/files/${f.id}`;
+  const url = (f: JetFile) => `${base}/files/${f.id}`;
   return (
     <div className="mj-files">
       <p className="muted">{t("mj.files_info")}</p>
