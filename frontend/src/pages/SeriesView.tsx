@@ -5,6 +5,7 @@ import { useI18n } from "../i18n";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
+import YarnScopeView from "../components/YarnScopeView";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -16,7 +17,7 @@ function lastTab(): string | null {
   }
 }
 
-export default function SeriesView() {
+export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -34,7 +35,8 @@ export default function SeriesView() {
       .then((d) => {
         if (!alive) return;
         setData(d);
-        const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...d.tabs.map((x) => x.key)];
+        const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []),
+          ...d.tabs.map((x) => x.key)];
         const want = lastTab();
         setTab(want && keys.includes(want) ? want : "machine");
       })
@@ -119,6 +121,12 @@ export default function SeriesView() {
             {tr("tab", "rd", "R&D Machine Data")}
           </button>
         )}
+        {data.has_yarnscope && (
+          <button role="tab" aria-selected={tab === "yarnscope"} className={"se-tab" + (tab === "yarnscope" ? " on" : "")}
+            onClick={() => choose("yarnscope")}>
+            YarnScope
+          </button>
+        )}
         <button role="tab" aria-selected={tab === "notes"} className={"se-tab" + (tab === "notes" ? " on" : "")}
           onClick={() => choose("notes")}>
           {t("nt.tab")}{data.notes.length > 0 && <span className="note-count">{data.notes.length}</span>}
@@ -131,6 +139,7 @@ export default function SeriesView() {
       </div>
 
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
+      {tab === "yarnscope" && <YarnScopeView seriesId={s.id} canWrite={accessLevel >= 2} />}
       {data.trials.length > 0 && tab === "rd" && (
         <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} />
       )}

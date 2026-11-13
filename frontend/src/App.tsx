@@ -50,7 +50,7 @@ export default function App() {
         <Route path="/" element={<Home me={me} />} />
         <Route path="/experiments" element={<AllExperiments />} />
         <Route path="/backlog" element={<Backlog />} />
-        <Route path="/series/:id" element={<SeriesView />} />
+        <Route path="/series/:id" element={<SeriesView accessLevel={me.user.access_level} />} />
         <Route path="/series/:id/report" element={<SeriesReport />} />
         <Route path="*" element={<NotYet />} />
       </Routes>

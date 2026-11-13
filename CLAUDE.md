@@ -82,8 +82,12 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    ausgeblendet wie im Desktop; Feldnamen aus `tblMachineFields` bleiben bewusst unübersetzt = sprachunabhängig, Nutzerentscheid 2026-11-13; übersetzt nur die festen Zeilen über `row.<Titel>`),
    Komponente `MachineTable.tsx`. Alle Labor-Reiter aus `LAB_TABS` (auch Itemat Lab/Plus, DTYoMat, ATYoMat);
    Düsen-Luftverbrauch lazy: `GET /api/series/{id}/jet-air?unit=Nm3h|lmin` (`JetAirView.tsx`, drei Tabellen).
-   Gegen Desktop-Modelle geprüft (alle Reiter, 0 Abweichungen). Noch offen: R&D-Maschinendaten, YarnScope DTY/ATY,
-   Notizen an Werten + Notes-Reiter, Anhänge (Bilder/PDF), Experiment-Request-Popup, Athena.
+   Gegen Desktop-Modelle geprüft (alle Reiter, 0 Abweichungen). Dazu (2026-11-13): R&D (`/rd`, gleiche Tabelle),
+   Notizen an Werten + Reiter "Notizen", Anhänge (`/attachments`), **DTY-YarnScope** (`app/yarnscope.py` +
+   `YarnScopeView.tsx`): Berechnung = `ui/yarnscope/dty_service.py`, Analysen im Speicher (`CACHE_SIZE`, Schlüssel
+   Versuch+Datei+Zeit), Ansichten Segmentmittel/Signal (Plotly, lokal aus /report-assets) und Garnspiegel (Canvas),
+   "In DB speichern" ab Zugriffsstufe 2 über `svc.save_analysis`. Noch offen: Prozessvergleich + Trend-/Prozesswellen-
+   Karten in YarnScope, ATY-YarnScope, Experiment-Request-Popup, Athena.
 3. Experiment Requests (Create + My Requests) – erster Schreib-Teil
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines
