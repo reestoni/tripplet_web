@@ -338,3 +338,22 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Legacy import (typed experiment ID) | mode `legacy` | **DONE** | `/experiments/legacy`, Ctrl+Shift+J; existing IDs refused (`legacy_id_taken`, desktop too) |
 | Add trials (from Show Experiment) | mode `addtrials` | **DONE** | "+T" → `/series/:id/add-trials`, `addtrials_setup()` + `trial_actions.add_trials` |
 | Context help "How does Create Experiment work?" | `_open_help` | **DONE** | `HelpButton` → `ScreenHelp` (also All Experiments, Backlog, Show Experiment, Report) |
+
+## 9. Manage Jets / New Jet (`ui/screen_manage_jets.py`, `ui/screen_new_jet.py`, `main.py` jet functions → `fe/pages/ManageJets.tsx`, `fe/components/AdminTable.tsx`, `be/admin_jets.py`, logic `db/jets_admin.py`) – added 2026-11-13
+
+| Feature | Desktop (file:function) | Web status | Notes / logic location |
+|---|---|---|---|
+| Table of all jets, ID + Jet frozen, files column after Jet, UsedInTrial computed | `reload_data`, `_load_jets_data` | **DONE** | `jets_admin.load_jets()` |
+| CreatedBy / CreationDate only for superusers | `_AUDIT_COLS` | **DONE** | server drops the columns below level 4 |
+| Search field (Jet + Bemerkungen) | `_on_search_changed` | **DONE** | no highlighting of the hit inside the cell |
+| Header filter menu (text / numeric range) | `FilterHeaderView._on_context_menu` | **DONE (different)** | filter row under the header: text = contains, numbers also `<5`, `>=2`, `1..3` |
+| Sort by header click | proxy `lessThan` | **DONE** | empty values last |
+| Edit cells, FK columns as dropdown, bool as checkbox, dirty marking, Save Changes | `JetsTableModel.setData`, `FKComboDelegate`, `save_changes` | **DONE** | server checks columns, FK ids and numbers (`bad_value`); Ctrl+S |
+| Read-only without Admin card right (buttons disabled, "View in Form") | `_apply_read_only_ui`, `_require_admin_box_write` | **DONE** | `jets_admin.can_edit` |
+| New Jet / Copy / Edit in Form (two-column form, FK "+" quick add, unique name) | `NewJetScreen`, `_quick_add_fk_value`, `_is_jet_name_available` | **DONE** | modal `JetForm`; new jet writes all form fields like `_collect_values` |
+| Files tab (list, upload, open, delete, image preview) | `NewJetScreen._load_files/_upload_file/_open_file/_delete_file` | **DONE** | `jets_admin.list_files/add_file/remove_file/file_path`; files open in a new tab |
+| Delete selected jets (confirm) | `_on_delete` | **DONE** | Ctrl/Shift multi-select |
+| UsedInTrial ▸ → series rows → trials (yarn, OF, speed) | `_expand_jet_row`, `_fetch_jet_usage` | **DONE** | `jets_admin.jet_usage()`; series label links to Show Experiment |
+| Columns… dialog (drag & drop, "Save layout" per user) | `ColumnOrderDialog`, `_save_column_order_now` | **DONE** | same `db/user_column_order` key `manage_jets` as the desktop |
+| Copy selection (Ctrl+C) | `copy_selection_to_clipboard` | **DONE** | selected rows as TSV |
+| Context help | `_open_help` | **DONE** | `HelpButton screen="manage_jets"` |

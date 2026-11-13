@@ -31,7 +31,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   **dort** in ein Qt-freies Modul gezogen (Desktop nutzt es dann auch), nie hier nachgebaut.
   Bisher so herausgezogen: `db/nav_counts.py` (Badges), `db/user_profile.py` (Login-Profil),
   `feature_access.rules_for()` (Rechte für beliebigen Benutzer), `db/experiment_create.py`
-  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13).
+  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13).
   Alle Regeln der Desktop-`CLAUDE.md` zu Schreibpfaden gelten auch hier (Änderungsprotokoll,
   `dy_ratio`, Papierkorb, Plausibilität, `exclude_references_sql`, `execute_insert` …).
 - Offline-Modus (SQLite) gibt es im Web nicht (offen, ob je nötig).
@@ -149,6 +149,17 @@ Ab Zugriffsstufe 2. Frontend `src/edit.tsx` (`EditProvider` pro Serie mit `key={
 ungespeichert, Strg+S, Strg+Z, Warnung beim Verlassen); Ansicht/Einheit sind gesperrt, solange in Machine
 Data/Jet Air Ungespeichertes liegt (Zeilen-/Spaltennummern gelten pro Ansicht).
 
+**Manage Jets** (2026-11-13): `/admin/jets`, `app/admin_jets.py` (`/api/admin/jets…`) auf `db/jets_admin.py`
+(aus `main.py`/`screen_manage_jets.py`/`screen_new_jet.py` gezogen, Desktop nutzt es jetzt auch). Seite `ManageJets.tsx`
+mit der wiederverwendbaren Tabelle `components/AdminTable.tsx` (eingefrorene Spalten, Filterzeile, Sortierung, FK-Dropdowns,
+Bool-Häkchen, gelb = ungespeichert, Strg+S/Strg+C) - gedacht auch für Manage Yarn. Lesen = Feature `manage_jets`,
+Schreiben = Admin-Karten-Recht (`jets_admin.can_edit`). Der Browser schickt Spaltennamen + Werte; der Server prüft Spalten
+gegen die Tabelle, FK-IDs gegen die Stammlisten und Zahlen gegen den MySQL-Typ (`information_schema`; Tabellenname dort
+als Literal, weil `db.connection` Alt-Namen wie `tblDTYJets` -> `tbljets` im SQL-Text umschreibt). Neue Düse schreibt wie
+der Desktop alle Formularfelder (leer = NULL; sonst bricht der Default `JetTypeID=0` den FK). Dateien: Ablage
+`jets_admin.files_root()` (dev = `C:\ttt\JetFiles`). Spaltenreihenfolge = `db/user_column_order` Schlüssel `manage_jets`
+(gleich wie Desktop). Tests `tests/test_admin_jets.py` (Durchlauf schreibt echt und löscht wieder).
+
 **Hilfe** (2026-11-13): `backend/app/help.py` (`/api/help/screen/<screen>` = Kontext-Hilfe aller Sprachen aus den
 Desktop-Textmodulen `ui/widgets/help_texts_*.py` als Bausteine, Skizzen als data-URL; `/api/help/search` = Suche aus
 `ui/help_index` inkl. Knowledge-Base-Treffern mit Web-Route und `web_ready`; `/api/help/log` = die Desktop-Events
@@ -164,7 +175,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. Manage Jets,
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets (siehe unten),
   Manage Yarn, Yarn Stock. **Kleinkram für später** (nicht vergessen): "Open in Yarn Stock" im Lagerplatz-Dialog
   von Create Experiment (sobald Yarn Stock im Web ist), "?"-Knopf auf weiteren Seiten, sobald sie ins Web
   kommen (Manage Yarn/Jets, Yarn Stock, Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
