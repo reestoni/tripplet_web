@@ -1,0 +1,5 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+itsdangerous>=2.1
+pydantic>=2
+# plus everything the core needs: C:\python	ripplet_projectequirements.txt
