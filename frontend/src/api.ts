@@ -73,7 +73,8 @@ export type ArchivedRow = {
   xx: string;
 };
 
-export type PivotCell = { v: string; alert?: "red" | "orange" };
+export type CellNote = { id: number; text: string; user: string; when: string; trial_id: number | null };
+export type PivotCell = { v: string; alert?: "red" | "orange"; notes?: CellNote[] };
 export type SeriesData = {
   series: {
     id: number;
@@ -90,15 +91,16 @@ export type SeriesData = {
   trials: { id: number; label: string; number: number; reference: string | null }[];
   tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; cells: PivotCell[] }[]; flags: Record<string, string> }[];
   pending_tabs: { key: string; title: string }[];
+  notes: (CellNote & { where_tab: string | null; where_row: string; trial_note: boolean })[];
 };
 
 export type MachineData = {
   mode: "single" | "compact" | "groups";
   has_groups: boolean;
   message: string | null;
-  columns: { filter: string; trial_id: number; trial_label: string; reference: string | null; ply: string;
+  columns: { notes: CellNote[]; filter: string; trial_id: number; trial_label: string; reference: string | null; ply: string;
     ply_tooltip: string; colour: string | null; colour_name: string }[];
-  rows: { title: string; key: string; readonly: boolean; cells: { v: string; tip?: string; alert?: string }[] }[];
+  rows: { title: string; key: string; readonly: boolean; cells: { v: string; tip?: string; alert?: string; notes?: CellNote[] }[] }[];
   filter_labels: string[];
   multi_ply?: boolean;
 };
@@ -159,3 +161,8 @@ export const api = {
 };
 
 export const img = (name: string) => `/api/img/${name}`;
+
+/** Tooltip text for notes on a value (same content as the desktop tooltip). */
+export function notesTip(notes?: CellNote[]): string {
+  return (notes ?? []).map((n) => `${n.user || "?"}, ${n.when}: ${n.text}`).join("\n");
+}

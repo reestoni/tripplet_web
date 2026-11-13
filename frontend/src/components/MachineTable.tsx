@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, type MachineData } from "../api";
+import { api, notesTip, type MachineData } from "../api";
 import { useI18n } from "../i18n";
 
 const MODE_KEY = "tripplet.machine.mode";
@@ -97,8 +97,9 @@ export default function MachineTable({ seriesId, rowTitle }: { seriesId: number;
               </tr>
               <tr className="ply-row">
                 {visible.map(({ c, i }) => (
-                  <th key={i} className={c.reference ? "ref" : ""}
-                    title={[c.ply_tooltip, c.colour_name ? t("md.colour", { c: c.colour_name }) : ""].filter(Boolean).join("\n") || undefined}>
+                  <th key={i} className={(c.reference ? "ref" : "") + (c.notes.length ? " has-note" : "")}
+                    title={[c.ply_tooltip, c.colour_name ? t("md.colour", { c: c.colour_name }) : "", notesTip(c.notes)]
+                      .filter(Boolean).join("\n") || undefined}>
                     {c.colour && <span className="yarn-dot" style={{ background: c.colour }} />}
                     {c.ply}
                   </th>
@@ -112,7 +113,8 @@ export default function MachineTable({ seriesId, rowTitle }: { seriesId: number;
                   {visible.map(({ c, i }) => {
                     const cell = row.cells[i];
                     return (
-                      <td key={i} className={(cell.alert ?? "") + (c.reference ? " ref" : "")} title={cell.tip}>
+                      <td key={i} className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
+                        title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined}>
                         {cell.v}
                       </td>
                     );

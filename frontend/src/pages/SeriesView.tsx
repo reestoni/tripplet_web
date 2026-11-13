@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, ApiError, type SeriesData } from "../api";
+import { api, ApiError, notesTip, type SeriesData } from "../api";
 import { useI18n } from "../i18n";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
+import Attachments from "../components/Attachments";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -33,7 +34,7 @@ export default function SeriesView() {
       .then((d) => {
         if (!alive) return;
         setData(d);
-        const keys = ["machine", ...d.tabs.map((x) => x.key)];
+        const keys = ["machine", "notes", ...d.tabs.map((x) => x.key)];
         const want = lastTab();
         setTab(want && keys.includes(want) ? want : "machine");
       })
@@ -85,6 +86,7 @@ export default function SeriesView() {
             <span><b>{t("se.owner")}:</b> {s.owner || "–"}</span>
             <span><b>{t("se.created")}:</b> {s.creation_date ? s.creation_date.replace("T", " ").slice(0, 16) : "–"}</span>
             <span><b>{t("se.trials")}:</b> {data.trials.length}</span>
+            <Attachments seriesId={s.id} />
             {s.notes && (
               <button className="link-btn" onClick={() => setShowNotes((v) => !v)}>
                 {t("se.notes")} {showNotes ? "▾" : "▸"}
@@ -111,6 +113,10 @@ export default function SeriesView() {
             {Object.keys(x.flags).length > 0 && <span className="flag-dot" />}
           </button>
         ))}
+        <button role="tab" aria-selected={tab === "notes"} className={"se-tab" + (tab === "notes" ? " on" : "")}
+          onClick={() => choose("notes")}>
+          {t("nt.tab")}{data.notes.length > 0 && <span className="note-count">{data.notes.length}</span>}
+        </button>
         {data.pending_tabs.map((x) => (
           <span key={x.key} className="se-tab soon" title={t("se.pending", { tab: tr("tab", x.key, x.title) })}>
             {tr("tab", x.key, x.title)}
@@ -121,6 +127,29 @@ export default function SeriesView() {
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
       {data.trials.length > 0 && tab === "machine" && (
         <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} />
+      )}
+      {tab === "notes" && (
+        data.notes.length === 0 ? <div className="card muted">{t("nt.none")}</div> : (
+          <div className="table-wrap">
+            <table className="grid">
+              <thead>
+                <tr><th>{t("nt.trial")}</th><th>{t("nt.where")}</th><th>{t("nt.text")}</th><th>{t("nt.by")}</th><th>{t("nt.when")}</th></tr>
+              </thead>
+              <tbody>
+                {data.notes.map((n) => (
+                  <tr key={n.id}>
+                    <td className="nowrap">{data.trials.find((x) => x.id === n.trial_id)?.label ?? ""}</td>
+                    <td>{n.trial_note ? t("nt.wholeTrial")
+                      : n.where_tab ? `${tr("tab", n.where_tab, n.where_tab)} · ${tr("row", n.where_row, n.where_row)}` : n.where_row}</td>
+                    <td className="note-text">{n.text}</td>
+                    <td className="nowrap">{n.user}</td>
+                    <td className="nowrap">{n.when}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       )}
       {current?.lazy && current.key === "jet_air" && <JetAirView seriesId={s.id} />}
       {current && !current.lazy && (
@@ -149,7 +178,8 @@ export default function SeriesView() {
                   <tr key={r} className={row.info ? "info" : ""}>
                     <th scope="row">{tr("row", row.title, row.title)}</th>
                     {row.cells.map((cell, c) => (
-                      <td key={c} className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "")}>
+                      <td key={c} className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
+                        title={notesTip(cell.notes) || undefined}>
                         {cell.v}
                       </td>
                     ))}

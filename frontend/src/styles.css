@@ -341,3 +341,24 @@ table.pivot.machine .pv-corner { z-index: 4; }
 .ja-block { margin-bottom: 16px; }
 .ja-block h3 { font-size: 14px; margin: 6px 0; }
 .ja-block .table-wrap { flex: none; }
+
+/* notes on values: violet triangle like the desktop */
+table.pivot td.has-note, table.pivot th.has-note { position: relative; }
+table.pivot td.has-note::after, table.pivot th.has-note::after {
+  content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 8px 8px 0;
+  border-color: transparent #8a2be2 transparent transparent;
+}
+.note-count { margin-left: 6px; background: #8a2be2; color: white; border-radius: 9px; font-size: 11px; padding: 0 6px; }
+td.note-text { white-space: pre-wrap; }
+
+/* attachments */
+.at-modal { width: min(1100px, 100%); max-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+.at-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.at-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; overflow-y: auto; }
+.at-thumb { display: flex; flex-direction: column; gap: 4px; padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: #fafcfa; cursor: pointer; font: inherit; font-size: 12px; }
+.at-thumb:hover { border-color: var(--accent); }
+.at-thumb img { width: 100%; height: 130px; object-fit: cover; border-radius: 4px; background: #eee; }
+.at-thumb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.at-big { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; overflow: auto; }
+.at-big img { max-width: 100%; max-height: calc(100vh - 200px); border-radius: 6px; }
+.at-list { margin: 0; padding-left: 18px; line-height: 1.9; }

@@ -123,3 +123,40 @@ def test_jet_air(client):
         assert j["unit"] == unit and j["consumption"]["columns"] == p.consumption.col_titles
         assert [r["title"] for r in j["atm"]["rows"]] == p.atm.row_titles
     assert client.get("/api/series/987654321/jet-air").status_code == 404
+
+
+def test_notes_on_cells_and_list(client):
+    from db import cell_notes
+    if not cell_notes.available():
+        pytest.skip("no tblNote")
+    rows = fetch_all("SELECT SeriesID AS S FROM tblNote WHERE SeriesID IS NOT NULL GROUP BY SeriesID LIMIT 1")
+    if not rows:
+        pytest.skip("no notes on dev_local")
+    sid = int(rows[0]["S"])
+    d = client.get(f"/api/series/{sid}").json()
+    all_notes = cell_notes.notes_for_series(sid, stb.load_trials(sid).trial_ids)
+    assert {n["id"] for n in d["notes"]} == {int(n["ID"]) for n in all_notes}
+    in_cells = {x["id"] for t in d["tabs"] for r in t["rows"] for c in r["cells"] for x in c.get("notes", [])}
+    m = client.get(f"/api/series/{sid}/machine").json()
+    in_cells |= {x["id"] for r in m["rows"] for c in r["cells"] for x in c.get("notes", [])}
+    in_cells |= {x["id"] for col in m["columns"] for x in col["notes"]}
+    for n in d["notes"]:
+        if n["where_tab"] in ("machine",) or n["where_tab"] in {t["key"] for t in d["tabs"]} or n["trial_note"]:
+            assert n["id"] in in_cells or n["where_tab"] == "machine"
+
+
+def test_attachments(client):
+    from db import series_attachments as sa
+    rows = fetch_all("SELECT TrialSeriesID AS S FROM tblTrialSeriesImage GROUP BY TrialSeriesID LIMIT 1")
+    if not rows:
+        pytest.skip("no images on dev_local")
+    sid = int(rows[0]["S"])
+    d = client.get(f"/api/series/{sid}/attachments").json()
+    assert [i["id"] for i in d["images"]] == [r["ID"] for r in sa.list_images(sid)]
+    first = d["images"][0]["id"]
+    if sa.file_for_download("image", sid, first):
+        assert client.get(f"/api/series/{sid}/attachments/image/{first}").status_code == 200
+    # an image id of another series / an unknown kind is never served
+    assert client.get(f"/api/series/{sid + 100000}/attachments/image/{first}").status_code == 404
+    assert client.get(f"/api/series/{sid}/attachments/exe/{first}").status_code == 404
+    assert TestClient(app).get(f"/api/series/{sid}/attachments/image/{first}").status_code == 401
