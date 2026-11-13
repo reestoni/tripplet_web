@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 
 from . import core  # noqa: F401
+from . import tdms_inspector as ti
 from .deps import current_user
 
 from db import series_tables as stb  # noqa: E402
@@ -34,6 +35,8 @@ def _json(obj: Any) -> Response:
 
 
 def _trial_file(series_id: int, trial_id: int) -> Optional[Path]:
+    if ti.is_inspector(series_id):                    # TDMS Inspector: an uploaded file (app/tdms_inspector.py)
+        return ti.file_for(series_id) if int(trial_id) == 0 else None
     st = stb.load_trials(series_id)
     for t in svc.trial_files(series_id, st.trials, set(st.reference_names)):
         if int(t["trial_id"]) == int(trial_id):
@@ -67,6 +70,13 @@ def _not_analysed() -> JSONResponse:
 
 @router.get("/series/{series_id}/yarnscope")
 def trials(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    if ti.is_inspector(series_id):
+        path = ti.file_for(series_id)
+        with _lock:
+            loaded = path is not None and _key(0, path) in _cache
+        return {"trials": [{"trial_id": 0, "vno": 0, "label": ti.label(series_id), "has_file": path is not None,
+                            "file": path.name if path else None, "analysed": False, "loaded": loaded}] if path else [],
+                "folder_ok": True, "inspector": True}
     st = stb.load_trials(series_id)
     rows = svc.trial_files(series_id, st.trials, set(st.reference_names), with_analysed=True)
     labels = {int(t["ID"]): st.labels[i] for i, t in enumerate(st.trials)}
@@ -93,7 +103,7 @@ def analyse(series_id: int, trial_id: int, _user: Dict[str, Any] = Depends(curre
         hit = _cache.get(k)
     if hit is None:
         try:
-            hit = svc.analyse_trial(path, trial_id)
+            hit = svc.analyse_trial(path, None if ti.is_inspector(series_id) else trial_id)
         except ValueError as e:
             return JSONResponse(status_code=422, content={"code": "no_signal", "detail": str(e)})
         with _lock:
@@ -164,6 +174,8 @@ def garnspiegel(series_id: int, trial_id: int, start: float = 0.0, _user: Dict[s
 @router.post("/series/{series_id}/yarnscope/{trial_id}/save")
 def save(series_id: int, trial_id: int, user: Dict[str, Any] = Depends(current_user)):
     """Write the analysis into tbllabordtyomat (same as the desktop's Save) - write users only."""
+    if ti.is_inspector(series_id):
+        return ti.refused()
     if int(user.get("access_level") or 0) < 2:
         return JSONResponse(status_code=403, content={"code": "read_only", "detail": "You have read-only access."})
     hit = _cached(series_id, trial_id)
@@ -243,6 +255,8 @@ def _run_batch(job: Dict[str, Any], user: Dict[str, Any]) -> None:
 
 @router.post("/series/{series_id}/yarnscope/batch")
 def start_batch(series_id: int, body: BatchBody, user: Dict[str, Any] = Depends(current_user)):
+    if ti.is_inspector(series_id):
+        return ti.refused()
     if body.save and int(user.get("access_level") or 0) < 2:
         return JSONResponse(status_code=403, content={"code": "read_only", "detail": "You have read-only access."})
     running = [j for j in _jobs.values() if j["series_id"] == series_id and not j["finished"]]
@@ -323,6 +337,8 @@ def compare(series_id: int, body: CompareBody, _user: Dict[str, Any] = Depends(c
     """Process waves of 2-6 trials over their whole measured length (dty_service.run_process_comparison,
     analysed trials from the analysis cache) + chart lines and table (comparison_json). The results are
     kept, so changing only the display options does not read the TDMS files again."""
+    if ti.is_inspector(series_id):
+        return ti.refused()
     ids = list(dict.fromkeys(int(t) for t in body.trial_ids))
     if not 2 <= len(ids) <= 6:
         return JSONResponse(status_code=400, content={"code": "compare_count", "detail": "Choose two to six trials."})

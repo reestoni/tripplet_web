@@ -52,7 +52,7 @@ function Canvas({ draw, deps, height }: { draw: (g: CanvasRenderingContext2D, w:
   return <canvas ref={ref} className="aty-canvas" style={{ height }} />;
 }
 
-export default function YarnScopeAty({ seriesId, canWrite }: { seriesId: number; canWrite: boolean }) {
+export default function YarnScopeAty({ seriesId, canWrite, inspector }: { seriesId: number; canWrite: boolean; inspector?: boolean }) {
   const { t } = useI18n();
   const [setup, setSetup] = useState<Setup | null>(null);
   const [sel, setSel] = useState<number | null>(null);
@@ -128,17 +128,17 @@ export default function YarnScopeAty({ seriesId, canWrite }: { seriesId: number;
   if (!setup) return <div className="muted">{msg?.text ?? t("app.loading")}</div>;
   const cur = setup.trials.find((x) => x.trial_id === sel);
   const toggle = (id: number) => setPicked((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const views: View[] = ["dist", "mirror", "fabric", "knitted", "compare"];
+  const views: View[] = inspector ? ["dist", "mirror", "fabric", "knitted"] : ["dist", "mirror", "fabric", "knitted", "compare"];
 
   return (
     <div className="ys">
       <div className="ys-list">
-        <button className="btn-green ys-batch-btn" onClick={() => setBatch(true)} disabled={busy}>Batch</button>
-        <p className="muted aty-hint">{t("aty.listHint")}</p>
+        {!inspector && <button className="btn-green ys-batch-btn" onClick={() => setBatch(true)} disabled={busy}>Batch</button>}
+        {!inspector && <p className="muted aty-hint">{t("aty.listHint")}</p>}
         {setup.trials.map((tr) => (
           <div key={tr.trial_id} className={"ys-trial aty-trial" + (tr.trial_id === sel ? " on" : "") + (tr.has_file ? "" : " off")}>
-            <input type="checkbox" disabled={!tr.has_file} checked={picked.includes(tr.trial_id)} onChange={() => toggle(tr.trial_id)}
-              title={t("aty.pickTip")} />
+            {!inspector && <input type="checkbox" disabled={!tr.has_file} checked={picked.includes(tr.trial_id)} onChange={() => toggle(tr.trial_id)}
+              title={t("aty.pickTip")} />}
             <button disabled={!tr.has_file || busy} onClick={() => analyse(tr.trial_id)} title={tr.file ?? t("ys.noFile")}>
               <span>{tr.label}</span>
               <span className={"ys-state " + (tr.analysed ? "ok" : tr.has_file ? "todo" : "none")}>
@@ -156,7 +156,7 @@ export default function YarnScopeAty({ seriesId, canWrite }: { seriesId: number;
             <div className="ys-head">
               <h3>{cur ? <>{cur.label} <span className="muted">· {cur.file}{result ? ` · ${result.total_m.toFixed(1)} m` : ""}</span></> : t("aty.title")}</h3>
               {busy && <span className="muted">{t("aty.analysing")}</span>}
-              {canWrite && result && <button className="btn-green" onClick={save} title={t("aty.saveTip")}>{t("ys.save")}</button>}
+              {canWrite && !inspector && result && <button className="btn-green" onClick={save} title={t("aty.saveTip")}>{t("ys.save")}</button>}
               {msg && <span className={msg.kind === "err" ? "login-error" : "muted"}>{msg.text}</span>}
             </div>
             <div className="se-tabs">

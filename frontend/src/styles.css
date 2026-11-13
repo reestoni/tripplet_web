@@ -1246,3 +1246,8 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .lg-sheet button.used { background: #9FE1CB; }
 .lg-sheet button.on { outline: 2px solid #1F7A3A; }
 @media (max-width: 1300px) { .lg-body, .lg-work { grid-template-columns: 1fr; } }
+
+/* TDMS Inspector (pages/TdmsInspector.tsx) */
+.ti-page { max-width: none; }
+.ti-top { display: flex; gap: 12px; align-items: center; margin: 8px 0; }
+.ti-tabs { margin-bottom: 8px; }

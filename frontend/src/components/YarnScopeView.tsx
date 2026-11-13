@@ -126,7 +126,7 @@ function MirrorCanvas({ m }: { m: Mirror }) {
   return <canvas ref={ref} className="ys-mirror" />;
 }
 
-export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number; canWrite: boolean }) {
+export default function YarnScopeView({ seriesId, canWrite, inspector }: { seriesId: number; canWrite: boolean; inspector?: boolean }) {
   const { t } = useI18n();
   const [trials, setTrials] = useState<YsTrial[] | null>(null);
   const [sel, setSel] = useState<number | null>(null);
@@ -252,9 +252,9 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   return (
     <div className="ys">
       <div className="ys-list">
-        <button className="btn-green ys-batch-btn" onClick={() => { setCmp(false); setBatch(true); }} disabled={busy}>Batch</button>
-        <button className="btn-plain ys-batch-btn" onClick={() => { setBatch(false); setCmp(true); }} disabled={busy}
-          title={t("ys.cmp.tip")}>{t("ys.cmp.title")}</button>
+        {!inspector && <button className="btn-green ys-batch-btn" onClick={() => { setCmp(false); setBatch(true); }} disabled={busy}>Batch</button>}
+        {!inspector && <button className="btn-plain ys-batch-btn" onClick={() => { setBatch(false); setCmp(true); }} disabled={busy}
+          title={t("ys.cmp.tip")}>{t("ys.cmp.title")}</button>}
         {trials.map((tr) => (
           <button key={tr.trial_id} disabled={!tr.has_file || busy}
             className={"ys-trial" + (tr.trial_id === sel ? " on" : "")} onClick={() => analyse(tr.trial_id)}
@@ -278,7 +278,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
           <>
             <div className="ys-head">
               <h3>{cur.label} <span className="muted">· {cur.file} · {total.toFixed(1)} m</span></h3>
-              {canWrite && <button className="btn-green" onClick={save}>{t("ys.save")}</button>}
+              {canWrite && !inspector && <button className="btn-green" onClick={save}>{t("ys.save")}</button>}
               {saved && <span className="muted">{saved}</span>}
             </div>
             <div className="ys-top">

@@ -22,6 +22,7 @@ from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from . import core  # noqa: F401
+from . import tdms_inspector as ti
 from .deps import current_user
 from .yarnscope import _executor   # one worker for all YarnScope batches (TDMS files are on one share)
 
@@ -48,6 +49,9 @@ def _err(status: int, code: str, detail: str) -> JSONResponse:
 
 
 def _files(series_id: int, with_analysed: bool = False) -> Tuple[list, Dict[int, str]]:
+    if ti.is_inspector(series_id):                    # TDMS Inspector: an uploaded file (app/tdms_inspector.py)
+        path = ti.file_for(series_id)
+        return ([{"trial_id": 0, "vno": 0, "tdms": path, "analysed": False}] if path else []), {0: ti.label(series_id)}
     st = stb.load_trials(series_id)
     labels = {int(t["ID"]): st.labels[i] for i, t in enumerate(st.trials)}
     return svc.trial_files(series_id, st.trials, set(st.reference_names), with_analysed=with_analysed), labels
@@ -115,7 +119,7 @@ def trials(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
                     "label": labels.get(int(f["trial_id"]), svc.trial_label(f["vno"])),
                     "has_file": path is not None, "file": Path(path).name if path is not None else None,
                     "analysed": bool(f.get("analysed")), "loaded": loaded})
-    return {"trials": out, "folder_ok": svc.tdms_base().exists(), "controls": svc.CONTROLS,
+    return {"trials": out, "folder_ok": ti.is_inspector(series_id) or svc.tdms_base().exists(), "inspector": ti.is_inspector(series_id), "controls": svc.CONTROLS,
             "features": svc.HIST_FEATURES, "class_colours": {"di": svc.tc.DI_COLORS, "due": svc.tc.DUE_COLORS}}
 
 
@@ -187,6 +191,8 @@ def knitted(series_id: int, trial_id: int, rows: int = 50, _user: Dict[str, Any]
 @router.post("/series/{series_id}/aty/{trial_id}/save")
 def save(series_id: int, trial_id: int, user: Dict[str, Any] = Depends(current_user)):
     """Desktop "Save to DB": core analysis of the loaded signal -> tblLaborATYoMat."""
+    if ti.is_inspector(series_id):
+        return ti.refused()
     if int(user.get("access_level") or 0) < 2:
         return _err(403, "read_only", "You have read-only access.")
     entry = _entry(series_id, trial_id)
@@ -208,6 +214,8 @@ class CompareBody(BaseModel):
 def compare(series_id: int, body: CompareBody, _user: Dict[str, Any] = Depends(current_user)):
     """Desktop "Run Comparison": core analysis of the selected trials (analysed trials from the cache,
     others read from their TDMS file), sorted by trial number."""
+    if ti.is_inspector(series_id):
+        return ti.refused()
     ids = list(dict.fromkeys(int(t) for t in body.trial_ids))
     if not ids:
         return _err(400, "compare_count", "Choose at least one trial.")
@@ -285,6 +293,8 @@ def _run_batch(job: Dict[str, Any], user: Dict[str, Any]) -> None:
 
 @router.post("/series/{series_id}/aty/batch")
 def start_batch(series_id: int, body: BatchBody, user: Dict[str, Any] = Depends(current_user)):
+    if ti.is_inspector(series_id):
+        return ti.refused()
     if body.save and int(user.get("access_level") or 0) < 2:
         return _err(403, "read_only", "You have read-only access.")
     running = [j for j in _jobs.values() if j["series_id"] == series_id and not j["finished"]]

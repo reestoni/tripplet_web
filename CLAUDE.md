@@ -233,6 +233,11 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   und `db/label_sheets.py` (Bogen "CustomLabel"). Seite `LabelGenerator.tsx`: Zeichenfläche 8 px/mm mit 10-mm-Raster/Lineal,
   Ziehen/Grösse (0.5 mm), Anker-Gruppen, Text-Teile (fest/Feld/laufende Nummer), Tabellen, Logo, Druckdialog mit Startplatz.
   Etikettengrösse wird wie im Desktop sofort ins Bogen-Template geschrieben. Das Web legt tblLabelDesign nie an.
+- TDMS Inspector `/tools/tdms-inspector`: `app/tdms_inspector.py` - Upload in einen Temp-Ordner pro Benutzer (1 Tag, max 1 GB),
+  die Datei bekommt eine NEGATIVE Seriennummer; `app/yarnscope.py`/`yarnscope_aty.py` beantworten solche Nummern mit einem
+  Pseudo-Versuch 0 (Analyse ohne TrialID, nur für den hochladenden Benutzer); Speichern/Batch/Vergleich verweigert (`inspector`).
+  Seite `TdmsInspector.tsx` nutzt `YarnScopeView`/`YarnScopeAty` mit `inspector` (blendet Batch/Vergleich/Speichern aus).
+  Desktop unverändert (der Screen war schon nur eine Hülle um die YarnScope-Reiter).
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

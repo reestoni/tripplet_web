@@ -1961,6 +1961,14 @@ const en = {
   "lg.err.no_name": "Please enter a name.",
   "lg.err.not_found": "Not found.",
   "lg.err.bad_template": "Invalid sheet value.",
+  "ti.title": "TDMS Inspector",
+  "ti.info": "Open any .tdms file and run the DTY and/or ATY YarnScope analysis on it directly - no experiment/trial needed, nothing is read from or written to the database. Stability predictions (DTY) run without the usual jet/process features; Save, Batch and Compare need a trial and are not available here.",
+  "ti.open": "Open TDMS file…",
+  "ti.none": "No file selected.",
+  "ti.uploading": "Uploading… {p} %",
+  "ti.err.not_tdms": "Please choose a .tdms file.",
+  "ti.err.too_big": "The file is too big (max. 1 GB).",
+  "ti.err.failed": "The upload failed.",
 };
 
 export type TextKey = keyof typeof en;
@@ -3915,6 +3923,14 @@ const de: Texts = {
   "lg.err.no_name": "Bitte einen Namen eingeben.",
   "lg.err.not_found": "Nicht gefunden.",
   "lg.err.bad_template": "Ungültiger Bogenwert.",
+  "ti.title": "TDMS-Inspektor",
+  "ti.info": "Eine beliebige .tdms-Datei öffnen und direkt mit DTY- und/oder ATY-YarnScope auswerten – ohne Experiment/Versuch, nichts wird aus der Datenbank gelesen oder hineingeschrieben. Die Stabilitätsprognosen (DTY) laufen ohne die üblichen Düsen-/Prozessmerkmale; Speichern, Batch und Vergleich brauchen einen Versuch und gibt es hier nicht.",
+  "ti.open": "TDMS-Datei öffnen…",
+  "ti.none": "Keine Datei gewählt.",
+  "ti.uploading": "Wird hochgeladen… {p} %",
+  "ti.err.not_tdms": "Bitte eine .tdms-Datei wählen.",
+  "ti.err.too_big": "Die Datei ist zu gross (max. 1 GB).",
+  "ti.err.failed": "Das Hochladen ist fehlgeschlagen.",
 };
 
 const es: Texts = {
@@ -5867,6 +5883,14 @@ const es: Texts = {
   "lg.err.no_name": "Introduce un nombre.",
   "lg.err.not_found": "No encontrado.",
   "lg.err.bad_template": "Valor de hoja no válido.",
+  "ti.title": "Inspector TDMS",
+  "ti.info": "Abre cualquier archivo .tdms y analízalo directamente con YarnScope DTY y/o ATY – sin experimento/ensayo, sin leer ni escribir en la base de datos. Las predicciones de estabilidad (DTY) se calculan sin los datos de boquilla/proceso; Guardar, Lote y Comparar necesitan un ensayo y no están disponibles aquí.",
+  "ti.open": "Abrir archivo TDMS…",
+  "ti.none": "Ningún archivo seleccionado.",
+  "ti.uploading": "Subiendo… {p} %",
+  "ti.err.not_tdms": "Elige un archivo .tdms.",
+  "ti.err.too_big": "El archivo es demasiado grande (máx. 1 GB).",
+  "ti.err.failed": "La subida falló.",
 };
 
 const zh: Texts = {
@@ -7816,6 +7840,14 @@ const zh: Texts = {
   "lg.err.no_name": "请输入名称。",
   "lg.err.not_found": "未找到。",
   "lg.err.bad_template": "版面数值无效。",
+  "ti.title": "TDMS 检查器",
+  "ti.info": "打开任意 .tdms 文件，直接用 DTY 和/或 ATY YarnScope 分析 – 无需实验/试验，不读写数据库。稳定性预测（DTY）不使用常规的喷嘴/工艺特征；保存、批量和比较需要试验，此处不可用。",
+  "ti.open": "打开 TDMS 文件…",
+  "ti.none": "未选择文件。",
+  "ti.uploading": "正在上传… {p} %",
+  "ti.err.not_tdms": "请选择 .tdms 文件。",
+  "ti.err.too_big": "文件过大（最大 1 GB）。",
+  "ti.err.failed": "上传失败。",
 };
 
 export const TEXTS = { en, de, es, zh } as const;
