@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { api, ApiError, type Me } from "./api";
 import Login from "./pages/Login";
 import Shell from "./components/Shell";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotYet from "./pages/NotYet";
 import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
@@ -56,6 +57,8 @@ export default function App() {
         <Route path="/requests" element={<MyRequests />} />
         <Route path="/requests/new" element={<RequestForm />} />
         <Route path="/requests/:id" element={<RequestForm />} />
+        <Route path="/knowledge-base" element={<KnowledgeBase />} />
+        <Route path="/knowledge-base/:key" element={<KnowledgeBase />} />
         <Route path="*" element={<NotYet />} />
       </Routes>
     </Shell>
