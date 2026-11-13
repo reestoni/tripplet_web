@@ -1425,3 +1425,27 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .recent-empty { padding: 10px 12px; font-size: 12px; }
 .recent-row { padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #1C2321; }
 .recent-row:hover { background: #F0F5EF; }
+
+/* Fresh off the Spool (components/WhatsNew.tsx) */
+.modal.wn { width: min(1100px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+.wn-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.wn-head h2 { margin: 0; }
+.wn-logo { height: 48px; }
+.wn-body { display: grid; grid-template-columns: 220px 1fr; gap: 14px; min-height: 0; flex: 1; overflow: hidden; }
+.wn-side { overflow: auto; border-right: 1px solid #EEF1ED; padding-right: 8px; }
+.wn-search { width: 100%; box-sizing: border-box; border: 1px solid #C9D1C8; border-radius: 6px; padding: 5px 8px; margin-bottom: 8px; }
+.wn-vtitle { font-size: 11px; font-weight: 700; color: #5A6460; margin-bottom: 4px; text-transform: uppercase; }
+.wn-ver { padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.wn-ver.on { background: #E6F2E6; }
+.wn-ver.dim { opacity: .45; }
+.wn-ver .muted { font-size: 11px; }
+.wn-new { background: var(--accent); color: #fff; border-radius: 8px; font-size: 10px; padding: 1px 6px; margin-left: 6px; }
+.wn-main { overflow: auto; padding-right: 4px; }
+.wn-card { display: flex; gap: 16px; background: #fff; border: 1px solid #dcdcdc; border-left: 5px solid var(--accent); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; font-size: 13px; }
+.wn-card-text { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.wn-card-title { font-weight: 700; font-size: 15px; }
+.wn-where { color: #2b2b2b; padding-top: 4px; }
+.wn-where > span:first-child { color: #565656; }
+.wn-sketch { width: 300px; height: 130px; object-fit: contain; flex-shrink: 0; }
+.wn-hitver { font-size: 11px; font-weight: 700; color: #5A6460; margin: 6px 0 2px; }
+.wn-sub { margin-bottom: 8px; }

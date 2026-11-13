@@ -5,6 +5,7 @@ import { LangFlags, useI18n } from "../i18n";
 import { HelpHost, openHelp } from "./Help";
 import Bell from "./Notifications";
 import { openQuickSearch, QuickSearchHost, RecentMenu, ScreenLog } from "./QuickSearch";
+import { openWhatsNew, WhatsNewHost } from "./WhatsNew";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
 const NARROW_KEY = "tripplet.sidebar.narrow";
@@ -128,6 +129,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
               <img src={img("user_white.png")} alt="" />
               <span>{name}</span>
             </div>
+            <button type="button" className="sb-bell" title="Fresh off the Spool" onClick={openWhatsNew}>🧵</button>
             <Bell />
             <NavLink className="sb-settings" to="/settings" title={t("sb.settings")}>⚙</NavLink>
             <button className="sb-logout" onClick={onLogout}>{t("sb.logout")}</button>
@@ -139,6 +141,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
       <HelpHost />
       <QuickSearchHost />
       <ScreenLog />
+      <WhatsNewHost />
     </div>
   );
 }

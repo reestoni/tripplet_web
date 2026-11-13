@@ -20,7 +20,7 @@ const HELP_LANGS = [
 const LANG_KEY = "tripplet.helpLang";
 
 /** Help language: shared by all helps (desktop QSettings "Help/language"), default = app language. */
-function useHelpLang(): [string, (l: string) => void] {
+export function useHelpLang(): [string, (l: string) => void] {
   const { lang: appLang } = useI18n();
   const [lang, setLangState] = useState<string>(() => {
     try {
@@ -36,7 +36,7 @@ function useHelpLang(): [string, (l: string) => void] {
   return [lang, setLang];
 }
 
-function HelpFlags({ lang, onPick }: { lang: string; onPick: (l: string) => void }) {
+export function HelpFlags({ lang, onPick }: { lang: string; onPick: (l: string) => void }) {
   return (
     <div className="lang-flags hl-flags" role="group">
       {HELP_LANGS.map((l) => (

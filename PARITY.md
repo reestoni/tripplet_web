@@ -18,7 +18,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
-| 7. Login, sidebar, account | 18 | 0 | 1 | 2 | 21 |
+| 7. Login, sidebar, account | 19 | 0 | 0 | 2 | 21 |
 | 8. Create Experiment / Add Trial Series / Add Lab Machines | 16 | 0 | 0 | 0 | 16 |
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
@@ -28,9 +28,9 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 14. Tools | 9 | 0 | 0 | 0 | 9 |
 | 15. Admin master tables | 4 | 0 | 0 | 0 | 4 |
 | 16. Superuser pages | 2 | 0 | 0 | 1 | 3 |
-| **Total** | 318 | 6 | 5 | 7 | 336 |
+| **Total** | 319 | 6 | 4 | 7 | 336 |
 
-Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, What's new (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -317,7 +317,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Ask AI in the help search | `help_ai.py` | **NOT IN WEB** | deliberately left out (user decision 2026-11-13) |
 | Settings (text size, contrast, crosshair, start screen) | `display_prefs` / `user_settings_dialog` | **DONE** | `fe/pages/Settings.tsx` (⚙ in the sidebar footer) on `be/settings_api.py`: welcome, start screen, accent, table options; same stored values as desktop; text size = browser zoom |
 | Accent colour picker | `pick_accent_colour` | **DONE** | Settings page, live preview + "Default green" |
-| "Fresh off the Spool" (What's new) + auto popup after login | `ui/whats_new.py` | **MISSING** | data `ui/widgets/whats_new_texts.py` |
+| "Fresh off the Spool" (What's new) + auto popup after login | `ui/whats_new.py` | **DONE** | `fe/components/WhatsNew.tsx`, `be/whats_new_api.py` on `ui/whats_new_data.py` (versions, tabs, search, sketches, auto popup, seen = same value as desktop; no PDF button - browser print), 2026-11-13 |
 | Log Out | `on_logout` | **DONE** | |
 | Mode/DB banner (non-prod), version | footer / title | **DONE** | |
 | Usage tracking of screen opens (`currentChanged` hook) | `main.py` | **DONE** | `ScreenLog` logs the desktop screen name per page (`/api/screen-open`), 2026-11-13 |

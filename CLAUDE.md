@@ -284,6 +284,11 @@ bei Fokus und nach Yarn-Stock-Laden über das Ereignis `tripplet:bell`). Schnell
 `push_recent`; Show Experiment meldet `POST /api/recent`, nicht bei Papierkorb-Vorschau). `ScreenLog` schreibt pro Seitenaufruf
 `screen_open` mit dem Desktop-Klassennamen (Usage Stats zählt beide Apps zusammen; Zuordnung `SCREENS` in `QuickSearch.tsx`).
 
+**Fresh off the Spool** (2026-11-13): `components/WhatsNew.tsx` (🧵 im Seitenleisten-Fuss, öffnet sich nach dem Login einmal von
+selbst, wenn die neueste Version ungesehen ist), `app/whats_new_api.py` auf `ui/whats_new_data.py` + `ui/widgets/whats_new_texts.py`
+(EN/DE/ES, Flaggen wie die Hilfe, Chinesisch -> Englisch). "Gesehen" = `DisplaySettings.whats_new_seen` wie im Desktop. Skizzen über
+`/api/whats-new/sketch/<name>`. Kein PDF-Knopf (Browser-Druck).
+
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,
