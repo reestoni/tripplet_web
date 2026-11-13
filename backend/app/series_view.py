@@ -221,11 +221,18 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
         "has_yarnscope_aty": _has_yarnscope_aty(series_id),
         # right-click on a trial: "Open in Process Playground" (DTY machines, tool allowed; desktop same rule)
         "playground": _playground(_user, series_id),
+        # opened from the recycle bin by this superuser: read only + banner (app/recycle_bin_api.py)
+        "recycle_preview": _recycle_preview(series_id, _user),
         "tabs": tabs,
         # Notes tab: every note of the series, where it sits (lab tab · row, else "Machine Data" / table · field)
         "notes": [dict(_note_json(n), trial_note=cell_notes.is_trial_note(n), **_where(n, seen)) for n in all_notes],
         "pending_tabs": [{"key": k, "title": t} for k, t in PENDING_TABS],
     }
+
+
+def _recycle_preview(series_id: int, user: Dict[str, Any]):
+    from .recycle_bin_api import preview_for
+    return preview_for(series_id, user)
 
 
 def _playground(user: Dict[str, Any], series_id: int) -> bool:

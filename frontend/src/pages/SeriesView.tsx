@@ -25,7 +25,7 @@ function lastTab(): string | null {
   }
 }
 
-export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }) {
+export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel?: number }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -94,6 +94,9 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
   if (!data) return <div className="page muted">{t("se.loading")}</div>;
 
   const s = data.series;
+  // opened from the recycle bin (desktop RecyclePreview): read only until a decision
+  const preview = data.recycle_preview ?? null;
+  const accessLevel = preview ? 1 : userLevel;
   const canWrite = accessLevel >= 2;
   const reloadAll = (msg?: string) => { setTool(null); setReload((x) => x + 1); if (msg) setToast(msg); };
   // tools that add/change trials reload the page - unsaved values would be lost (desktop asks the same)
@@ -105,6 +108,9 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
 
   return (
     <div className="page page-wide">
+      {preview && <RecycleBanner seriesId={s.id} info={preview} onDone={(action) => {
+        if (action === "keep") { setToast(t("rb.kept")); setReload((x) => x + 1); } else navigate("/superuser/recycle-bin");
+      }} />}
       <div className="se-head">
         <button className="btn-plain" onClick={() => confirmLeave() && navigate(-1)} title={t("se.back")}>←</button>
         <div className="se-title">
@@ -149,7 +155,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
       <EditProvider key={s.id} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
-        <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={rights}
+        <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights}
           onChanged={() => setReload((x) => x + 1)} onTool={openTool} tools={data.trials.length > 0 && (
             <>
               <button className="tb-icon" onClick={() => setTool({ kind: "labels" })} title={t("tl.labels")}>
@@ -479,5 +485,46 @@ function SavedReports({ seriesId }: { seriesId: number }) {
       </select>
       <button className="btn-plain" onClick={go}>{t("se.go")}</button>
     </span>
+  );
+}
+
+const backTimers = new Map<number, number>();
+
+/** Banner of a series opened from the recycle bin (desktop ui/recycle_preview.py): restore for good, back to the
+ *  recycle bin (same deletion date / user) or delete permanently. Leaving the page without a decision puts the
+ *  series back (desktop: closing the tab). */
+function RecycleBanner({ seriesId, info, onDone }: { seriesId: number; info: { deleted_at: string; deleted_by: string };
+  onDone: (action: "keep" | "back" | "delete") => void }) {
+  const { t } = useI18n();
+  const decided = useRef(false);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    const url = `/api/superuser/recycle-bin/preview/${seriesId}/back`;
+    // a remount right away (React StrictMode in development) must not put the series back: wait a moment
+    window.clearTimeout(backTimers.get(seriesId));
+    const onUnload = () => { if (!decided.current) navigator.sendBeacon(url); };
+    window.addEventListener("pagehide", onUnload);
+    return () => {
+      window.removeEventListener("pagehide", onUnload);
+      if (!decided.current) backTimers.set(seriesId, window.setTimeout(() => request("POST", url).catch(() => undefined), 400));
+    };
+  }, [seriesId]);
+  const act = async (action: "keep" | "back" | "delete") => {
+    if (action === "delete" && !window.confirm(t("rb.deleteQ"))) return;
+    decided.current = true;
+    try {
+      await request("POST", `/api/superuser/recycle-bin/preview/${seriesId}/${action}`);
+      onDone(action);
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+  };
+  return (
+    <div className="rb-banner">
+      <span><b>{t("rb.bannerTitle")}</b> {t("rb.bannerText", { when: info.deleted_at, who: info.deleted_by || "?" })}</span>
+      <span style={{ flex: 1 }} />
+      <button className="btn-green" title={t("rb.keepTip")} onClick={() => act("keep")}>{t("rb.keep")}</button>
+      <button className="btn-plain" title={t("rb.backTip")} onClick={() => act("back")}>{t("rb.back")}</button>
+      <button className="btn-plain danger" title={t("rb.deleteTip")} onClick={() => act("delete")}>{t("rb.delete")}</button>
+      {err && <span className="mj-msg err">{err}</span>}
+    </div>
   );
 }

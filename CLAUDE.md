@@ -267,6 +267,16 @@ Admin-Karte. Material: "In Garn verwendet" klappt die Garne auf; Top Plates: Neu
 Dateiliste `JetFiles` aus `ManageJets.tsx` mit `base`). Korrigiert in beiden Apps: "New" ohne AUTO_INCREMENT auf der ID
 (dev_local `tblBestellungstyp`) vergibt MAX+1 statt abzubrechen. Tests `tests/test_admin_master.py`.
 
+**Superuser: Usage Stats + Papierkorb** (2026-11-13): Usage Stats `/superuser/usage-stats` (`UsageStats.tsx`, Plotly) über
+`app/usage_stats_api.py` auf neu `db/usage_stats.py` (Abfragen + Hilfe-Zusammenfassung aus `ui/screen_usage_stats.py`). Papierkorb
+`/superuser/recycle-bin` (`RecycleBin.tsx`) über `app/recycle_bin_api.py` auf `db/recycle_bin.py` (neu `preview_start`/`preview_back`/
+`preview_delete`, auch von `ui/recycle_preview.py` genutzt): Wiederherstellen, endgültig löschen, Vorschau = Serie vorübergehend
+zurück, Show Experiment nur lesend mit Banner (`recycle_preview` in `/api/series/{id}`, nur für den Superuser, der sie geöffnet hat):
+endgültig wiederherstellen / zurück (Originaldatum) / endgültig löschen; Seite verlassen = zurück (wie Tab schliessen). Offene
+Vorschauen leben im Serverprozess - nach einem Neustart bleibt die Serie einfach wiederhergestellt (wie Absturz im Desktop).
+**Lab Assistant** (KI-Chat) ist bewusst nicht im Web (keine KI im Web) und fehlt in der Seitenleiste wie Offline Sync.
+Tests `tests/test_usage_stats.py`, `tests/test_recycle_bin_api.py` (echte Testserie, wird endgültig gelöscht).
+
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,

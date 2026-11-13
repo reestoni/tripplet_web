@@ -1370,3 +1370,14 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 
 /* Admin master tables (pages/ManageMaster.tsx) */
 .mm-usage { margin: 2px 0 4px 20px; padding: 0; list-style: none; font-size: 12px; color: #444; }
+
+/* Usage Stats (pages/UsageStats.tsx) */
+.us-dash { display: grid; gap: 12px; }
+.us-plot-l .ys-plot { height: 420px; }
+.us-plot-s .ys-plot { height: 260px; }
+.us-search { margin: 4px 0 6px; }
+.us-wrap { max-height: calc(100vh - 230px); overflow: auto; border: 1px solid #E3E7E2; border-radius: 6px; }
+.us-table td { white-space: nowrap; }
+
+/* Recycle Bin (pages/RecycleBin.tsx, banner in pages/SeriesView.tsx) */
+.rb-banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: #FFF4D6; border: 1px solid #E8C15A; color: #5a4500; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; font-size: 13px; }

@@ -14,7 +14,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 |---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
 | 2. Backlog | 31 | 0 | 0 | 1 | 32 |
-| 3. Show Experiment | 93 | 3 | 2 | 1 | 99 |
+| 3. Show Experiment | 94 | 3 | 1 | 1 | 99 |
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
@@ -27,10 +27,11 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 13. Smart Chart / Dashboards | 22 | 1 | 0 | 0 | 23 |
 | 14. Tools | 9 | 0 | 0 | 0 | 9 |
 | 15. Admin master tables | 4 | 0 | 0 | 0 | 4 |
-| **Total** | 311 | 7 | 10 | 5 | 333 |
+| 16. Superuser pages | 2 | 0 | 0 | 1 | 3 |
+| **Total** | 314 | 7 | 9 | 6 | 336 |
 
-Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips, recycle bin (preview + restore),
-notifications bell, quick search, recent series, What's new (all tools are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips,
+notifications bell, quick search, recent series, What's new (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -137,7 +138,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **DONE** | YarnsDialog, `be/series_tools.yarns_apply`; "+ Trial output" = `/yarns/trial-search` + `/yarns/trial-output` (`get_or_create_shadow_yarn`) |
 | Help button (EN/DE/ES) | `_open_help` | **DONE** | `HelpButton screen="show_experiment"` |
 | Read-only for access level ≤ 1 | `_get_access_level` / `_sync_save_button_access` | **DONE** | `canWrite = accessLevel >= 2` |
-| Recycle-bin preview mode (read-only series) | `set_recycle_preview` | **MISSING** | Recycle Bin not in web |
+| Recycle-bin preview mode (read-only series) | `set_recycle_preview` | **DONE** | banner + read only via `recycle_preview` (2026-11-13) |
 
 ### 3b. Tabs
 
@@ -470,3 +471,11 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Product Groups: same | `ui/screen_manage_product_groups.py` | **DONE** | |
 | Material: same + "Used in yarn" with the yarns inline | `ui/screen_manage_material.py` | **DONE** | |
 | Top Plates: table, New / Copy (unique name), Delete, files (upload, open, preview, remove) | `ui/screen_manage_top_plates.py`, `ui/screen_new_top_plate.py` | **DONE** | New/Copy ask only for the name (the table has only Name); files dialog per row (double-click) |
+
+## 16. Superuser pages (`ui/screen_usage_stats.py`, `ui/widgets/recycle_bin_dialog.py` + `ui/recycle_preview.py`, `ui/screen_lab_assistant.py`) – added 2026-11-13
+
+| Feature | Desktop | Web status | Notes |
+|---|---|---|---|
+| Usage Stats: ranking + logins per day, tables Logins / Screens / Features / Help | `ui/screen_usage_stats.py` | **DONE** | `be/usage_stats_api.py` on `db/usage_stats.py`; tables sortable + filter |
+| Recycle Bin: list, restore, delete permanently, preview in Show Experiment (read only, banner: keep / back / delete; leaving = back) | `ui/widgets/recycle_bin_dialog.py`, `ui/recycle_preview.py` | **DONE** | `be/recycle_bin_api.py` on `db/recycle_bin.py` |
+| Lab Assistant (AI chat over the database) | `ui/screen_lab_assistant.py` | **NOT IN WEB (on purpose)** | no AI in the web (user decision); left out of the sidebar like Offline Sync |

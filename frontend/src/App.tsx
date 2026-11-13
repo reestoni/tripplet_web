@@ -20,6 +20,8 @@ import ManageUsers from "./pages/ManageUsers";
 import Settings from "./pages/Settings";
 import SmartChart from "./pages/SmartChart";
 import Dashboards from "./pages/Dashboards";
+import RecycleBin from "./pages/RecycleBin";
+import UsageStats from "./pages/UsageStats";
 import ManageMaster from "./pages/ManageMaster";
 import QuickScan, { RequirementHub } from "./pages/QuickScan";
 import ProcessPlayground from "./pages/ProcessPlayground";
@@ -91,6 +93,8 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
+        <Route path="/superuser/recycle-bin" element={<RecycleBin />} />
+        <Route path="/superuser/usage-stats" element={<UsageStats />} />
         <Route path="/admin/top-plates" element={<ManageMaster key="top_plates" kind="top_plates" />} />
         <Route path="/admin/order-types" element={<ManageMaster key="order_types" kind="order_types" />} />
         <Route path="/admin/product-groups" element={<ManageMaster key="product_groups" kind="product_groups" />} />
