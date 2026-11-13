@@ -335,3 +335,9 @@ table.pivot.machine thead tr.ply-row th { top: 31px; font-weight: 500; font-size
 table.pivot.machine thead tr.ply-row th.ref { background: #fff0cc; }
 table.pivot.machine .pv-corner { z-index: 4; }
 .yarn-dot { display: inline-block; width: 10px; height: 10px; border: 1px solid #888; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+/* jet air */
+.ja-wrap { flex: 1; overflow: auto; }
+.ja-block { margin-bottom: 16px; }
+.ja-block h3 { font-size: 14px; margin: 6px 0; }
+.ja-block .table-wrap { flex: none; }

@@ -17,13 +17,8 @@ from db.trial_reference import format_trial_number  # noqa: E402
 router = APIRouter(prefix="/api")
 
 # desktop tabs that are not in the web version yet (shown greyed out)
-PENDING_TABS = [
-    ("jet_air", "Jet Air Consumption"),
-    ("itemat", "Itemat Lab"),
-    ("itemat_plus", "Itemat Plus"),
-    ("dtyomat", "DTYoMat"),
-    ("atyomat", "ATYoMat"),
-]
+# desktop tabs that are not in the web version yet (shown greyed out)
+PENDING_TABS: List[tuple] = []
 
 
 def _text(v: Any) -> str:
@@ -83,6 +78,10 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
     pivots = {lt.key: lt.build(st) for lt in stb.LAB_TABS}
     stb.apply_titer_to_stat_ds(pivots.get("titer"), pivots.get("stat_ds"))
     tabs = [_tab_json(lt, pivots[lt.key], info, series_id, trial_col) for lt in stb.LAB_TABS if pivots[lt.key]]
+    # Jet Air Consumption (own columns = pressure steps), loaded on demand; desktop position = 2nd lab tab
+    if stb.build_jet_air(series_id) is not None:
+        tabs.insert(min(stb.JET_AIR_TAB_INDEX, len(tabs)), {"key": "jet_air", "title": stb.JET_AIR_TITLE,
+                                                             "lazy": True, "rows": [], "flags": {}})
     trials = [{
         "id": int(t["ID"]),
         "label": st.labels[c],
@@ -159,3 +158,20 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
     return {"mode": mode, "has_groups": has_groups, "message": None, "columns": columns, "rows": rows,
             "filter_labels": list(md.filter_labels or []) if mode != "compact" else [],
             "multi_ply": bool(md.has_multi_ply)}
+
+
+# --------------------------------------------------------------------------- Jet Air Consumption
+def _grid(p: stb.LabPivot) -> Dict[str, Any]:
+    return {"columns": list(p.col_titles or []),
+            "rows": [{"title": t, "cells": [{"v": _text(v)} for v, _b in p.cells[r]]} for r, t in enumerate(p.row_titles)]}
+
+
+@router.get("/series/{series_id}/jet-air")
+def jet_air(series_id: int, unit: str = "Nm3h", _user: Dict[str, Any] = Depends(current_user)):
+    if unit not in stb.JET_AIR_UNITS:
+        unit = "Nm3h"
+    j = stb.build_jet_air(series_id, unit)
+    if j is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "No jet air data."})
+    return {"unit": j.unit, "units": stb.JET_AIR_UNITS,
+            "consumption": _grid(j.consumption), "atm": _grid(j.atm), "temp": _grid(j.temp)}

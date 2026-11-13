@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, type SeriesData } from "../api";
 import { useI18n } from "../i18n";
 import MachineTable from "../components/MachineTable";
+import JetAirView from "../components/JetAirView";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -121,7 +122,8 @@ export default function SeriesView() {
       {data.trials.length > 0 && tab === "machine" && (
         <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} />
       )}
-      {current && (
+      {current?.lazy && current.key === "jet_air" && <JetAirView seriesId={s.id} />}
+      {current && !current.lazy && (
         <>
           <div className="table-wrap pivot-wrap">
             <table className="pivot">

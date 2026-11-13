@@ -108,3 +108,18 @@ def test_machine_modes(client):
 def test_machine_needs_login_and_series(client):
     assert TestClient(app).get("/api/series/1/machine").status_code == 401
     assert client.get("/api/series/987654321/machine").status_code == 404
+
+
+def test_jet_air(client):
+    rows = fetch_all("SELECT TrialSeriesID AS S FROM tblLaborJetAirConsumption ORDER BY S DESC LIMIT 1")
+    if not rows:
+        pytest.skip("no jet air data")
+    sid = int(rows[0]["S"])
+    d = client.get(f"/api/series/{sid}").json()
+    assert any(t["key"] == "jet_air" and t.get("lazy") for t in d["tabs"])
+    for unit in ("Nm3h", "lmin"):
+        j = client.get(f"/api/series/{sid}/jet-air?unit={unit}").json()
+        p = stb.build_jet_air(sid, unit)
+        assert j["unit"] == unit and j["consumption"]["columns"] == p.consumption.col_titles
+        assert [r["title"] for r in j["atm"]["rows"]] == p.atm.row_titles
+    assert client.get("/api/series/987654321/jet-air").status_code == 404

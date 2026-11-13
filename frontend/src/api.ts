@@ -88,7 +88,7 @@ export type SeriesData = {
     notes: string;
   };
   trials: { id: number; label: string; number: number; reference: string | null }[];
-  tabs: { key: string; title: string; rows: { title: string; info?: boolean; cells: PivotCell[] }[]; flags: Record<string, string> }[];
+  tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; cells: PivotCell[] }[]; flags: Record<string, string> }[];
   pending_tabs: { key: string; title: string }[];
 };
 
@@ -115,7 +115,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
+export async function request<T>(method: string, url: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
     method,
     credentials: "same-origin",
