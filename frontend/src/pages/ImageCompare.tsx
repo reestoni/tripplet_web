@@ -12,16 +12,16 @@ import { useContextMenu } from "../components/ContextMenu";
 type Src = { kind: "db"; series: number; id: number; name: string } | { kind: "local"; token: string; name: string };
 type Info = { kind: "image" | "pdf" | "excel" | "word" | "vk4"; pages?: number; sheets?: string[]; channels?: { key: string; label: string }[];
   radar?: { vno: number; scores: Record<string, number | null> } | null };
-type Anno = { tool: string; color: string; size: number; text?: string; points: [number, number][] };
+export type Anno = { tool: string; color: string; size: number; text?: string; points: [number, number][] };
 type Cell = { src: Src | null; whiteboard: boolean; info: Info | null; page: number; sheet: number; channel: string; rotation: number;
   zoom: number; panX: number; panY: number; annos: Anno[]; undo: string[]; radarVisible: boolean;
   radarRel: { x: number; y: number; w: number; h: number } | null; clip?: string };
 
-const TOOLS: [string, string][] = [["pan", "🖐"], ["arrow", "↗"], ["ellipse", "⬭"], ["rect", "▭"], ["free", "✏️"], ["text", "T"],
+export const TOOLS: [string, string][] = [["pan", "🖐"], ["arrow", "↗"], ["ellipse", "⬭"], ["rect", "▭"], ["free", "✏️"], ["text", "T"],
   ["highlight", "🖊"], ["marker", "①"], ["eraser", "⌫"], ["move", "⤢"]];
-const COLORS: Record<string, string> = { red: "#DC3232", yellow: "#F0C800", green: "#32C850", white: "#FFFFFF", blue: "#3282DC" };
-const SIZES: [number, string][] = [[2, "—"], [4, "━"], [8, "▬"]];
-const MARKERS = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
+export const COLORS: Record<string, string> = { red: "#DC3232", yellow: "#F0C800", green: "#32C850", white: "#FFFFFF", blue: "#3282DC" };
+export const SIZES: [number, string][] = [[2, "—"], [4, "━"], [8, "▬"]];
+export const MARKERS = "①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳";
 const AXES = ["volume", "frequency", "character", "evenness", "outliers"], CODES = "VFCEO";
 const UNDO_LIMIT = 10, ACTIVE = "#39A650", BG = "#1e1e1e";
 const emptyCell = (): Cell => ({ src: null, whiteboard: false, info: null, page: 0, sheet: 0, channel: "", rotation: 0, zoom: 1, panX: 0, panY: 0,
@@ -55,7 +55,7 @@ function rotated(img: HTMLImageElement, deg: number): HTMLCanvasElement | HTMLIm
   return cv;
 }
 
-function drawAnno(g: CanvasRenderingContext2D, a: Anno, toS: (p: [number, number]) => [number, number]) {
+export function drawAnno(g: CanvasRenderingContext2D, a: Anno, toS: (p: [number, number]) => [number, number]) {
   if (!a.points.length) return;
   if (["arrow", "ellipse", "rect", "highlight"].includes(a.tool) && a.points.length < 2) return;
   const col = COLORS[a.color] || COLORS.red;
@@ -370,10 +370,18 @@ export default function ImageCompare() {
     if (!info && src.kind === "db") info = await request<Info>("GET", `/api/image-compare/series/${src.series}/images/${src.id}/info`).catch(() => ({ kind: "image" } as Info));
     setCells((cs) => cs.map((x, j) => (j === i ? { ...emptyCell(), src, info, channel: info?.channels?.[0]?.key || "" } : x)));
   };
+  const activeRef = useRef(0);
+  activeRef.current = active;
+  const cellsRef = useRef(cells);
+  cellsRef.current = cells;
   const assignActive = async (src: Src, info?: Info) => {
-    await assign(active, src, info);
+    const a = activeRef.current;          // refs: several files in a row go to consecutive frames
+    await assign(a, src, info);
     // advance to the next empty frame (desktop _advance_active)
-    setActive((a) => { for (let k = 1; k <= n; k++) { const j = (a + k) % n; if (!cells[j]?.src && !cells[j]?.whiteboard) return j; } return a; });
+    let next = a;
+    for (let k = 1; k <= n; k++) { const j = (a + k) % n; if (j !== a && !cellsRef.current[j]?.src && !cellsRef.current[j]?.whiteboard) { next = j; break; } }
+    activeRef.current = next;
+    setActive(next);
   };
   const dropOn = (i: number, data: string) => {
     if (data.startsWith("frame:")) {

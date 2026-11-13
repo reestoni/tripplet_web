@@ -49,3 +49,15 @@ def test_upload_local_and_render():
     assert c.post("/api/image-compare/upload", files={"file": ("x.exe", b"MZ")}).json()["code"] == "unsupported"
     assert c.get("/api/image-compare/local/../../etc/file").status_code == 404
     assert c.get("/api/image-compare/local/" + "0" * 32 + "/file").json()["code"] == "not_found"
+
+
+def test_canvas_series_and_pdfs():
+    c = _client()
+    s = c.get("/api/image-compare/canvas-series").json()["series"]
+    assert s and all({"has_images", "has_pdfs"} <= set(x) for x in s)
+    with_pdf = next((x for x in s if x["has_pdfs"]), None)
+    if with_pdf:
+        p = c.get(f"/api/image-compare/series/{with_pdf['id']}/pdfs").json()["pdfs"]
+        assert p and p[0]["name"]
+        r = c.get(f"/api/image-compare/series/{with_pdf['id']}/pdfs/{p[0]['id']}/file")
+        assert r.status_code in (200, 404)        # 404 when the share is not reachable here

@@ -1969,6 +1969,20 @@ const en = {
   "ti.err.not_tdms": "Please choose a .tdms file.",
   "ti.err.too_big": "The file is too big (max. 1 GB).",
   "ti.err.failed": "The upload failed.",
+  "cv.title": "Canvas",
+  "cv.toolPan": "Pan / move images – Ctrl+wheel on an image scales it, double-click rotates",
+  "cv.undoTip": "Undo the last step (max. 10)",
+  "cv.clear": "Clear",
+  "cv.clearQ": "Remove all images and annotations?",
+  "cv.bgTip": "Background colour",
+  "cv.saveAs": "Save as…",
+  "cv.reset": "Reset view",
+  "cv.exportFailed": "The image could not be exported.",
+  "cv.type.all": "All",
+  "cv.type.img": "Images",
+  "cv.type.pdf": "PDFs",
+  "cv.itemTip": "Click: place on the canvas",
+  "cv.hint": "Wheel: scroll · Ctrl+wheel: zoom · Del: delete selected images · Ctrl+V: paste picture",
 };
 
 export type TextKey = keyof typeof en;
@@ -3931,6 +3945,20 @@ const de: Texts = {
   "ti.err.not_tdms": "Bitte eine .tdms-Datei wählen.",
   "ti.err.too_big": "Die Datei ist zu gross (max. 1 GB).",
   "ti.err.failed": "Das Hochladen ist fehlgeschlagen.",
+  "cv.title": "Canvas",
+  "cv.toolPan": "Verschieben / Bilder bewegen – Strg+Mausrad auf einem Bild skaliert, Doppelklick dreht",
+  "cv.undoTip": "Letzten Schritt rückgängig (max. 10)",
+  "cv.clear": "Leeren",
+  "cv.clearQ": "Alle Bilder und Beschriftungen entfernen?",
+  "cv.bgTip": "Hintergrundfarbe",
+  "cv.saveAs": "Speichern als…",
+  "cv.reset": "Ansicht zurücksetzen",
+  "cv.exportFailed": "Das Bild konnte nicht exportiert werden.",
+  "cv.type.all": "Alle",
+  "cv.type.img": "Bilder",
+  "cv.type.pdf": "PDFs",
+  "cv.itemTip": "Klick: auf die Fläche legen",
+  "cv.hint": "Mausrad: scrollen · Strg+Mausrad: zoomen · Entf: gewählte Bilder löschen · Strg+V: Bild einfügen",
 };
 
 const es: Texts = {
@@ -5891,6 +5919,20 @@ const es: Texts = {
   "ti.err.not_tdms": "Elige un archivo .tdms.",
   "ti.err.too_big": "El archivo es demasiado grande (máx. 1 GB).",
   "ti.err.failed": "La subida falló.",
+  "cv.title": "Lienzo",
+  "cv.toolPan": "Mover / desplazar imágenes – Ctrl+rueda sobre una imagen escala, doble clic gira",
+  "cv.undoTip": "Deshacer el último paso (máx. 10)",
+  "cv.clear": "Vaciar",
+  "cv.clearQ": "¿Quitar todas las imágenes y anotaciones?",
+  "cv.bgTip": "Color de fondo",
+  "cv.saveAs": "Guardar como…",
+  "cv.reset": "Restablecer vista",
+  "cv.exportFailed": "No se pudo exportar la imagen.",
+  "cv.type.all": "Todo",
+  "cv.type.img": "Imágenes",
+  "cv.type.pdf": "PDF",
+  "cv.itemTip": "Clic: colocar en el lienzo",
+  "cv.hint": "Rueda: desplazar · Ctrl+rueda: zoom · Supr: borrar imágenes · Ctrl+V: pegar imagen",
 };
 
 const zh: Texts = {
@@ -7848,6 +7890,20 @@ const zh: Texts = {
   "ti.err.not_tdms": "请选择 .tdms 文件。",
   "ti.err.too_big": "文件过大（最大 1 GB）。",
   "ti.err.failed": "上传失败。",
+  "cv.title": "画布",
+  "cv.toolPan": "平移 / 移动图像 – 在图像上 Ctrl+滚轮缩放，双击旋转",
+  "cv.undoTip": "撤销上一步（最多 10 步）",
+  "cv.clear": "清空",
+  "cv.clearQ": "删除所有图像和标注？",
+  "cv.bgTip": "背景颜色",
+  "cv.saveAs": "另存为…",
+  "cv.reset": "重置视图",
+  "cv.exportFailed": "无法导出图像。",
+  "cv.type.all": "全部",
+  "cv.type.img": "图像",
+  "cv.type.pdf": "PDF",
+  "cv.itemTip": "点击：放到画布上",
+  "cv.hint": "滚轮：滚动 · Ctrl+滚轮：缩放 · Del：删除所选图像 · Ctrl+V：粘贴图片",
 };
 
 export const TEXTS = { en, de, es, zh } as const;

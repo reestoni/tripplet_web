@@ -19,7 +19,9 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 
 from . import core  # noqa: F401
-from .deps import require_feature
+from fastapi import HTTPException
+
+from .deps import can_use, current_user
 
 from db import image_compare as dbic  # noqa: E402
 from db import series_attachments as sa  # noqa: E402
@@ -27,7 +29,14 @@ from db.usage_log import log_usage_event  # noqa: E402
 from ui import doc_render as dr  # noqa: E402
 
 router = APIRouter(prefix="/api/image-compare")
-_feature = require_feature("image_compare")
+
+
+
+def _feature(user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
+    """Image Compare and Canvas (/tools/canvas, pages/Canvas.tsx) share these routes."""
+    if not (can_use(user, "image_compare") or can_use(user, "canvas")):
+        raise HTTPException(status_code=403, detail="You are not allowed to use this.")
+    return user
 UPLOAD_ROOT = Path(tempfile.gettempdir()) / "tripplet_web" / "image_compare"
 MAX_UPLOAD = 100 * 1024 * 1024
 KEEP_SECONDS = 24 * 3600
@@ -60,8 +69,8 @@ def _local_path(user: Dict[str, Any], token: str) -> Optional[Path]:
     return None
 
 
-def _series_path(series_id: int, image_id: int) -> Optional[str]:
-    return sa.file_for_download("image", series_id, image_id)
+def _series_path(series_id: int, image_id: int, kind: str = "image") -> Optional[str]:
+    return sa.file_for_download(kind, series_id, image_id)
 
 
 def _render(path: str, name: str, page: int, sheet: int, channel: str, max_side: int):
@@ -131,3 +140,37 @@ def local_file(token: str, page: int = 0, sheet: int = 0, channel: str = "", max
     if p is None:
         return _err("not_found", "This file is no longer available - add it again.", 404)
     return _render(str(p), p.name.split("_", 1)[-1], page, sheet, channel, max)
+
+
+# ------------------------------------------------------------------ Canvas: series with images or PDFs
+@router.get("/canvas-series")
+def canvas_series(user: Dict[str, Any] = Depends(_feature)):
+    log_usage_event("feature", "canvas_open", "web")
+    return {"series": [{"id": int(r["TrialSeriesID"]), "name": str(r.get("SeriesName") or ""),
+                        "experiment": str(r.get("ExperimentID") or ""), "has_images": bool(r.get("has_images")),
+                        "has_pdfs": bool(r.get("has_pdfs"))} for r in dbic.fetch_canvas_series_groups()]}
+
+
+@router.get("/series/{series_id}/pdfs")
+def pdfs(series_id: int, user: Dict[str, Any] = Depends(_feature)):
+    return {"pdfs": [{"id": int(r["ID"]), "series_id": series_id,
+                      "name": str(r.get("OriginalFilename") or r.get("StoredFilename") or "")}
+                     for r in dbic.fetch_pdfs_for_series(series_id)]}
+
+
+@router.get("/series/{series_id}/pdfs/{pdf_id}/info")
+def pdf_info(series_id: int, pdf_id: int, user: Dict[str, Any] = Depends(_feature)):
+    path = _series_path(series_id, pdf_id, "pdf")
+    if not path:
+        return _err("not_found", "File not found.", 404)
+    return dr.info(path)
+
+
+@router.get("/series/{series_id}/pdfs/{pdf_id}/file")
+def pdf_file(series_id: int, pdf_id: int, page: int = 0, max: int = Query(0, ge=0, le=6000),
+             user: Dict[str, Any] = Depends(_feature)):
+    path = _series_path(series_id, pdf_id, "pdf")
+    if not path:
+        return _err("not_found", "File not found.", 404)
+    return _render(path, os.path.basename(path), page, 0, "", max)
+

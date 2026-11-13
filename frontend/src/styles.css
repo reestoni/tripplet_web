@@ -1251,3 +1251,10 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .ti-page { max-width: none; }
 .ti-top { display: flex; gap: 12px; align-items: center; margin: 8px 0; }
 .ti-tabs { margin-bottom: 8px; }
+
+/* Canvas (pages/Canvas.tsx) */
+.cv-board { position: relative; min-height: 0; background: #111; border-radius: 6px; overflow: hidden; }
+.cv-board canvas { position: absolute; inset: 0; display: block; }
+.cv-hint { position: absolute; right: 8px; bottom: 6px; color: #888; font-size: 11px; pointer-events: none; }
+.cv-bg { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
+.cv-bg input { width: 22px; height: 18px; padding: 0; border: none; background: none; cursor: pointer; }

@@ -238,6 +238,12 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Pseudo-Versuch 0 (Analyse ohne TrialID, nur für den hochladenden Benutzer); Speichern/Batch/Vergleich verweigert (`inspector`).
   Seite `TdmsInspector.tsx` nutzt `YarnScopeView`/`YarnScopeAty` mit `inspector` (blendet Batch/Vergleich/Speichern aus).
   Desktop unverändert (der Screen war schon nur eine Hülle um die YarnScope-Reiter).
+- Canvas `/tools/canvas`: Seite `Canvas.tsx` (eine Zeichenfläche, Bilder/PDF-Seiten verschieben, Strg+Mausrad skaliert ein Bild,
+  Doppelklick dreht/rastet 90°, Werkzeuge/Farben/Undo wie Bildvergleich - `drawAnno` usw. aus `ImageCompare.tsx` exportiert,
+  Hintergrundfarbe, Raster, PNG-Export, `.ttcanvas`-Projekt). Backend = Routen von `image_compare_api.py` (für Features
+  image_compare ODER canvas) + `/canvas-series` und PDFs der Serie. Desktop: `screen_canvas.py` nutzt jetzt `ui/doc_render.py`
+  und `db/image_compare.py` (`fetch_canvas_series_groups`, `fetch_pdfs_for_series`) statt eigener Kopien (-570 Zeilen).
+  Drehung im Web um die Bildmitte (Desktop um die linke obere Ecke).
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

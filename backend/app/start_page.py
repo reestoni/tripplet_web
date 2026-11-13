@@ -16,7 +16,9 @@ from db.connection import fetch_all  # noqa: E402
 WEB_ROUTES = {"backlog": "/backlog", "all_experiments": "/experiments", "my_requests": "/requests",
               "yarn_stock": "/tools/yarn-stock", "manage_jets": "/admin/jets", "manage_yarn": "/admin/yarn",
               "smart_chart": "/tools/smart-chart", "dashboards": "/tools/dashboards",
-              "jet_roi": "/tools/jet-roi"}
+              "jet_roi": "/tools/jet-roi", "air_supply": "/tools/air-supply", "image_compare": "/tools/image-compare",
+              "label_generator": "/tools/label-generator", "tdms_inspector": "/tools/tdms-inspector",
+              "canvas": "/tools/canvas"}
 
 
 def preferred_start(user_id: Any) -> str:
