@@ -14,6 +14,7 @@ export type Change = CellAddr & { value: string | number | null; display: string
 export const cellKey = (a: CellAddr) => `${a.tab}|${a.r}|${a.c}`;
 const key = cellKey;
 
+type UndoStep = { k: string; prev: Pending | undefined; next: Pending | undefined };
 type CellInfo = { addr: CellAddr; text: string; raw?: string | null; editable: boolean;
   options?: [number | string, string][] | null };
 
@@ -90,7 +91,8 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
   const { t } = useI18n();
   const [dirty, setDirty] = useState<Map<string, Pending>>(new Map());
   const [bad, setBad] = useState<Set<string>>(new Set());
-  const [undo, setUndo] = useState<{ k: string; prev: Pending | undefined }[][]>([]);
+  const [undo, setUndo] = useState<UndoStep[][]>([]);
+  const [redo, setRedo] = useState<UndoStep[][]>([]);
   const [reloadKey, setReloadKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [warn, setWarn] = useState<string[] | null>(null);
@@ -107,17 +109,19 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
     if (!changes.length) return;
     setDirty((d) => {
       const next = new Map(d);
-      const group: { k: string; prev: Pending | undefined }[] = [];
+      const group: UndoStep[] = [];
       for (const ch of changes) {
         const k = key(ch);
-        group.push({ k, prev: d.get(k) });
+        const prev = d.get(k);
         // back to the stored value = no longer unsaved (dropdown rows compare the stored ID)
         const info = registry.current.get(k);
         const orig = ch.original ?? (info ? (info.options ? (info.raw ?? "") : info.text) : undefined);
         if (orig !== undefined && String(ch.value ?? "") === orig) next.delete(k);
         else next.set(k, { tab: ch.tab, r: ch.r, c: ch.c, value: ch.value, display: ch.display });
+        group.push({ k, prev, next: next.get(k) });
       }
       setUndo((u) => [...u, group]);
+      setRedo([]);
       return next;
     });
     setBad((b) => {
@@ -142,7 +146,25 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
         }
         return n;
       });
+      setRedo((r) => [...r, last]);
       return u.slice(0, -1);
+    });
+  }, []);
+
+  // Ctrl+Y / Ctrl+Shift+Z: the undone step again (desktop _UndoManager)
+  const doRedo = useCallback(() => {
+    setRedo((r) => {
+      if (!r.length) return r;
+      const last = r[r.length - 1];
+      setDirty((d) => {
+        const n = new Map(d);
+        for (const { k, next } of last) {
+          if (next) n.set(k, next); else n.delete(k);
+        }
+        return n;
+      });
+      setUndo((u) => [...u, last]);
+      return r.slice(0, -1);
     });
   }, []);
 
@@ -154,7 +176,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       const res = await request<{ kind: string; saved?: number; warnings?: string[]; failed?: string[] }>(
         "POST", `/api/series/${seriesId}/save`, { edits, mode: machineMode(), unit: jetUnit(), confirmed });
       if (res.kind === "confirm") { setWarn(res.warnings ?? []); return; }
-      setWarn(null); setDirty(new Map()); setUndo([]); setBad(new Set());
+      setWarn(null); setDirty(new Map()); setUndo([]); setRedo([]); setBad(new Set());
       setMsg(res.failed?.length ? { kind: "err", text: t("ed.partly", { tabs: res.failed.join(", ") }) } : { kind: "ok", text: t("ed.saved") });
       setReloadKey((k) => k + 1);
       onSaved?.();
@@ -207,6 +229,9 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       const typing = isTyping(e.target);
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); return; }
       if (typing) return;
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === "y" || (e.key.toLowerCase() === "z" && e.shiftKey))) {
+        e.preventDefault(); doRedo(); return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); doUndo(); return; }
       if (e.key === "Delete" && canWrite && selRef.current.size) {
         const changes: Change[] = [];
@@ -272,7 +297,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       document.removeEventListener("copy", onCopy);
       document.removeEventListener("paste", onPaste);
     };
-  }, [save, doUndo, canWrite, setMany, t]);
+  }, [save, doUndo, doRedo, canWrite, setMany, t]);
 
   // leaving inside the app (sidebar, links, buttons using confirmLeave): ask first, like the desktop
   useEffect(() => {
@@ -304,7 +329,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
     set,
     setMany,
     invalid: (a) => bad.has(key(a)),
-    hasDirty: (tab) => [...dirty.values()].some((p) => p.tab === tab),
+    hasDirty: (tab) => [...dirty.values()].some((p) => p.tab === tab || (tab === "jet_air" && p.tab.startsWith("jet_air"))),
     reloadKey,
     isSelected: (a) => sel.has(key(a)),
     select,
@@ -323,7 +348,8 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
               {busy ? t("ed.saving") : t("ed.save", { n: dirty.size })}
             </button>
             <button className="btn-plain" disabled={!undo.length} onClick={doUndo} title="Ctrl+Z">{t("ed.undo")}</button>
-            <button className="btn-plain" disabled={!dirty.size} onClick={() => { setDirty(new Map()); setUndo([]); setBad(new Set()); }}>
+            <button className="btn-plain" disabled={!redo.length} onClick={doRedo} title="Ctrl+Y">{t("ed.redo")}</button>
+            <button className="btn-plain" disabled={!dirty.size} onClick={() => { setDirty(new Map()); setUndo([]); setRedo([]); setBad(new Set()); }}>
               {t("ed.discard")}
             </button>
           </>

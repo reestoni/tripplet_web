@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, notesTip, request, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
-import { confirmLeave, EditCell, EditProvider } from "../edit";
+import { confirmLeave, EditCell, EditProvider, useEdit } from "../edit";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
@@ -106,6 +106,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
         <div className="se-title">
           <h1>{s.experiment_id} – {s.name}</h1>
           <div className="se-facts">
+            <span className="se-sid" title={t("se.sidTip")} onClick={() => { try { void navigator.clipboard.writeText(String(s.id)); } catch { /* no clipboard */ } }}><b>TrialSeriesID:</b> {s.id}</span>
             <span><b>{t("se.machine")}:</b> {s.machine || "–"}</span>
             <span><b>{t("se.status")}:</b> {s.status_id != null ? t(`status.${s.status_id}`) : "–"}</span>
             <span><b>{t("se.owner")}:</b> {s.owner || "–"}</span>
@@ -245,6 +246,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
     } else items.push({ label: t("tl.markRef", { trial: trial.label }), onClick: () => onTool({ kind: "ref-mark", trial }) });
     return items;
   };
+  const ed = useEdit();
   const menus = useSeriesMenus({ seriesId: s.id, rights, trials: data.trials, onChanged, trialExtras,
     mode: () => localStorage.getItem("tripplet.machine.mode") || "single" });
   // right-click on the ply row of Machine Data (MachineTable) opens the Yarns… dialog
@@ -259,19 +261,19 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
       <div className="se-tabs" role="tablist">
         <button role="tab" aria-selected={tab === "machine"} className={"se-tab" + (tab === "machine" ? " on" : "")}
           onClick={() => choose("machine")}>
-          {tr("tab", "machine", "Machine Data")}
+          {tr("tab", "machine", "Machine Data")}{ed?.hasDirty("machine") && <span className="dirty-dot" title={t("ed.unsavedTab")} />}
         </button>
         {data.tabs.map((x) => (
           <button key={x.key} role="tab" aria-selected={x.key === tab}
             className={"se-tab" + (x.key === tab ? " on" : "")} onClick={() => choose(x.key)}>
-            {tr("tab", x.key, x.title)}
+            {tr("tab", x.key, x.title)}{ed?.hasDirty(x.key) && <span className="dirty-dot" title={t("ed.unsavedTab")} />}
             {Object.keys(x.flags).length > 0 && <span className="flag-dot" />}
           </button>
         ))}
         {data.has_rd && (
           <button role="tab" aria-selected={tab === "rd"} className={"se-tab" + (tab === "rd" ? " on" : "")}
             onClick={() => choose("rd")}>
-            {tr("tab", "rd", "R&D Machine Data")}
+            {tr("tab", "rd", "R&D Machine Data")}{ed?.hasDirty("rd") && <span className="dirty-dot" title={t("ed.unsavedTab")} />}
           </button>
         )}
         {data.has_yarnscope && (
