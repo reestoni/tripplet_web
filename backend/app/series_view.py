@@ -286,6 +286,9 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
             tip = "" if r in rd.housing_rows else mdm.rd_tooltip(rd, r, c, jets.tooltip_map, {})
             if tip:
                 cell["tip"] = tip
+            alert = rd.cell_alerts.get((r, c))
+            if alert:
+                cell["alert"] = alert
             notes = cell_notes.notes_for_binding(by_key, rd.cells[r][c][1])
             if notes:
                 cell["notes"] = [_note_json(n) for n in notes]
