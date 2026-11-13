@@ -120,7 +120,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Upload images | `_upload_series_images` / `_insert_trialseries_image_row` | **DONE** | `be/uploads.py`, `fe/components/Attachments.tsx`, `db/series_uploads.py` (2026-11-13) |
 | Garnspiegel CV analysis of uploaded images | `_analyze_and_save_garnspiegel` | **DONE** | `db/series_uploads.analyze_garnspiegel` on upload (2026-11-13) |
 | Upload PDFs | `_upload_series_pdfs` / `_insert_trialseries_pdf_row` | **DONE** | `be/uploads.py` (2026-11-13) |
-| Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **DONE** | `fe/components/SeriesTools.tsx` PdfImportDialog, `be/series_tools.pdf_import` (web: write access needed) |
+| Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **DONE** | `fe/components/SeriesTools.tsx` PdfImportDialog, `be/series_tools.pdf_import` (open to all like the desktop) |
 | Itemat import | `_itemat_import` | **DONE** | same as Statimat |
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
 | Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **PARTIAL** | report page has its own load list; no picker in header (`?report=` supported) |

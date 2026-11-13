@@ -125,6 +125,11 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
               <button className="btn-plain" onClick={() => openTool({ kind: "yarns" })} title={t("tl.yarnsTip")}>{t("tl.yarns")}</button>
               <button className="btn-plain" onClick={() => openTool({ kind: "copy", ids: [] })}>{t("tl.copy")}</button>
               <button className="btn-plain" onClick={() => openTool({ kind: "ref-add" })} title={t("tl.addRefTip")}>{t("tl.addRef")}</button>
+            </>
+          )}
+          {data.trials.length > 0 && (
+            <>
+              {/* comparing only reads; the PDF import is open to every user like on the desktop (and like uploads) */}
               <button className="btn-plain" onClick={() => setTool({ kind: "compare", ref: null })} title={t("tl.cmpTip")}>{t("tl.cmp")}</button>
               <button className="btn-plain" onClick={() => openTool({ kind: "import", which: "statimat" })}>{t("tl.statImport")}</button>
               <button className="btn-plain" onClick={() => openTool({ kind: "import", which: "itemat" })}>{t("tl.itemImport")}</button>

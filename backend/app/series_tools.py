@@ -292,9 +292,10 @@ class PdfImport(BaseModel):
 @router.post("/{series_id}/pdf-import")
 def pdf_import(series_id: int, body: PdfImport, user: Dict[str, Any] = Depends(current_user)):
     """Desktop "Statimat import" / "Itemat import": only PDFs attached to this series (allow-list by
-    attachment id, the browser never sends paths). Web: write access needed (access level >= 2)."""
-    if int(user.get("access_level") or 0) < 2:
-        return _err(403, "read_only", "You have read-only access.")
+    attachment id, the browser never sends paths). Open to every user like the desktop and like uploads
+    (db/lab_pdf_import.can_import, Nutzerentscheid 2026-11-13)."""
+    if not lpi.can_import(user):
+        return _err(403, "forbidden", "You may not import PDFs.")
     if body.kind not in ("statimat", "itemat") or not body.ids:
         return _err(400, "bad_request", "Choose Statimat or Itemat and at least one PDF.")
     paths = []
