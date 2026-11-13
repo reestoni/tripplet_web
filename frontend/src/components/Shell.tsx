@@ -62,10 +62,10 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
     <div className="shell">
       <aside className="sidebar">
         <NavLink to="/" className="sb-brand">
-          <img src={img("logo-heberlein-weiss.png")} alt="Heberlein" />
+          <img className="sb-logo" src={img("tricolour.png")} alt="TrippleT" />
           <div>
             <div className="sb-brand-title">TrippleT</div>
-            <div className="sb-brand-sub">WEB · {me.version}</div>
+            <div className="sb-brand-sub">HEBERLEIN · WEB {me.version}</div>
           </div>
         </NavLink>
         {me.mode !== "prod" && <div className="sb-env">{me.mode.toUpperCase()} · {me.db}</div>}

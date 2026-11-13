@@ -30,7 +30,13 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
     <div className="login-page">
       <form className="login-card" onSubmit={submit}>
         <LangFlags className="login-flags" />
-        <img className="login-logo" src={img("header_logo_big.png")} alt="TrippleT" />
+        <div className="login-brand">
+          <img className="login-logo" src={img("tricolour_black.png")} alt="TrippleT" />
+          <div>
+            <div className="login-brand-title">TrippleT</div>
+            <div className="login-brand-sub">HEBERLEIN</div>
+          </div>
+        </div>
         <h1>{t("login.title")}</h1>
         <label>
           {t("login.username")}

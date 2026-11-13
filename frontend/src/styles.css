@@ -38,7 +38,10 @@ body { background: var(--page-bg); }
   gap: 14px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
 }
-.login-logo { max-width: 220px; align-self: center; }
+.login-brand { display: flex; align-items: center; gap: 12px; align-self: center; }
+.login-logo { height: 56px; width: auto; }
+.login-brand-title { font-size: 24px; font-weight: 700; }
+.login-brand-sub { font-size: 11px; font-weight: 600; letter-spacing: 2px; color: var(--muted); }
 .login-card h1 { margin: 0; font-size: 20px; text-align: center; }
 .login-card label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px; }
 .login-card input {
@@ -74,14 +77,14 @@ body { background: var(--page-bg); }
 }
 .sb-brand {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   padding: 18px 16px 10px;
   color: white;
   text-decoration: none;
 }
-.sb-brand img { height: 22px; max-width: 100%; }
+.sb-brand img.sb-logo { height: 38px; width: auto; }
 .sb-brand-title { font-size: 16px; font-weight: 700; }
 .sb-brand-sub { font-size: 9px; font-weight: 600; letter-spacing: 1px; color: rgba(255, 255, 255, 0.6); }
 .sb-env {
