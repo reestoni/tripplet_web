@@ -34,7 +34,6 @@ from ui import smart_dashboard_core as sc  # noqa: E402
 from ui import smart_dashboard_engine as en  # noqa: E402
 
 router = APIRouter(prefix="/api/smart")
-page_router = APIRouter()
 
 MAX_SESSIONS = 40
 IDLE_SECONDS = 6 * 3600
@@ -183,7 +182,7 @@ _QT_SCRIPT = '<script src="qrc:///qtwebchannel/qwebchannel.js"></script>'
 _PLOTLY_SCRIPT = '<script src="plotly-2.32.0.min.js"></script>'
 
 
-@page_router.get("/smart-page", response_class=HTMLResponse)
+@router.get("/page", response_class=HTMLResponse)     # under /api: the Vite dev proxy forwards it
 def dashboard_page(user: Dict[str, Any] = Depends(current_user)) -> HTMLResponse:
     from ui.smart_dashboard_html import DASHBOARD_HTML
     html = DASHBOARD_HTML

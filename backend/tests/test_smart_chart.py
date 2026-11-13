@@ -45,7 +45,7 @@ def _call(c, sid, method, *args):
 
 def test_page_is_the_desktop_page_with_the_web_bridge():
     c, _ = _client()
-    html = c.get("/smart-page").text
+    html = c.get("/api/smart/page").text
     assert "/report-assets/smart_bridge.js" in html and "qrc:" not in html
     assert "/report-assets/plotly-2.32.0.min.js" in html
     assert "QWebChannel" in c.get("/report-assets/smart_bridge.js").text

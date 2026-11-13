@@ -3,7 +3,7 @@ import { request } from "../api";
 import { useI18n } from "../i18n";
 import { CalcDialog, ColourDialog, FairDialog, FilterDialog, type Answer, type Summary } from "./SmartDialogs";
 
-/* The desktop's dashboard page (ui/smart_dashboard_html.py) in an iframe, served at /smart-page with
+/* The desktop's dashboard page (ui/smart_dashboard_html.py) in an iframe, served at /api/smart/page with
    /report-assets/smart_bridge.js instead of Qt's web channel. One server session per open page (sid).
    The bridge sends the page's own calls to the server; calls that open a desktop dialog arrive here by
    postMessage, and the answers of the dialogs go back to the page as commands (postMessage "smart-cmds"). */
@@ -77,7 +77,7 @@ export function useSmartFrame(sid: string, readOnly: boolean, enabled: boolean) 
     : <FairDialog sid={sid} vid={dlg.vid} onClose={close} onDone={apply} />;
 
   const element = useMemo(() => enabled
-    ? <iframe ref={frame} className="smart-frame" src={`/smart-page?sid=${encodeURIComponent(sid)}`} title="Dashboard" />
+    ? <iframe ref={frame} className="smart-frame" src={`/api/smart/page?sid=${encodeURIComponent(sid)}`} title="Dashboard" />
     : null, [enabled, sid]);
 
   return { element, dialogs, apply, send, summary, setSummary, ready, error, setError };

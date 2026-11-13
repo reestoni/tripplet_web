@@ -190,7 +190,7 @@ Tests `tests/test_user_admin.py` (Test-Benutzer wird angelegt und gelöscht, Zug
 
 **Smart Chart / Dashboards** (2026-11-13, erste Werkzeuge): `/tools/smart-chart` (`?view=<id>`), `/tools/dashboards`.
 Nutzerentscheid: die Desktop-Seite `ui/smart_dashboard_html.py` (Power-BI-Editor, Plotly) wird **eingebettet**, nicht neu
-gebaut - iframe `/smart-page?sid=…`, `backend/app/static/smart_bridge.js` ersetzt qwebchannel (Seiten-Aufrufe -> `POST
+gebaut - iframe `/api/smart/page?sid=…`, `backend/app/static/smart_bridge.js` ersetzt qwebchannel (Seiten-Aufrufe -> `POST
 /api/smart/<sid>/call`, Antwort = "Kommandos" = Seitenfunktionen init/renderResults/setSpec/…; Dialog-Aufrufe -> postMessage
 an React). Die Dashboard-Fläche bleibt dadurch Englisch wie im Desktop (bewusst); Rahmen + Dialoge (Filter, berechnetes
 Feld, Farbe, Fairness, Ansicht öffnen/speichern/teilen, PDF-Frage) sind React und 4-sprachig. Logik der Qt-Brücke Qt-frei in
