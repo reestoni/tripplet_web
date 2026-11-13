@@ -357,3 +357,22 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Columns… dialog (drag & drop, "Save layout" per user) | `ColumnOrderDialog`, `_save_column_order_now` | **DONE** | same `db/user_column_order` key `manage_jets` as the desktop |
 | Copy selection (Ctrl+C) | `copy_selection_to_clipboard` | **DONE** | selected rows as TSV |
 | Context help | `_open_help` | **DONE** | `HelpButton screen="manage_jets"` |
+
+## 10. Manage Yarn / New Yarn (`ui/screen_manage_yarn.py`, `ui/screen_new_yarn.py`, `main.py` yarn form callbacks → `fe/pages/ManageYarn.tsx`, `be/admin_yarn.py`, logic `db/yarn_admin.py`) – added 2026-11-13
+
+| Feature | Desktop (file:function) | Web status | Notes / logic location |
+|---|---|---|---|
+| Table of catalogue yarns (no shadow yarns), UsedInTrial + StockKg computed, DPF computed | `_load_yarn`, `YarnTableModel` | **DONE** | `yarn_admin.load_yarns()`; DPF also live while editing Endtiter / filaments |
+| SourceTrialID never shown, CreatedBy / CreationDate only superusers, "ColourID" shown as "Colour" | `reload_data`, `_DISPLAY_LABEL_OVERRIDES` | **DONE** | `yarn_admin.visible_columns`, `DISPLAY_LABELS` |
+| Colour square in front of Name and Colour | `colour_icon` | **DONE** | `db/yarn_colours.colour_css` |
+| Search by name, header filters, sort | `_on_search_changed`, `FilterableHeaderView` | **DONE (different)** | filter row as in Manage Jets; ID + Name frozen (desktop: nothing frozen) |
+| Edit cells, FK dropdowns (Garntyp, Material, YarnGroup, Colour), "+ Add new colour…" | `ComboMapDelegate`, `quick_add_colour` | **DONE** | same name → existing colour, similar name → use it / create anyway (`colour_exact/colour_similar/insert_colour`) |
+| Rights: everyone edits/creates, MinStock only superusers, Delete only Admin card right | `set_permissions`, `app_meta.can_edit_min_stock` | **DONE** | `yarn_admin.can_edit_minstock/can_delete`; server refuses MinStock / delete otherwise |
+| Duplicate check before every save ("Save anyway?", default No) | `find_duplicate_yarn`, `confirm_save_despite_duplicate` | **DONE** | 409 `duplicate_identical/similar` → dialog → resend with `confirmed` |
+| New Yarn / Edit in Form (two columns, DPF read-only, MinStock locked) | `NewYarnScreen`, `_go_new_yarn_form`, `_go_edit_yarn_form` | **DONE** | `yarn_admin.insert_yarn/update_yarn` |
+| Delete selected (confirm) | `_on_delete` | **DONE** | |
+| UsedInTrial ▸ → series → trials (jet, OF / Core-Effect OF, speed) | `_expand_yarn_row`, `_fetch_yarn_usage` | **DONE** | `yarn_admin.yarn_usage()` |
+| Columns… dialog + "Save layout" | `ColumnOrderDialog` | **DONE** | key `manage_yarn` like the desktop |
+| Overwriting GlobalID in the table | (desktop allows it) | **NOT IN WEB (on purpose)** | |
+| KB links in the right-click menu (Material / Garntyp) | `kb_links.install_table_menu/install_combo_menu` | **MISSING** | |
+| Context help | `_open_help` | **DONE** | `HelpButton screen="manage_yarn"` |

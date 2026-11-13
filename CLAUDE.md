@@ -31,7 +31,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   **dort** in ein Qt-freies Modul gezogen (Desktop nutzt es dann auch), nie hier nachgebaut.
   Bisher so herausgezogen: `db/nav_counts.py` (Badges), `db/user_profile.py` (Login-Profil),
   `feature_access.rules_for()` (Rechte für beliebigen Benutzer), `db/experiment_create.py`
-  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13).
+  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13).
   Alle Regeln der Desktop-`CLAUDE.md` zu Schreibpfaden gelten auch hier (Änderungsprotokoll,
   `dy_ratio`, Papierkorb, Plausibilität, `exclude_references_sql`, `execute_insert` …).
 - Offline-Modus (SQLite) gibt es im Web nicht (offen, ob je nötig).
@@ -159,6 +159,14 @@ als Literal, weil `db.connection` Alt-Namen wie `tblDTYJets` -> `tbljets` im SQL
 der Desktop alle Formularfelder (leer = NULL; sonst bricht der Default `JetTypeID=0` den FK). Dateien: Ablage
 `jets_admin.files_root()` (dev = `C:\ttt\JetFiles`). Spaltenreihenfolge = `db/user_column_order` Schlüssel `manage_jets`
 (gleich wie Desktop). Tests `tests/test_admin_jets.py` (Durchlauf schreibt echt und löscht wieder).
+Ganzzahl-Spalten lehnen Kommazahlen ab (MySQL würde still runden), gilt für Jets und Yarn.
+
+**Manage Yarn** (2026-11-13): `/admin/yarn`, `app/admin_yarn.py` (`/api/admin/yarn…`) auf `db/yarn_admin.py` (aus
+`screen_manage_yarn.py`/`main.py` gezogen, Desktop nutzt es jetzt auch), Seite `ManageYarn.tsx` auf `AdminTable`.
+Rechte wie Desktop: alle mit Feature `manage_yarn` bearbeiten/anlegen, MinStock nur Superuser, Löschen nur Admin-Karte.
+Jede Speicherung prüft Dubletten (409 `duplicate_identical`/`duplicate_similar` -> "Trotzdem speichern?" -> erneut mit
+`confirmed`). "+ Neue Farbe…" (`POST …/colour`, ähnlicher Name -> 409 `colour_similar`, dann `force`). GlobalID ist im Web
+bewusst nicht änderbar. Tests `tests/test_admin_yarn.py`.
 
 **Hilfe** (2026-11-13): `backend/app/help.py` (`/api/help/screen/<screen>` = Kontext-Hilfe aller Sprachen aus den
 Desktop-Textmodulen `ui/widgets/help_texts_*.py` als Bausteine, Skizzen als data-URL; `/api/help/search` = Suche aus
@@ -175,10 +183,10 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets (siehe unten),
-  Manage Yarn, Yarn Stock. **Kleinkram für später** (nicht vergessen): "Open in Yarn Stock" im Lagerplatz-Dialog
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn (siehe unten),
+  Yarn Stock (Route `/tools/yarn-stock`). **Kleinkram für später** (nicht vergessen): "Open in Yarn Stock" im Lagerplatz-Dialog
   von Create Experiment (sobald Yarn Stock im Web ist), "?"-Knopf auf weiteren Seiten, sobald sie ins Web
-  kommen (Manage Yarn/Jets, Yarn Stock, Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
+  kommen (Yarn Stock, Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen
   Qt-frei teilen, Server rechnet + schickt ausgedünnte Kurven, Plotly zeichnet, Garngraf im Browser neu aus

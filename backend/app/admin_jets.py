@@ -30,6 +30,7 @@ from ui.text_normalize import canon_with_id_strip as _canon  # noqa: E402
 router = APIRouter(prefix="/api/admin/jets")
 SCREEN_KEY = "manage_jets"
 SUPERUSER = 4
+INT_TYPES = {"TINYINT", "SMALLINT", "MEDIUMINT", "INT", "INTEGER", "BIGINT"}
 NUMERIC_TYPES = {"TINYINT", "SMALLINT", "MEDIUMINT", "INT", "INTEGER", "BIGINT", "DECIMAL", "NUMERIC", "FLOAT", "DOUBLE", "REAL"}
 
 
@@ -50,6 +51,16 @@ def _numeric_columns() -> set:
     except Exception:
         return set()
     return {r["c"] for r in rows if str(r.get("d") or "").upper() in NUMERIC_TYPES}
+
+
+def _int_columns() -> set:
+    """Whole-number columns (MySQL would round 99.5 silently - refused instead)."""
+    try:
+        rows = fetch_all("SELECT COLUMN_NAME AS c, DATA_TYPE AS d FROM information_schema.COLUMNS "
+                         "WHERE TABLE_SCHEMA = DATABASE() AND LOWER(TABLE_NAME) = LOWER('" + ja.TABLE + "')", [])
+    except Exception:
+        return set()
+    return {r["c"] for r in rows if str(r.get("d") or "").upper() in INT_TYPES}
 
 
 def _plain(v: Any) -> Any:
@@ -99,7 +110,7 @@ def jets(user: Dict[str, Any] = Depends(require_feature("manage_jets"))):
     }
 
 
-def _convert(col: str, value: Any, numeric: set, maps: Dict[str, Dict]) -> Any:
+def _convert(col: str, value: Any, numeric: set, maps: Dict[str, Dict], ints: set = frozenset()) -> Any:
     """Browser value -> DB value with the desktop's rules (FK id from the list, bool 0/1, empty -> NULL);
     numbers are checked so a typo is refused instead of being written as text."""
     if ja.is_bool_column(col):
@@ -121,18 +132,23 @@ def _convert(col: str, value: Any, numeric: set, maps: Dict[str, Dict]) -> Any:
             f = float(str(value).replace(",", "."))
         except ValueError:
             raise ValueError(f"{col}: number expected")
+        if col in ints:
+            if not f.is_integer():
+                raise ValueError(f"{col}: whole number expected")
+            return int(f)
         return int(f) if f.is_integer() and "." not in str(value) and "," not in str(value) else f
     return value
 
 
 def _clean(data: Dict[str, Any], allowed: List[str]) -> Dict[str, Any]:
     numeric = _numeric_columns()
+    ints = _int_columns()
     maps = ja.fk_maps()
     out = {}
     for col, v in data.items():
         if col not in allowed:
             raise ValueError(f"{col}: column cannot be changed")
-        out[col] = _convert(col, v, numeric, maps)
+        out[col] = _convert(col, v, numeric, maps, ints)
     return out
 
 

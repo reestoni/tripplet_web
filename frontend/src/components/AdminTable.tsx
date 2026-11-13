@@ -12,6 +12,7 @@ export type FkItems = [number | string, string][];
 export type AdminTableProps = {
   columns: string[];
   frozen: number;
+  frozenWidths?: number[];
   idCol: string;
   rows: Row[];
   fk: Record<string, FkItems>;
@@ -27,7 +28,12 @@ export type AdminTableProps = {
   search?: string;
   searchCols?: string[];
   header?: (col: string) => ReactNode;
-  cell?: (col: string, row: Row) => ReactNode | undefined;
+  /** special rendering (not editable); ``val`` reads the current (also unsaved) value of a column */
+  cell?: (col: string, row: Row, val: (c: string) => unknown) => ReactNode | undefined;
+  /** something in front of the text of a normal cell (e.g. the colour square) */
+  prefix?: (col: string, row: Row, val: (c: string) => unknown) => ReactNode;
+  /** dropdown columns with an extra "+ …" entry at the end */
+  addNew?: { cols: Set<string>; label: string; onAdd: (col: string, id: number) => void };
   narrow?: Set<string>;
   detail?: (row: Row) => ReactNode | null;
   onCount?: (shown: number) => void;
@@ -167,9 +173,10 @@ export default function AdminTable(p: AdminTableProps) {
     }
   };
 
-  const left = (i: number) => FROZEN_W.slice(0, i).reduce((a, b) => a + b, 0);
+  const W = p.frozenWidths ?? FROZEN_W;
+  const left = (i: number) => W.slice(0, i).reduce((a, b) => a + b, 0);
   const frozenStyle = (i: number) =>
-    i < p.frozen ? { position: "sticky" as const, left: left(i), width: FROZEN_W[i], minWidth: FROZEN_W[i], maxWidth: FROZEN_W[i], zIndex: 2 } : undefined;
+    i < p.frozen ? { position: "sticky" as const, left: left(i), width: W[i], minWidth: W[i], maxWidth: W[i], zIndex: 2 } : undefined;
 
   const editor = (row: Row, col: string) => {
     const id = Number(row[p.idCol]);
@@ -178,11 +185,15 @@ export default function AdminTable(p: AdminTableProps) {
     if (items) {
       return (
         <select autoFocus className="at-edit" defaultValue={v === null || v === undefined ? "" : String(v)}
-          onChange={(e) => commit(id, col, e.target.value === "" ? null : items.find(([i]) => String(i) === e.target.value)?.[0] ?? e.target.value)}
+          onChange={(e) => {
+            if (e.target.value === "__add__") { setEditing(null); p.addNew?.onAdd(col, id); return; }
+            commit(id, col, e.target.value === "" ? null : items.find(([i]) => String(i) === e.target.value)?.[0] ?? e.target.value);
+          }}
           onBlur={() => setEditing(null)}
           onKeyDown={(e) => e.key === "Escape" && setEditing(null)}>
           <option value="" />
           {items.map(([i, n]) => <option key={String(i)} value={String(i)}>{n}</option>)}
+          {p.addNew?.cols.has(col) && <option value="__add__">{p.addNew.label}</option>}
         </select>
       );
     }
@@ -232,7 +243,8 @@ export default function AdminTable(p: AdminTableProps) {
               <Fragment key={id}>
                 <tr className={p.selected.has(id) ? "sel" : ""}>
                   {p.columns.map((c, i) => {
-                    const special = p.cell?.(c, row);
+                    const val = (x: string) => value(row, x);
+                    const special = p.cell?.(c, row, val);
                     const isEdit = editing && editing.id === id && editing.col === c;
                     const dirty = ch && c in ch;
                     const cls = [i === p.frozen - 1 ? "at-lastfrozen" : "", dirty ? "dirty" : "",
@@ -255,7 +267,7 @@ export default function AdminTable(p: AdminTableProps) {
                       <td key={c} style={frozenStyle(i)} className={cls}
                         onClick={(e) => !isEdit && clickCell(row, c, e)}
                         onDoubleClick={() => !canEditCell(c) && p.onOpen?.(id)}>
-                        {isEdit ? editor(row, c) : text(row, c)}
+                        {isEdit ? editor(row, c) : <>{p.prefix?.(c, row, val)}{text(row, c)}</>}
                       </td>
                     );
                   })}

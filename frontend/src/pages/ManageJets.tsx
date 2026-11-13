@@ -21,9 +21,9 @@ type JetsData = {
   column_order: string[];
 };
 
-type Usage = {
+export type Usage = {
   series_id: number; label: string; machine_name: string | null;
-  trial_numbers: { vno: number; yarn: string | null; is_aty: boolean; of_pct: string | null; core_of: string | null;
+  trial_numbers: { vno: number; yarn?: string | null; jet?: string | null; is_aty: boolean; of_pct: string | null; core_of: string | null;
     effect_of: string | null; speed: string | null }[];
 };
 
@@ -31,9 +31,9 @@ const ID = "ID";
 const FILES = "__has_files__";
 const USED = "UsedInTrial";
 
-export function errText(t: (k: string, v?: Record<string, string | number>) => string, e: unknown): string {
+export function errText(t: (k: string, v?: Record<string, string | number>) => string, e: unknown, area = "mj"): string {
   if (e instanceof ApiError && e.code) {
-    const key = `mj.err.${e.code}`;
+    const key = `${area}.err.${e.code}`;
     const s = t(key, (e.data?.vars ?? {}) as Record<string, string | number>);
     if (s !== key) return e.code === "bad_value" || e.code === "delete_failed" ? `${s} ${e.message}` : s;
   }
@@ -43,6 +43,7 @@ export function errText(t: (k: string, v?: Record<string, string | number>) => s
 function trialLabel(tr: Usage["trial_numbers"][number]): string {
   const parts: string[] = [];
   if (tr.yarn) parts.push(tr.yarn);
+  if (tr.jet) parts.push(tr.jet);
   if (tr.is_aty) {
     if (tr.core_of !== null) parts.push(`${tr.core_of}% Core OF`);
     if (tr.effect_of !== null) parts.push(`${tr.effect_of}% Effect OF`);
@@ -252,7 +253,7 @@ export default function ManageJets() {
   );
 }
 
-function UsageList({ series }: { series: Usage[] }) {
+export function UsageList({ series }: { series: Usage[] }) {
   const { t } = useI18n();
   const [open, setOpen] = useState<Set<number>>(new Set());
   return (
