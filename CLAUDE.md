@@ -97,7 +97,7 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
   Server-Daten. Zuerst DTY, dann ATY. TDMS liegen auf `H:\Technik\TrippleT\YarnScopeTDMS` bzw. `...\ATYtdms`
   (auf dem PC des Nutzers erreichbar).
 - **Liste für die IT (späterer Intranet-Server):** VM/Server mit HTTPS; Lesezugriff des Dienstkontos auf die
-  Freigaben für YarnScope-TDMS und Serien-Anhänge (Bilder/PDFs, `\heb-fil-003\heberlein	echnik	ripplet\...`
+  Freigaben für YarnScope-TDMS und Serien-Anhänge (Bilder/PDFs, `\\heb-fil-003\heberlein\technik\tripplet\...`
   = `H:\Technik\TrippleT\...`); evtl. Firmen-Login.
 
 - Passwort ändern gibt es im Web noch nicht (Login mit Passwort = Benutzername wird mit
