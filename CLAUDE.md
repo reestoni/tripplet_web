@@ -88,7 +88,13 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    Versuch+Datei+Zeit), Ansichten Segmentmittel/Signal (Plotly, lokal aus /report-assets) und Garnspiegel (Canvas),
    "In DB speichern" ab Zugriffsstufe 2 über `svc.save_analysis`. Noch offen: Prozessvergleich + Trend-/Prozesswellen-
    Karten in YarnScope, ATY-YarnScope, Experiment-Request-Popup, Athena.
-3. Experiment Requests (Create + My Requests) – erster Schreib-Teil
+3. ✅ Experiment Requests (2026-11-13): `app/requests_api.py` (`/api/requests…`) auf `db/experiment_requests.py` +
+   `db/experiment_request_images.py`; Seiten `MyRequests.tsx` (Liste, Filter, Status für Superuser mit
+   Begründung/Bestätigung über `StatusDialog`) und `RequestForm.tsx` (neu/bearbeiten aus dem Formular-Schema,
+   Pflichtfelder, Änderungsvorschlag prüfen = annehmen/ablehnen, Bilder). Abweichung zum Desktop (bewusst):
+   Bilder erst nach dem ersten Speichern - der Desktop legt dafür einen Entwurf an, der beim nächsten Login
+   samt Bildern gelöscht wird (Fehler im Desktop, siehe Commit). Feldnamen übersetzt über `rqf.<DB-Spalte>`,
+   Status über `rqs.<id>`. Noch offen: Experiment zuordnen, Versionsverlauf, ER-Popup aus den Listen.
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines
 5. Bereits Web-nahes: Knowledge Base, Hilfen, Yarn Count, Dashboards/Report

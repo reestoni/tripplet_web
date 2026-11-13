@@ -9,6 +9,8 @@ import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
 import SeriesView from "./pages/SeriesView";
 import SeriesReport from "./pages/SeriesReport";
+import MyRequests from "./pages/MyRequests";
+import RequestForm from "./pages/RequestForm";
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -52,6 +54,9 @@ export default function App() {
         <Route path="/backlog" element={<Backlog />} />
         <Route path="/series/:id" element={<SeriesView accessLevel={me.user.access_level} />} />
         <Route path="/series/:id/report" element={<SeriesReport />} />
+        <Route path="/requests" element={<MyRequests />} />
+        <Route path="/requests/new" element={<RequestForm />} />
+        <Route path="/requests/:id" element={<RequestForm />} />
         <Route path="*" element={<NotYet />} />
       </Routes>
     </Shell>
