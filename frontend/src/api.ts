@@ -87,6 +87,7 @@ export type SeriesData = {
     owner: string;
     creation_date: string | null;
     notes: string;
+    experiment_request_id?: string | number | null;
   };
   trials: { id: number; label: string; number: number; reference: string | null }[];
   has_rd: boolean;
@@ -103,7 +104,7 @@ export type MachineData = {
   columns: { c: number; notes: CellNote[]; filter: string; trial_id: number; trial_label: string; reference: string | null; ply: string;
     ply_tooltip: string; colour: string | null; colour_name: string }[];
   rows: { r: number; title: string; key: string; readonly: boolean; options?: [number | string, string][] | null;
-    cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null }[] }[];
+    cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null; img?: number | string }[] }[];
   filter_labels: string[];
   multi_ply?: boolean;
   machine_id?: number | null;

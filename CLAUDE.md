@@ -87,14 +87,19 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    `YarnScopeView.tsx`): Berechnung = `ui/yarnscope/dty_service.py`, Analysen im Speicher (`CACHE_SIZE`, Schlüssel
    Versuch+Datei+Zeit), Ansichten Segmentmittel/Signal (Plotly, lokal aus /report-assets) und Garnspiegel (Canvas),
    "In DB speichern" ab Zugriffsstufe 2 über `svc.save_analysis`. Noch offen: Prozessvergleich + Trend-/Prozesswellen-
-   Karten in YarnScope, ATY-YarnScope, Experiment-Request-Popup, Athena.
+   Karten in YarnScope, ATY-YarnScope, Athena.
 3. ✅ Experiment Requests (2026-11-13): `app/requests_api.py` (`/api/requests…`) auf `db/experiment_requests.py` +
    `db/experiment_request_images.py`; Seiten `MyRequests.tsx` (Liste, Filter, Status für Superuser mit
    Begründung/Bestätigung über `StatusDialog`) und `RequestForm.tsx` (neu/bearbeiten aus dem Formular-Schema,
    Pflichtfelder, Änderungsvorschlag prüfen = annehmen/ablehnen, Bilder). Abweichung zum Desktop (bewusst):
    Bilder erst nach dem ersten Speichern - der Desktop legt dafür einen Entwurf an, der beim nächsten Login
    samt Bildern gelöscht wird (Fehler im Desktop, siehe Commit). Feldnamen übersetzt über `rqf.<DB-Spalte>`,
-   Status über `rqs.<id>`. Noch offen: Experiment zuordnen, Versionsverlauf, ER-Popup aus den Listen.
+   Status über `rqs.<id>`. Dazu (2026-11-13): ER-Popup nur lesend (`RequestPopup.tsx`, `GET /api/requests/{id}/view`,
+   Sichtbarkeit `experiment_requests.can_view`) aus All Experiments, Backlog, Show Experiment und Report;
+   Versionsverlauf + Vergleich (`/versions`, `/versions/{alt}/compare`); Experiment zuordnen (Superuser);
+   `links_router`: `/api/series/{id}/request`, `/api/series/{id}/reports` (RE-Symbol, `SeriesLinks.tsx`),
+   `/api/experiment-series` (Experiment ID -> Serie, Auswahl bei mehreren); Hilfe "Wie funktionieren Requests"
+   (`RequestHelp.tsx`). Tests `tests/test_request_links.py`.
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines
 5. Bereits Web-nahes: Knowledge Base, Hilfen, Yarn Count, Dashboards/Report

@@ -11,6 +11,7 @@ from . import core  # noqa: F401
 from .deps import current_user
 
 from db import cell_notes  # noqa: E402
+from db import experiment_requests as _er  # noqa: E402
 from db import series_tables as stb  # noqa: E402
 from db.retest_flags import get_open_retest_flags_for_series_and_source  # noqa: E402
 from db.trial_reference import format_trial_number  # noqa: E402
@@ -25,6 +26,32 @@ PENDING_TABS: List[tuple] = []
 def _text(v: Any) -> str:
     # desktop PivotEditModel.set_cell stores str(value), None -> ""
     return "" if v is None else str(v)
+
+
+def _int_or(v: Any) -> Any:
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return v
+
+
+def _lookup(m: Dict[Any, Any], key: Any) -> Any:
+    """Lookup maps of db/machine_data hold int and str keys."""
+    k = _int_or(key)
+    return (m or {}).get(k) or (m or {}).get(str(k))
+
+
+@router.get("/housing-image/{housing_id}")
+def housing_image(housing_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """Picture of a housing (tblHousing.Link) - the hover picture of the Housing row. Only the path
+    stored for that housing, only image files."""
+    import os
+    from fastapi.responses import FileResponse
+    from db import machine_data as mdm
+    path = _lookup(mdm.load_housing_lookup().image_map, housing_id)
+    if not path or os.path.splitext(str(path))[1].lower() not in (".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp")             or not os.path.isfile(str(path)):
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "No picture for this housing."})
+    return FileResponse(str(path), headers={"Cache-Control": "private, max-age=86400"})
 
 
 def _note_json(n: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,6 +178,8 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
             "owner": head.get("Owner") or "",
             "creation_date": head.get("CreationDate"),
             "notes": head.get("Notes") or "",
+            # ER icon in the header (desktop ShowExperimentScreen._refresh_experiment_request_link)
+            "experiment_request_id": _er.request_id_for_experiment(head.get("ExperimentPK")),
         },
         "trials": trials,
         "has_rd": has_rd_fields(series_id),
@@ -220,6 +249,11 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
                 if r in dd_rows:
                     cell["raw"] = None if md.cells[r][c][0] in (None, "") else str(md.cells[r][c][0])
             tip = md.cell_tooltips.get((r, c))
+            stored = md.cells[r][c][0]
+            if r == mdm.JET_ROW and stored not in (None, ""):      # desktop: jet geometry tooltip
+                tip = _lookup(jets.tooltip_map, stored) or tip
+            if r == mdm.HOUSING_ROW and stored not in (None, "") and _lookup(housing.image_map, stored):
+                cell["img"] = _int_or(stored)                     # desktop: housing picture on hover
             if tip:
                 cell["tip"] = tip
             alert = md.cell_alerts.get((r, c))
@@ -333,6 +367,9 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
                     cell["raw"] = None if rd.cells[r][c][0] in (None, "") else str(rd.cells[r][c][0])
             # housing rows: the desktop shows a picture (tblHousing.Link) - not as text here
             tip = "" if r in rd.housing_rows else mdm.rd_tooltip(rd, r, c, jets.tooltip_map, {})
+            stored = rd.cells[r][c][0]
+            if r in rd.housing_rows and stored not in (None, "") and _lookup(housing.image_map, stored):
+                cell["img"] = _int_or(stored)
             if tip:
                 cell["tip"] = tip
             alert = rd.cell_alerts.get((r, c))

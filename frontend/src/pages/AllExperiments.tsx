@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, img, type ExperimentRow } from "../api";
 import { useI18n } from "../i18n";
+import { RequestIcon } from "../components/RequestPopup";
+import { ReportIcon } from "../components/SeriesLinks";
 
 type SortKey = "experiment_id" | "series_name" | "machine" | "creation_date" | "owner" | "status_id" | "has_attach"
   | "experiment_request_id" | "has_notes" | "reports";
@@ -154,13 +156,11 @@ export default function AllExperiments() {
                 </td>
                 <td className="icon-col">{r.has_attach && <img src={img("attach.png")} alt="yes" />}</td>
                 <td className="icon-col">
-                  {r.experiment_request_id != null && (
-                    <img src={img("experiment_request.png")} alt="yes" title={t("icon.request", { id: r.experiment_request_id })} />
-                  )}
+                  <RequestIcon id={r.experiment_request_id} />
                 </td>
                 <td className="icon-col">{r.has_notes && <img src={img("notes.png")} alt="yes" />}</td>
                 <td className="icon-col">
-                  {r.reports > 0 && <img src={img("analytics.png")} alt="yes" title={t("icon.reports", { n: r.reports })} />}
+                  <ReportIcon seriesId={r.series_id} count={r.reports} />
                 </td>
               </tr>
             ))}

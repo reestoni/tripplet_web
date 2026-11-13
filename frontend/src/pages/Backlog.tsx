@@ -34,7 +34,7 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu }:
       </div>
       <div className="bl-sub">
         <span>{sub}</span>
-        <SeriesIcons attach={c.has_attach} request={c.experiment_request_id} notes={c.has_notes} reports={c.reports} />
+        <SeriesIcons attach={c.has_attach} request={c.experiment_request_id} notes={c.has_notes} reports={c.reports} seriesId={c.series_id} />
       </div>
     </div>
   );

@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
+import { ImageViewer, VersionHistory } from "../components/RequestPopup";
+import RequestHelp from "../components/RequestHelp";
 
 type Field = { name: string; label: string; type: "text" | "multiline" | "date" | "fk"; choices?: [unknown, string][]; required: boolean };
 type Loaded = {
   id: number; title: string; status_id: number | null; status_label: string; denial_banner: string | null;
   change_of_id: number | null; pending_change_id: number | null; form: Record<string, unknown>;
   display: { name: string; label: string; text: string; multiline: boolean }[];
-  images: { id: number; name: string }[]; is_superuser: boolean; versions: unknown[];
+  images: { id: number; name: string }[]; is_superuser: boolean; versions: unknown[]; history_target_id: number | null;
 };
-type Img = { id: number; name: string; can_delete: boolean };
+type Img = { id: number; name: string; can_delete: boolean; can_rename?: boolean };
 type Compare = { title: string; rows: { field: string; left: string; right: string; changed: boolean }[]; any_changes: boolean };
 
 function toInput(type: string, v: unknown): string {
@@ -36,6 +38,10 @@ export default function RequestForm() {
   const [busy, setBusy] = useState(false);
   const [review, setReview] = useState<Compare | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [initial, setInitial] = useState<Record<string, string>>({});
+  const [viewer, setViewer] = useState<number | null>(null);
+  const [history, setHistory] = useState(false);
+  const [help, setHelp] = useState(false);
 
   const reqId = loaded?.id ?? null;
 
@@ -59,17 +65,40 @@ export default function RequestForm() {
           v[k] = /^\d{4}-\d{2}-\d{2}[ T]00:00:00/.test(txt) ? txt.slice(0, 10) : txt; // dates as yyyy-mm-dd
         }
         setValues(v);
+        setInitial(v);
         loadImages(d.id);
         if (d.is_superuser && d.pending_change_id) {
           request<Compare>("GET", `/api/requests/${d.id}/compare/${d.pending_change_id}`).then((c) => alive && setReview(c));
         }
       }).catch((e) => setMsg({ kind: "err", text: e instanceof ApiError && e.status === 404 ? t("rq.notFound") : e.message }));
     } else {
-      setLoaded(null); setValues({}); setImages([]);
+      setLoaded(null); setValues({}); setInitial({}); setImages([]);
     }
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // unsaved changes (desktop _has_unsaved_changes): ask before leaving the form
+  const dirty = useMemo(() => {
+    const keys = new Set([...Object.keys(values), ...Object.keys(initial)]);
+    return [...keys].some((k) => (values[k] ?? "") !== (initial[k] ?? ""));
+  }, [values, initial]);
+  const dirtyRef = useRef(false);
+  dirtyRef.current = dirty;
+  const leaveOk = () => !dirtyRef.current || window.confirm(t("rq.leaveQ"));
+  useEffect(() => {
+    const onUnload = (e: BeforeUnloadEvent) => { if (dirtyRef.current) { e.preventDefault(); e.returnValue = ""; } };
+    const onClick = (e: MouseEvent) => {
+      if (!dirtyRef.current) return;
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank" || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      if (a.origin !== window.location.origin || a.closest(".rq-images, .modal")) return;
+      if (!window.confirm(t("rq.leaveQ"))) { e.preventDefault(); e.stopPropagation(); }
+    };
+    window.addEventListener("beforeunload", onUnload);
+    document.addEventListener("click", onClick, true);
+    return () => { window.removeEventListener("beforeunload", onUnload); document.removeEventListener("click", onClick, true); };
+  }, [t]);
 
   const label = (f: Field) => { const k = `rqf.${f.name}`; const v = t(k); return v === k ? f.label : v; };
   const isReq = (f: Field) => f.required || required.includes(f.name);
@@ -80,8 +109,9 @@ export default function RequestForm() {
       const res = await request<{ kind: string; request_id: number | null; message: string; missing: string[] }>(
         isNew ? "POST" : "PUT", isNew ? "/api/requests" : `/api/requests/${reqId}`, { values });
       if (res.kind === "invalid") { setMissing(res.missing); setMsg({ kind: "err", text: res.message }); }
-      else if (res.kind === "unchanged") setMsg({ kind: "ok", text: t("rq.unchanged") });
+      else if (res.kind === "unchanged") { setInitial(values); setMsg({ kind: "ok", text: t("rq.unchanged") }); }
       else {
+        setInitial(values); dirtyRef.current = false;
         setMsg({ kind: "ok", text: res.kind === "proposal" ? t("rq.proposal") : t("rq.saved") });
         window.dispatchEvent(new Event("tripplet:nav-changed"));
         if (isNew && res.request_id) navigate(`/requests/${res.request_id}`, { replace: true });
@@ -114,6 +144,7 @@ export default function RequestForm() {
       if (accept) await request("POST", `/api/requests/${loaded.pending_change_id}/accept`);
       else await request("POST", `/api/requests/${loaded.pending_change_id}/reject`, { original_id: loaded.id });
       window.dispatchEvent(new Event("tripplet:nav-changed"));
+      dirtyRef.current = false;
       navigate("/requests");
     } catch (e) { setMsg({ kind: "err", text: e instanceof ApiError ? e.message : String(e) }); }
   };
@@ -123,12 +154,17 @@ export default function RequestForm() {
   return (
     <div className="page rq-page">
       <div className="se-head">
-        <button className="btn-plain" onClick={() => navigate("/requests")} title={t("se.back")}>←</button>
+        <button className="btn-plain" onClick={() => leaveOk() && (dirtyRef.current = false, navigate("/requests"))} title={t("se.back")}>←</button>
         <div className="se-title">
           <h1>{isNew ? t("rq.newTitle") : `#${loaded?.id ?? ""} – ${loaded?.title ?? ""}`}</h1>
           {loaded && <div className="se-facts"><span><b>{t("exp.col.status_id")}:</b> {loaded.status_id ? t(`rqs.${loaded.status_id}`) : loaded.status_label}</span>
             {loaded.change_of_id && <span>{t("rq.isChangeOf", { id: loaded.change_of_id })}</span>}</div>}
         </div>
+        <span style={{ flex: 1 }} />
+        {loaded && loaded.versions.length > 0 && loaded.history_target_id != null && (
+          <button className="btn-plain" onClick={() => setHistory(true)} title={t("rqp.historyTip")}>{t("rq.historyBtn")}</button>
+        )}
+        <button className="rq-help" onClick={() => setHelp(true)} title={t("rqh.tip")}>?</button>
       </div>
       {loaded?.denial_banner && <div className="card rq-denied">{loaded.denial_banner}</div>}
 
@@ -186,9 +222,10 @@ export default function RequestForm() {
           ) : <span className="muted">{t("rq.imagesAfterSave")}</span>}
         </div>
         <div className="at-grid">
-          {images.map((im) => (
+          {images.map((im, k) => (
             <div key={im.id} className="at-thumb">
-              <a href={`/api/requests/${reqId}/images/${im.id}/file`} target="_blank" rel="noreferrer">
+              <a href={`/api/requests/${reqId}/images/${im.id}/file`} target="_blank" rel="noreferrer"
+                onClick={(e) => { if (!(e.ctrlKey || e.metaKey || e.shiftKey)) { e.preventDefault(); setViewer(k); } }}>
                 <img src={`/api/requests/${reqId}/images/${im.id}/file`} alt={im.name} loading="lazy" />
               </a>
               <span title={im.name}>{im.name}</span>
@@ -197,6 +234,11 @@ export default function RequestForm() {
           ))}
         </div>
       </div>
+      {viewer != null && reqId != null && (
+        <ImageViewer requestId={reqId} images={images} start={viewer} onClose={() => setViewer(null)} onRenamed={() => loadImages(reqId)} />
+      )}
+      {history && loaded?.history_target_id != null && <VersionHistory requestId={loaded.history_target_id} onClose={() => setHistory(false)} />}
+      {help && <RequestHelp onClose={() => setHelp(false)} />}
     </div>
   );
 }

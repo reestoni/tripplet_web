@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, notesTip, type CellNote, type MachineData } from "../api";
 import { useI18n } from "../i18n";
-import { EditCell, useEdit } from "../edit";
+import { EditCell, HoverImage, useEdit } from "../edit";
 import type { MenuItem } from "./ContextMenu";
 import type { SeriesMenus } from "./seriesMenus";
 import SchemaPanel, { type SchemaHighlight } from "./SchemaPanel";
@@ -206,6 +206,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
         )}
         {tools && <span className="md-tools">{tools}</span>}
       </div>
+      <HoverImage />
       {schemaShown && data && (
         <SchemaPanel seriesId={seriesId} mode={mode} reloadKey={ed?.reloadKey} follow={follow} onHighlight={setHl}
           visibleKeys={data.rows.filter((r) => !hidden.includes(r.title) && r.key).map((r) => r.key)}
@@ -270,6 +271,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                     return (
                       <EditCell key={i} addr={{ tab: source, r: row.r, c: c.c }} text={cell.v} raw={cell.raw}
                         editable={!!cell.e} options={row.options ?? null}
+                        hoverImg={cell.img != null ? `/api/housing-image/${cell.img}` : undefined}
                         className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")
                           + (hl && row.key && hl.keys.includes(row.key) && hl.cols.includes(c.c) ? " schema-hl-cell" : "")}
                         title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined}

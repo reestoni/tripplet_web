@@ -14,10 +14,14 @@ from pydantic import BaseModel
 from . import core  # noqa: F401
 from .deps import current_user, require_feature
 
+from db import experiment_request_changes as rc  # noqa: E402
 from db import experiment_request_images as ei  # noqa: E402
 from db import experiment_requests as er  # noqa: E402
+from db import series_overview as so  # noqa: E402
 
 router = APIRouter(prefix="/api/requests")
+# links from series to requests/reports (ER + RE icons, Experiment ID -> series)
+links_router = APIRouter()
 
 
 def _json(obj: Any, status: int = 200) -> Response:
@@ -43,8 +47,13 @@ def _guard(fn, *a, **k):
 def list_requests(search: str = "", status: Optional[int] = None, project: Optional[str] = None,
                   owner: Optional[str] = None, user: Dict[str, Any] = Depends(require_feature("my_requests"))):
     data = er.list_requests(user, search=search, status_id=status, project=project or None, owner=owner or None)
+    try:
+        versioned = rc.versioned_ids([r["id"] for r in data.get("rows", [])])
+    except Exception:
+        versioned = set()
     for r in data.get("rows", []):
         r.pop("values", None)          # the list does not need the whole row
+        r["has_history"] = r["id"] in versioned   # context menu "View version history…"
     return _json(data)
 
 
@@ -161,16 +170,18 @@ def images(request_id: int, user: Dict[str, Any] = Depends(current_user)):
     row = er.fetch_request(request_id)
     if row is None:
         return _err(404, "not_found", "This request does not exist.")
-    if not er.can_open(user, row):
+    if not er.can_view(user, row):
         return _err(403, "forbidden", "You are not allowed to open this request.")
+    own = er.can_open(user, row)
     return _json({"images": [{"id": i["ID"], "name": i["OriginalFilename"] or i["StoredFilename"],
-                              "can_delete": ei.can_delete(user, i)} for i in ei.list_images(request_id)]})
+                              "can_delete": own and ei.can_delete(user, i),
+                              "can_rename": own and ei.can_delete(user, i)} for i in ei.list_images(request_id)]})
 
 
 @router.get("/{request_id}/images/{image_id}/file")
 def image_file(request_id: int, image_id: int, user: Dict[str, Any] = Depends(current_user)):
     row = er.fetch_request(request_id)
-    if row is None or not er.can_open(user, row):
+    if row is None or not er.can_view(user, row):
         return _err(404, "not_found", "File not found.")
     path = ei.image_file(request_id, image_id)
     if not path:
@@ -206,3 +217,69 @@ class RenameBody(BaseModel):
 def rename(request_id: int, image_id: int, body: RenameBody, user: Dict[str, Any] = Depends(current_user)):
     res, err = _guard(ei.rename_image, user, request_id, image_id, body.name)
     return err or _json({"name": res})
+
+
+# --------------------------------------------------------------------------- read-only popup + versions
+def _viewable(request_id: int, user) -> Any:
+    row = er.fetch_request(request_id)
+    if row is None:
+        return None, _err(404, "not_found", "This request does not exist.")
+    if not er.can_view(user, row):
+        return None, _err(403, "forbidden", "You are not allowed to open this request.")
+    return row, None
+
+
+@router.get("/{request_id}/view")
+def view(request_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Read-only popup (desktop _ExperimentRequestReadOnlyDialog): fields, images, version history flag."""
+    _row, err = _viewable(request_id, user)
+    if err:
+        return err
+    data = er.popup_data(request_id)
+    if data is None:
+        return _err(404, "not_found", "This request does not exist.")
+    data["images"] = [{"id": i.get("ID"), "name": i.get("OriginalFilename") or i.get("StoredFilename")}
+                      for i in data.get("images") or [] if i.get("ID") is not None]
+    return _json(data)
+
+
+@router.get("/{request_id}/versions")
+def versions(request_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Version history: the live row and every archived prior version, newest first."""
+    _row, err = _viewable(request_id, user)
+    if err:
+        return err
+    return _json({"versions": er.version_history(request_id)})
+
+
+@router.get("/{request_id}/versions/{older_id}/compare")
+def compare_version(request_id: int, older_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Archived version (left) vs. the live row (right), read-only."""
+    _row, err = _viewable(request_id, user)
+    if err:
+        return err
+    if not any(v["id"] == older_id for v in er.version_history(request_id) if not v["current"]):
+        return _err(404, "not_found", "This version does not belong to the request.")
+    return _json(er.compare_requests(older_id, request_id))
+
+
+# --------------------------------------------------------------------------- links from series
+@links_router.get("/api/series/{series_id}/request")
+def series_request(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """Experiment Request linked to the series' experiment (Report header ER icon)."""
+    return _json({"request_id": er.request_id_for_series(series_id)})
+
+
+@links_router.get("/api/series/{series_id}/reports")
+def series_reports(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """Saved Smart-Chart reports of the series (RE icon: one = open, several = pick)."""
+    return _json({"reports": [{"id": int(r["ID"]), "title": str(r.get("Title") or "").strip(),
+                               "author": str(r.get("Author") or "").strip()}
+                              for r in so.reports_for_series(series_id)]})
+
+
+@links_router.get("/api/experiment-series")
+def experiment_series(exp_id: str, _user: Dict[str, Any] = Depends(require_feature("my_requests"))):
+    """My Requests: click on an Experiment ID -> its trial series (one = open, several = pick)."""
+    pk, rows = er.series_for_experiment_id(exp_id)
+    return _json({"experiment_pk": pk, "series": rows})

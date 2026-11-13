@@ -6,6 +6,7 @@ import { confirmLeave, EditCell, EditProvider, useEdit } from "../edit";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
+import { RequestIcon } from "../components/RequestPopup";
 import YarnScopeView from "../components/YarnScopeView";
 import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
@@ -120,6 +121,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           </div>
         </div>
         <div className="se-actions">
+          {s.experiment_request_id != null && <span className="tb-icon big rqp-er"><RequestIcon id={s.experiment_request_id} big /></span>}
           <Attachments seriesId={s.id} />
           {data.trials.length > 0 && (
             <>
