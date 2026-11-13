@@ -320,3 +320,9 @@ table.pivot td.red { background: #ffd0d0 !important; color: #cc0000; font-weight
 table.pivot td.orange { background: #ffe5b4 !important; color: #b85c00; font-weight: 700; }
 table.pivot tbody tr:hover td, table.pivot tbody tr:hover th { box-shadow: inset 0 0 0 9999px rgba(57, 166, 80, 0.07); }
 .se-legend { font-size: 12px; margin-top: 6px; }
+
+/* report (desktop page in an iframe) */
+.se-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.report-page { display: flex; flex-direction: column; height: 100%; }
+.report-bar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--card-bg); }
+.report-frame { flex: 1; width: 100%; border: 0; background: white; }

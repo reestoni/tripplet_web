@@ -90,7 +90,10 @@ export default function SeriesView() {
             )}
           </div>
         </div>
-        <span className="muted se-ro">{t("se.readonly")}</span>
+        <div className="se-actions">
+          <button className="btn-green" onClick={() => navigate(`/series/${s.id}/report`)}>{t("rep.open")}</button>
+          <span className="muted se-ro">{t("se.readonly")}</span>
+        </div>
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
 

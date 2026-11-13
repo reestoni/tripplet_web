@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import core
-from . import auth, nav, series_lists, series_view, user_context
+from . import auth, nav, report, series_lists, series_view, user_context
 from .deps import current_user
 
 from db.usage_log import log_usage_event  # noqa: E402
@@ -24,6 +24,7 @@ app = FastAPI(title="TrippleT Web", version=core.APP_VERSION, docs_url="/api/doc
 app.add_middleware(auth.SessionMiddleware)
 app.include_router(series_lists.router)
 app.include_router(series_view.router)
+app.include_router(report.router)
 
 
 class LoginBody(BaseModel):

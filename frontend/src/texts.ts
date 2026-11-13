@@ -131,6 +131,9 @@ const en = {
   "bl.machine.text": "{series} has a placeholder (joker) machine. On which machine will it actually run?",
   "bl.machine.ok": "Move",
   "bl.machine.cancel": "Cancel",
+  "rep.open": "Report",
+  "rep.back": "Back to the series",
+  "rep.hint": "Same report as in the desktop app – reports saved here also appear there.",
 
   // show experiment
   "se.back": "Back",
@@ -306,6 +309,9 @@ const de: Texts = {
   "bl.machine.text": "{series} hat eine Platzhalter-Maschine (Joker). Auf welcher Maschine läuft sie tatsächlich?",
   "bl.machine.ok": "Verschieben",
   "bl.machine.cancel": "Abbrechen",
+  "rep.open": "Report",
+  "rep.back": "Zurück zur Serie",
+  "rep.hint": "Derselbe Report wie in der Desktop-App – hier gespeicherte Reports erscheinen auch dort.",
 
   // show experiment
   "se.back": "Zurück",
@@ -479,6 +485,9 @@ const es: Texts = {
   "bl.machine.text": "{series} tiene una máquina provisional (comodín). ¿En qué máquina se ejecutará realmente?",
   "bl.machine.ok": "Mover",
   "bl.machine.cancel": "Cancelar",
+  "rep.open": "Informe",
+  "rep.back": "Volver a la serie",
+  "rep.hint": "El mismo informe que en la aplicación de escritorio: los informes guardados aquí también aparecen allí.",
 
   // show experiment
   "se.back": "Volver",
@@ -648,6 +657,9 @@ const zh: Texts = {
   "bl.machine.text": "{series} 使用的是占位（Joker）机器。它实际在哪台机器上运行？",
   "bl.machine.ok": "移动",
   "bl.machine.cancel": "取消",
+  "rep.open": "报告",
+  "rep.back": "返回系列",
+  "rep.hint": "与桌面版相同的报告 – 在此保存的报告也会出现在桌面版中。",
 
   // show experiment
   "se.back": "返回",

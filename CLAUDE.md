@@ -80,6 +80,16 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    (`row.<Desktop-Titel>`, `tab.<key>`). Noch offen (`PENDING_TABS`, im Web ausgegraut): Machine Data,
    Jet Air, Itemat Lab/Plus, DTYoMat, ATYoMat - jeweils zuerst im Desktop nach `db/series_tables.py`
    ziehen (Zellvergleich vorher/nachher), dann hier anzeigen. Danach R&D, YarnScope, Notizen an Werten.
+2c. ✅ Serien-Report (2026-11-13): **dieselbe Desktop-Seite** (`ui/report_html_template.py`, gebaut von
+   `db/report_service.series_report_page`) unverändert im iframe (`/series/:id/report` → Backend
+   `GET /report/series/{pk}?report_id=`). `app/report.py` ersetzt beim Ausliefern nur `qwebchannel.js`
+   durch `app/static/web_bridge.js` (Fake-`QWebChannel`: jeder `_bridge.xxx()` → `POST /api/report/slot/xxx`
+   → `report_service.handle()` → Seite ruft ihr eigenes `receiveXxx(...)`) und Plotly-Pfad. Qt-only-Slots
+   im Browser: Bild = Datei-Input, PDF = Download (`POST /api/report/pdf`), Copy = Clipboard-API.
+   **Web-Härtung** (`_check_slot_args`): `loadFreeField` nur echte Tabelle/Spalte + einfache Bedingung,
+   `runVisualQuery` nur erlaubte Operatoren – der gemeinsame Code setzt diese Werte direkt ins SQL.
+   Offen: Report-Seite selbst ist nur Englisch (Template des Desktops); RE-Symbol/Report-Auswahl aus den Listen;
+   `deleteReport` prüft (wie im Desktop) keinen Autor.
 3. Experiment Requests (Create + My Requests) – erster Schreib-Teil
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines

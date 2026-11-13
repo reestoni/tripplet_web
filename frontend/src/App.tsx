@@ -8,6 +8,7 @@ import NotYet from "./pages/NotYet";
 import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
 import SeriesView from "./pages/SeriesView";
+import SeriesReport from "./pages/SeriesReport";
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -50,6 +51,7 @@ export default function App() {
         <Route path="/experiments" element={<AllExperiments />} />
         <Route path="/backlog" element={<Backlog />} />
         <Route path="/series/:id" element={<SeriesView />} />
+        <Route path="/series/:id/report" element={<SeriesReport />} />
         <Route path="*" element={<NotYet />} />
       </Routes>
     </Shell>
