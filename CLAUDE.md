@@ -79,7 +79,7 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    Jet/Jet Plate/Air Pressure, rot/orange Markierungen, Retest-Punkt; Zeilen-/Reiternamen übersetzt
    (`row.<Desktop-Titel>`, `tab.<key>`). Machine Data seit 2026-11-13: `GET /api/series/{id}/machine?mode=single|compact|groups`
    aus `db/machine_data.py` (`display_text`, `hidden_columns`; Custom-Group- und ungenutzte DTY-Verfahrenszeilen
-   ausgeblendet wie im Desktop; Feldnamen aus `tblMachineFields` werden nur übersetzt, wenn `row.<Titel>` existiert),
+   ausgeblendet wie im Desktop; Feldnamen aus `tblMachineFields` bleiben bewusst unübersetzt = sprachunabhängig, Nutzerentscheid 2026-11-13; übersetzt nur die festen Zeilen über `row.<Titel>`),
    Komponente `MachineTable.tsx`. Noch offen (`PENDING_TABS`, im Web ausgegraut):
    Jet Air, Itemat Lab/Plus, DTYoMat, ATYoMat - jeweils zuerst im Desktop nach `db/series_tables.py`
    ziehen (Zellvergleich vorher/nachher), dann hier anzeigen. Danach R&D, YarnScope, Notizen an Werten.
