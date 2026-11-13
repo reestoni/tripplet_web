@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import core
-from . import admin_jets, admin_yarn, auth, create_api, help, kb, nav, report, requests_api, series_actions, series_edit, series_manage, series_tools, series_lists, series_view, user_context, yarnscope, yarnscope_aty
+from . import admin_jets, admin_yarn, auth, create_api, help, kb, nav, report, requests_api, series_actions, series_edit, series_manage, series_tools, series_lists, series_view, user_context, yarn_stock_api, yarnscope, yarnscope_aty
 from .deps import current_user
 
 from db.usage_log import log_usage_event  # noqa: E402
@@ -33,6 +33,7 @@ app.include_router(create_api.router)
 app.include_router(help.router)
 app.include_router(admin_jets.router)
 app.include_router(admin_yarn.router)
+app.include_router(yarn_stock_api.router)
 app.include_router(series_edit.router)
 app.include_router(series_actions.router)
 app.include_router(series_manage.router)

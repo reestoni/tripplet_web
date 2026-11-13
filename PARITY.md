@@ -326,7 +326,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | General: product group, order type, experiment request (red border while open requests exist), project (locked to the request's), auto number, series name, backlog status (joker = Backlog, locked), priority | `_build_ui`, `_load_*`, `_sync_project_from_request` | **DONE** | `experiment_create.product_groups/order_types/projects/open_requests/request_project/next_experiment_number` |
 | ER icon of the chosen request (popup) | `_open_selected_experiment_request_popup` | **DONE** | `RequestIcon` (modal, not non-modal) |
 | Material tree by yarn group + search, colour square, stock symbol, ends, yarn use, spool choice | `_load_yarns`, `_add_material`, `SpoolPickerDialog` | **DONE** | `yarn_tree()`, `ply_label_for()`, `/api/create/spools` |
-| Click on stock symbol → stock locations dialog | `_on_material_tree_clicked` | **PARTIAL** | `StockDialog`, `/api/create/stock`; data in `db/yarn_spools.py`. Button "Open in Yarn Stock" missing (no Yarn Stock in the web yet) |
+| Click on stock symbol → stock locations dialog | `_on_material_tree_clicked` | **DONE** | `StockDialog`, `/api/create/stock`; data in `db/yarn_spools.py`. "Open in Yarn Stock" opens a new tab (keeps the form) |
 | "+ Trial" (output of another trial as ply, shadow yarn) | `_add_trial_ply`, `get_or_create_shadow_yarn` | **DONE** | `TrialPicker`; `experiment_create.search_trials` / `get_or_create_shadow_yarn` |
 | Remove a ply row → renumber | `_on_yarn_delete_row` | **DONE** | `renumber_plies()` (follows the ply rule; desktop fixed the same way) |
 | Jet tree by group with geometry/titer columns, header sort, search (name + development name) | `_load_jets`, `_on_jet_header_clicked` | **DONE** | `jet_tree()` |
@@ -376,3 +376,22 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Overwriting GlobalID in the table | (desktop allows it) | **NOT IN WEB (on purpose)** | |
 | KB links in the right-click menu (Material / Garntyp) | `kb_links.install_table_menu/install_combo_menu` | **MISSING** | |
 | Context help | `_open_help` | **DONE** | `HelpButton screen="manage_yarn"` |
+
+## 11. Yarn Stock (`ui/screen_yarn_stock.py` → `fe/pages/YarnStock.tsx`, `be/yarn_stock_api.py`, logic `db/yarn_stock.py`) – added 2026-11-13
+
+| Feature | Desktop (file:function) | Web status | Notes / logic location |
+|---|---|---|---|
+| Overview yarn × batch (spools, kg, yarn total, min. stock, status per yarn with colour, locations), empty batches hidden | `reload_data`, `_render_overview` | **DONE** | `yarn_stock.load_stock()` |
+| Search yarn / batch, status filter, Reload, Export to Excel | `_apply_overview_filter`, `_on_export_excel` | **DONE** | `overview_xlsx()` (download) |
+| Batch / producer of a group editable (all spools incl. discarded, logged), Min. stock (superusers) | `_on_group_item_changed`, `_on_minstock_edited` | **DONE** | double-click like the desktop; `update_group_batch/producer`, `set_min_stock` |
+| Spools of the chosen batch: weight / location / tube colour / producer, Save, change log | `SpoolTableModel`, `_write_pending_changes` | **DONE** | `save_spool_changes()`; only spools in stock |
+| Unsaved spool edits: Save / Discard / Cancel before switching | `_ask_pending_changes` | **DONE** | |
+| Select all, New spool(s) (+ producer, + label queue), New producer, Discard | `_on_new_spool`, `_on_new_producer`, `_on_discard` | **DONE** | `new_spools`, `create_producer`, `discard_spools` |
+| Used in…, History… (ticked/selected or whole batch incl. discarded) | `UsedInDialog`, `SpoolHistoryDialog` | **DONE** | `used_in`, `history`, `describe_history` |
+| "Go to spool #" (number or scanned label QR, discarded → show history) | `_on_goto_spool`, `parse_spool_input` | **DONE** | |
+| Label queue: add, remove, Print Labels… (sheet template, start cell, PDF, mark printed) | `_queue_labels`, `_on_print_labels`, `PrintLabelsDialog` | **DONE** | PDF opens in a new tab (desktop: save dialog); `labels_pdf()` |
+| Rack lookup (+ Excel) | `_apply_rack_filter`, `_on_export_rack_excel` | **DONE** | `rack_groups`, `rack_xlsx` |
+| Low / empty stock bell notifications on load | `reload_data` → `ui/notifications` | **DONE** | `refresh_notifications()` |
+| Stock take round | `StockTakeRoundDialog` (`db/stock_take.py`) | **MISSING** | button shown disabled with hint |
+| Yarn Stock help dialog (tasks / screen guide / background / stock take) | `show_yarn_stock_help` | **MISSING** | own dialog like the Request help |
+| "Open in Yarn Stock" from Create Experiment's stock dialog | `YarnLocationsDialog(on_open_yarn_stock)` | **DONE** | web opens a new tab `/tools/yarn-stock?yarn=&charge=` (keeps the form) |

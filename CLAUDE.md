@@ -31,7 +31,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   **dort** in ein Qt-freies Modul gezogen (Desktop nutzt es dann auch), nie hier nachgebaut.
   Bisher so herausgezogen: `db/nav_counts.py` (Badges), `db/user_profile.py` (Login-Profil),
   `feature_access.rules_for()` (Rechte für beliebigen Benutzer), `db/experiment_create.py`
-  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13).
+  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13), `db/yarn_stock.py` (Yarn Stock, 2026-11-13).
   Alle Regeln der Desktop-`CLAUDE.md` zu Schreibpfaden gelten auch hier (Änderungsprotokoll,
   `dy_ratio`, Papierkorb, Plausibilität, `exclude_references_sql`, `execute_insert` …).
 - Offline-Modus (SQLite) gibt es im Web nicht (offen, ob je nötig).
@@ -135,7 +135,7 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    `db/experiment_create.py`; eine Serie mit daraus entstandenen Garnen sperrt der Papierkorb),
    **Lagerplätze** per Klick aufs Spulen-Symbol (`/api/create/stock/<garn>`; `load_spools_in_stock`,
    `location_sort_key`, `tube_colour_candidates` jetzt in `db/yarn_spools.py`) und **Drag & Drop** der Düsenzeilen.
-   Noch offen: "Open in Yarn Stock" im Lagerplatz-Dialog (Yarn Stock gibt es im Web noch nicht).
+   "In Garnlager öffnen" im Lagerplatz-Dialog öffnet Yarn Stock in einem neuen Tab (seit 2026-11-13).
    Tests `tests/test_create_api.py` (Durchlauf schreibt echt und räumt per Papierkorb wieder ab).
 5. Bereits Web-nahes: Knowledge Base, Hilfen, Yarn Count, Dashboards/Report
 6. Tools später oder bewusst Desktop-only
@@ -168,6 +168,15 @@ Jede Speicherung prüft Dubletten (409 `duplicate_identical`/`duplicate_similar`
 `confirmed`). "+ Neue Farbe…" (`POST …/colour`, ähnlicher Name -> 409 `colour_similar`, dann `force`). GlobalID ist im Web
 bewusst nicht änderbar. Tests `tests/test_admin_yarn.py`.
 
+**Yarn Stock** (2026-11-13): `/tools/yarn-stock`, `app/yarn_stock_api.py` (`/api/yarn-stock…`) auf `db/yarn_stock.py` (aus
+`ui/screen_yarn_stock.py` gezogen, Desktop nutzt es jetzt auch), Seite `YarnStock.tsx`: Übersicht Garn×Batch (Status pro
+Garn), Spulen bearbeiten/neu/ausbuchen, Verwendet in, Verlauf (`tblYarnSpoolLog`), "Zu Spule #" (auch Scanner-QR),
+Etiketten-Warteschlange + Bogen-PDF (Vorlage "Default"; PDF markiert die Warteschlange als gedruckt, wie Desktop),
+Gestell-Suche, Excel-Exporte, Glocken-Meldungen beim Laden. Schreiben ab Stufe 2, MinStock nur Superuser.
+`?yarn=&charge=` springt zu einer Batch ("In Garnlager öffnen" aus dem Lagerplatz-Dialog von Create Experiment, neuer Tab).
+Noch offen: Inventur-Runde (`ui/widgets/stock_take_round_dialog.py`, Logik schon Qt-frei in `db/stock_take.py`) und
+die eigene Yarn-Stock-Hilfe. Tests `tests/test_yarn_stock.py` (Durchlauf mit Test-Batch, räumt Spulen/Log/Warteschlange ab).
+
 **Hilfe** (2026-11-13): `backend/app/help.py` (`/api/help/screen/<screen>` = Kontext-Hilfe aller Sprachen aus den
 Desktop-Textmodulen `ui/widgets/help_texts_*.py` als Bausteine, Skizzen als data-URL; `/api/help/search` = Suche aus
 `ui/help_index` inkl. Knowledge-Base-Treffern mit Web-Route und `web_ready`; `/api/help/log` = die Desktop-Events
@@ -183,10 +192,9 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn (siehe unten),
-  Yarn Stock (Route `/tools/yarn-stock`). **Kleinkram für später** (nicht vergessen): "Open in Yarn Stock" im Lagerplatz-Dialog
-  von Create Experiment (sobald Yarn Stock im Web ist), "?"-Knopf auf weiteren Seiten, sobald sie ins Web
-  kommen (Yarn Stock, Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock (siehe unten;
+  offen dort: Inventur-Runde, Yarn-Stock-Hilfe). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
+  Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen
   Qt-frei teilen, Server rechnet + schickt ausgedünnte Kurven, Plotly zeichnet, Garngraf im Browser neu aus

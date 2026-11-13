@@ -14,6 +14,7 @@ import RequestForm from "./pages/RequestForm";
 import CreateExperiment from "./pages/CreateExperiment";
 import ManageJets from "./pages/ManageJets";
 import ManageYarn from "./pages/ManageYarn";
+import YarnStock from "./pages/YarnStock";
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -67,6 +68,7 @@ export default function App() {
         <Route path="/requests/:id" element={<RequestForm />} />
         <Route path="/admin/jets" element={<ManageJets />} />
         <Route path="/admin/yarn" element={<ManageYarn />} />
+        <Route path="/tools/yarn-stock" element={<YarnStock />} />
         <Route path="/knowledge-base" element={<KnowledgeBase />} />
         <Route path="/knowledge-base/:key" element={<KnowledgeBase />} />
         <Route path="*" element={<NotYet />} />

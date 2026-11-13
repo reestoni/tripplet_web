@@ -851,3 +851,36 @@ table.at tr.at-detail td { white-space: normal; background: #fafbfa; max-width: 
 .my-colour-in { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px; }
 .my-colour-in input { font: inherit; font-weight: normal; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; }
 .mj-fk .my-sq { align-self: center; }
+
+/* ---------- Yarn Stock (YarnStock.tsx) ---------- */
+.st-page { display: flex; flex-direction: column; gap: 6px; padding-bottom: 24px; }
+.st-goto { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; }
+.st-goto input { font: inherit; font-weight: normal; width: 150px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.st-goto input.st-rack { width: 60px; }
+.st-msg { display: flex; gap: 10px; align-items: center; padding: 6px 10px; border-radius: 6px; background: #e8f5e9; color: #1d5f2c; font-size: 13px; }
+.st-msg.err { background: #fdecec; color: var(--danger); }
+.st-x { margin-left: auto; background: none; border: none; cursor: pointer; color: inherit; }
+.st-head, .st-btns { margin-bottom: 4px; }
+.st-grow { flex: 1; }
+.st-table { overflow: auto; max-height: 38vh; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); }
+.st-table.st-ov { max-height: 42vh; }
+.st-table.st-small { max-height: 28vh; }
+table.at.st { width: 100%; }
+table.at.st thead th { cursor: default; }
+table.at.st td { cursor: default; }
+table.at.st tbody tr { cursor: pointer; }
+table.at.st tr[style] td { background: transparent; }
+table.at.st tr.sel td { background: #b7d6ff !important; }
+table.at.st tr.st-gone td { color: #999; }
+.st-editable { display: inline-block; min-width: 30px; border-bottom: 1px dashed #b9c2b9; }
+.st-in { font: inherit; width: 100%; min-width: 70px; box-sizing: border-box; padding: 1px 4px; border: 1px solid #d5dbd5; border-radius: 3px; background: transparent; }
+.st-sec-head { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.st-toggle { width: 24px; height: 24px; border-radius: 12px; border: none; background: rgba(0,0,0,0.05); cursor: pointer; color: #444; }
+.st-toggle:hover { background: rgba(57,166,80,0.18); }
+.st-ro { color: #A32D2D; font-weight: 600; font-size: 13px; }
+.st-form { display: grid; grid-template-columns: 170px 1fr; gap: 8px 12px; align-items: center; }
+.st-form label { display: contents; font-size: 13px; font-weight: 600; }
+.st-form input:not([type=checkbox]), .st-form select { font: inherit; font-weight: normal; padding: 5px 8px; border: 1px solid #cdd5ce; border-radius: 4px; width: 100%; box-sizing: border-box; }
+.st-form .st-check { display: flex; grid-column: 1 / -1; gap: 8px; font-weight: normal; }
+.st-warn { background: #FFF3CD; color: #7A5B00; padding: 6px 10px; border-radius: 4px; font-size: 13px; }
+.ce-picked td { background: #b7d6ff !important; }

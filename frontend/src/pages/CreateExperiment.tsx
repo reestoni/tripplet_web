@@ -626,6 +626,7 @@ type StockSpool = { id: number; location: string; batch: string; kg: number | nu
 function StockDialog({ yarn, chosen, onClose }: { yarn: Yarn; chosen: Set<number>; onClose: () => void }) {
   const { t } = useI18n();
   const [spools, setSpools] = useState<StockSpool[] | null>(null);
+  const [picked, setPicked] = useState<number | null>(null);
   useEffect(() => {
     request<{ spools: StockSpool[] }>("GET", `/api/create/stock/${yarn.id}`).then((r) => setSpools(r.spools)).catch(() => setSpools([]));
   }, [yarn.id]);
@@ -648,7 +649,8 @@ function StockDialog({ yarn, chosen, onClose }: { yarn: Yarn; chosen: Set<number
                   const bold = chosen.has(s.id) || s.assigned;
                   const cols = tubeCss(s.tube_colours);
                   return (
-                    <tr key={s.id} className={(group % 2 ? "ce-tint" : "") + (bold ? " ce-chosen" : "")}>
+                    <tr key={s.id} className={(group % 2 ? "ce-tint" : "") + (bold ? " ce-chosen" : "") + (picked === s.id ? " ce-picked" : "")}
+                      onClick={() => setPicked(s.id)}>
                       <td>{s.location || "–"}</td><td>#{s.id}</td><td>{s.batch || "–"}</td>
                       <td className="num">{s.kg != null ? s.kg.toFixed(2) : "?"}</td>
                       <td>{cols.length > 0 && <span className="ce-tube">{cols.map((c, i) => <span key={i} style={{ background: c }} />)}</span>}{s.tube || "–"}</td>
@@ -662,7 +664,17 @@ function StockDialog({ yarn, chosen, onClose }: { yarn: Yarn; chosen: Set<number
           {spools.some((s) => chosen.has(s.id)) && <p className="muted">{t("ce.stockBold")}</p>}
         </>
       )}
-      <div className="modal-buttons"><button className="btn-plain" onClick={onClose}>{t("rqp.close")}</button></div>
+      <div className="modal-buttons">
+        {!!spools?.length && (
+          <button className="btn-plain" title={t("ce.openStockTip")} onClick={() => {
+            // desktop: switches to Yarn Stock at this yarn (batch of the selected spool); the web opens a new tab
+            // so the half-filled experiment form stays
+            const batch = spools.find((s) => s.id === picked)?.batch ?? "";
+            window.open(`/tools/yarn-stock?yarn=${yarn.id}&charge=${encodeURIComponent(batch)}`, "_blank");
+          }}>{t("ce.openStock")}</button>
+        )}
+        <button className="btn-plain" onClick={onClose}>{t("rqp.close")}</button>
+      </div>
     </Modal>
   );
 }
