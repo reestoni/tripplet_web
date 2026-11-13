@@ -221,6 +221,13 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Tabellen nie an (`ENSURE_TABLES = False`). Seite `AirSupply.tsx`: SVG-Editor (Ziehen auf 20er-Raster, Verbinden, Rechtsklick
   Umbenennen/Duplizieren/Löschen, Verbindung entfernen, Zoom/Verschieben, Strg+Z, Reiter), jede Änderung löst `/solve` aus.
   Knotenbeschriftungen kommen vom gemeinsamen Modul (EN).
+- Image Compare `/tools/image-compare`: `app/image_compare_api.py` auf `db/image_compare.py` (Serien/Bilder/ATY-Radar) und
+  `ui/doc_render.py` (VK4/PDF/Excel/Word als PIL-Bild; aus `screen_image_compare.py` gezogen, Canvas hat dieselben Helfer noch
+  dupliziert). Serienbilder nur über `series_attachments.file_for_download`; lokale Dateien = Upload in einen Temp-Ordner pro
+  Benutzer (1 Tag). Raster, Werkzeuge (Pfeil, Ellipse, Rechteck, Freihand, Text, Markieren, Nummer, Radierer, Verschieben),
+  Farben/Dicken, Rückgängig pro Feld, Rasterlinien, ATY-Radar (verschieb-/skalierbar), Zoom/Pan, Felder tauschen per Ziehen,
+  Strg+V, PNG-Export (Feld / alle), Projektdatei `.ttcompare` (Web: Serienbild per ID; lokale Pfade bleiben leer).
+  Bewusst anders: Drehen per Doppelklick dreht nur die Ansicht (der Desktop schreibt das Bild auf die Freigabe zurück).
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

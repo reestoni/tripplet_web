@@ -1182,3 +1182,32 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .as-table td.warn { color: #e53935; font-weight: 600; }
 .as-save { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 @media (max-width: 1100px) { .as-body, .as-opt-body { grid-template-columns: 1fr; } }
+
+/* Image Compare (pages/ImageCompare.tsx) */
+.ic-page { max-width: none; display: flex; flex-direction: column; height: calc(100vh - 32px); }
+.ic-toolbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; background: #2a2a2a; color: #ccc; padding: 6px 10px; border-radius: 8px; font-size: 12px; }
+.ic-toolbar input[type=number] { width: 46px; }
+.ic-toolbar b { color: #39A650; }
+.ic-sep { width: 1px; height: 22px; background: #555; margin: 0 3px; }
+.ic-tool { width: 32px; height: 30px; border: 1px solid #555; background: #3a3a3a; color: #eee; border-radius: 5px; cursor: pointer; }
+.ic-tool.on { background: #39A650; border-color: #39A650; }
+.ic-col { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #555; cursor: pointer; }
+.ic-col.on { border-color: #fff; box-shadow: 0 0 0 2px #39A650; }
+.ic-toolbar .btn-plain { background: #3a3a3a; color: #eee; border-color: #555; }
+.ic-on { background: #39A650 !important; color: #fff !important; }
+.ic-sub { display: flex; gap: 6px; align-items: center; margin-top: 4px; font-size: 12px; }
+.ic-body { flex: 1; display: grid; grid-template-columns: 260px 1fr; gap: 8px; margin-top: 6px; min-height: 0; }
+.ic-list { background: #fff; border: 1px solid #DADFD8; border-radius: 6px; padding: 6px; overflow: auto; font-size: 12px; }
+.ic-list .mj-search { width: 100%; box-sizing: border-box; }
+.ic-actions { display: flex; gap: 4px; margin: 6px 0; }
+.ic-ghead { font-weight: 600; cursor: pointer; padding: 3px 2px; color: #165C2B; }
+.ic-item { padding: 2px 6px 2px 16px; cursor: pointer; border-radius: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-item:hover { background: #EEF4EE; }
+.ic-grid { display: grid; gap: 4px; min-height: 0; background: #111; padding: 4px; border-radius: 6px; }
+.ic-frame { position: relative; min-height: 0; min-width: 0; overflow: hidden; background: #1e1e1e; border-radius: 3px; }
+.ic-frame canvas { position: absolute; inset: 0; display: block; }
+.ic-bar { position: absolute; top: 0; left: 0; right: 0; height: 20px; background: rgba(0,0,0,0.63); color: #ddd; font-size: 11px; display: flex; align-items: center; gap: 4px; padding: 0 4px; cursor: grab; }
+.ic-bar span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ic-bar button { background: none; border: none; color: #ff5050; cursor: pointer; font-size: 12px; }
+.ic-bar button.on { color: #39A650; }
+.ic-empty { position: absolute; inset: 0; display: grid; place-items: center; color: #777; font-size: 12px; text-align: center; padding: 10px; pointer-events: none; }
