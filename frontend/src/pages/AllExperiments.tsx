@@ -44,6 +44,8 @@ function fmtDate(v: string | null) {
   return v ? v.replace("T", " ") : "";
 }
 
+import { useSeriesAdmin } from "../components/SeriesAdmin";
+
 export default function AllExperiments() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -54,10 +56,18 @@ export default function AllExperiments() {
   const [seriesFilter, setSeriesFilter] = useState("");
   const [expFilter, setExpFilter] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: "experiment_id", asc: false });
+  const [reload, setReload] = useState(0);
+  const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const admin = useSeriesAdmin({ onChanged: () => setReload((x) => x + 1), onMessage: (kind, text) => setToast({ kind, text }) });
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), toast.kind === "ok" ? 2500 : 7000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   useEffect(() => {
     let alive = true;
-    setRows(null);
+    if (!reload) setRows(null);          // after a change keep the list (and the scroll position)
     api
       .experiments(machine)
       .then((d) => {
@@ -70,7 +80,7 @@ export default function AllExperiments() {
     return () => {
       alive = false;
     };
-  }, [machine]);
+  }, [machine, reload]);
 
   const shown = useMemo(() => {
     if (!rows) return [];
@@ -127,13 +137,21 @@ export default function AllExperiments() {
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.series_id} onDoubleClick={() => navigate(`/series/${r.series_id}`)} title={t("exp.open")}>
+              <tr key={r.series_id} onDoubleClick={() => navigate(`/series/${r.series_id}`)} title={t("exp.open")}
+                onContextMenu={(e) => admin.open(e, { series_id: r.series_id, name: r.series_name })}>
                 <td className="nowrap">{r.experiment_id}</td>
                 <td>{r.series_name}</td>
                 <td className="nowrap">{r.machine}</td>
                 <td className="nowrap">{fmtDate(r.creation_date)}</td>
                 <td>{r.owner ?? ""}</td>
-                <td className="nowrap">{r.status_id != null ? t(`status.${r.status_id}`) : ""}</td>
+                <td className="nowrap" onDoubleClick={(e) => e.stopPropagation()}>
+                  {/* status dropdown like the desktop: same rules as moving cards in the Backlog */}
+                  <select className="status-sel" value={r.status_id ?? ""}
+                    onChange={(e) => admin.move({ series_id: r.series_id, name: r.series_name }, Number(e.target.value))}>
+                    {r.status_id == null && <option value="">–</option>}
+                    {[1, 2, 3, 4, 5].map((sid) => <option key={sid} value={sid}>{t(`status.${sid}`)}</option>)}
+                  </select>
+                </td>
                 <td className="icon-col">{r.has_attach && <img src={img("attach.png")} alt="yes" />}</td>
                 <td className="icon-col">
                   {r.experiment_request_id != null && (
@@ -149,6 +167,8 @@ export default function AllExperiments() {
           </tbody>
         </table>
       </div>
+      {admin.dialogs}
+      {toast && <div className={"toast " + toast.kind} onClick={() => setToast(null)}>{toast.text}</div>}
     </div>
   );
 }

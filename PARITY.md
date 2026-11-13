@@ -43,18 +43,18 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Header click = sort asc/desc + indicator | `_on_header_clicked` | **DONE** | same sort keys as `_sort_key` |
 | Double-click row opens Show Experiment | `_on_cell_double_clicked` | **DONE** | navigate `/series/:id` |
 | Ctrl+double-click = open in new tab | `_open_in_new_window` | **MISSING** | rows are not links; use `<a href>` so Ctrl/middle-click works (frontend only) |
-| Status column = editable dropdown (role-filtered list, saves at once, joker-machine prompt) | `_create_status_combobox` / `_on_status_combo_changed` | **MISSING** | web shows text only. Qt-free: `db/backlog_moves.check_move/needs_machine/update_backlog_status/after_move` (= existing `POST /api/backlog/move`) |
+| Status column = editable dropdown (role-filtered list, saves at once, joker-machine prompt) | `_create_status_combobox` / `_on_status_combo_changed` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | "Copy TrialSeries" button (enabled on row selection) | `_on_copy_trialseries` | **MISSING** | opens Create Experiment in copy mode - needs Create Experiment in the web first |
 | AM icon + tooltip "Has attachments" | `_set_attach_cell` | **DONE** | |
 | ER icon click → read-only Experiment Request popup | `_set_er_cell` / `open_experiment_request_popup` | **PARTIAL** | icon + tooltip shown, not clickable. Popup = `_ExperimentRequestReadOnlyDialog` (Qt, `ui/screen_show_experiment.py`); data Qt-free in `db/experiment_requests` (web could link `/requests/:id`) |
 | NT icon "Has notes" | `_set_notes_cell` | **DONE** | |
 | RE icon click → saved Smart Chart report (Ctrl = new tab) | `_set_report_cell` / `_open_report_icon_for_series` | **PARTIAL** | icon shown, not clickable; route `/series/:id/report?report=` exists; ids Qt-free `db/series_overview.series_report_map` |
-| Context menu: Open in New Tab / Open in New Window | `_on_table_context_menu` | **MISSING** | browser equivalent: links / `window.open` |
-| Context menu: Rename Trial Series… (level ≥ 2, prefix kept) | `_rename_trialseries_at_row`, `RenameTrialSeriesDialog` | **MISSING** | Qt-free `db/series_actions.can_rename/split_prefix/compose_name/rename` |
-| Context menu: Reassign Yarn… (superuser; per ply, add/delete ply, conflicts) | `_reassign_yarn_at_row` | **MISSING** | Qt-free `db/trial_actions.series_ply_yarns/reassign_yarn_choices/plan_yarn_reassign/conflict_message/apply_yarn_reassign` |
-| Context menu: Change Machine… (superuser) | `_reassign_machine_at_row` | **MISSING** | Qt-free `db/series_actions.list_machines/current_machine/change_machine` |
-| Context menu: Delete Trial Series… (recycle bin, mover rights) | `_delete_trialseries_at_row` | **PARTIAL** | `POST /api/series/{id}/delete` (`be/series_actions.py`) + `DeleteSeriesDialog` (`fe/components/SeriesDialogs.tsx`) exist but are not wired to any menu |
-| Menu entries disabled by permission | `_on_table_context_menu` | **MISSING** | rules Qt-free (`series_permissions.can_delete_series_now`, `series_actions.can_*`) |
+| Context menu: Open in New Tab / Open in New Window | `_on_table_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context menu: Rename Trial Series… (level ≥ 2, prefix kept) | `_rename_trialseries_at_row`, `RenameTrialSeriesDialog` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context menu: Reassign Yarn… (superuser; per ply, add/delete ply, conflicts) | `_reassign_yarn_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context menu: Change Machine… (superuser) | `_reassign_machine_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context menu: Delete Trial Series… (recycle bin, mover rights) | `_delete_trialseries_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Menu entries disabled by permission | `_on_table_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Help button "How does All Experiments work?" (EN/DE/ES) | `_open_help` | **MISSING** | texts are pure data `ui/widgets/help_texts_all_experiments.py`; dialog Qt (`multilang_help`) |
 | Size-dependent scaling, name column fills width | `_update_scale` / `_fit_name_column` | **DONE** | CSS layout |
 | Reload on show + sidebar refresh | `showEvent` / `_refresh_sidebar` | **DONE** | load on mount |
@@ -77,13 +77,13 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Rule violation messages | `_handle_dnd_move` | **DONE** | toast `bl.err.<code>` |
 | Drop target highlight / drag feedback | `_set_drop_highlight` / `_build_drag_pixmap` | **DONE** | CSS classes |
 | Multi-select cards (Ctrl/Shift+click) + move several, one confirmation, summary of failures | `_handle_dnd_move_many` | **MISSING** | per-card rules Qt-free (`backlog_moves`); loop/summary only in screen |
-| Context: Open in New Tab / New Window | `_open_context_menu` | **MISSING** | |
-| Context: Change priority… (0-999) | `_ctx_change_prio` | **MISSING** | Qt-free `db/series_actions.can_change_prio/set_backlog_prio` |
-| Context: Change status… (role-filtered list) | `_ctx_change_status` | **MISSING** | same rules as DnD - reuse `/api/backlog/move` |
-| Context: Rename trial series… | `_ctx_rename_trialseries` | **MISSING** | Qt-free `db/series_actions.rename` |
-| Context: Reassign yarn… (superuser) | `_ctx_reassign_yarn` | **MISSING** | Qt-free `db/trial_actions.plan_yarn_reassign/apply_yarn_reassign` |
-| Context: Change machine… (superuser) | `_ctx_reassign_machine` | **MISSING** | Qt-free `db/series_actions.change_machine` |
-| Context: Delete trial series… | `_ctx_delete_trialseries` | **PARTIAL** | endpoint + `DeleteSeriesDialog` exist, unwired |
+| Context: Open in New Tab / New Window | `_open_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Change priority… (0-999) | `_ctx_change_prio` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Change status… (role-filtered list) | `_ctx_change_status` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Rename trial series… | `_ctx_rename_trialseries` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Reassign yarn… (superuser) | `_ctx_reassign_yarn` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Change machine… (superuser) | `_ctx_reassign_machine` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Delete trial series… | `_ctx_delete_trialseries` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Archived: search | `ArchivedPanel._on_search` | **DONE** | |
 | Archived: Year › XX accordion with counts (open while searching) | `_YearGroup` / `_XxGroup` | **DONE** | |
 | Archived: double-click open | `_ArchivedSeriesRow.mouseDoubleClickEvent` | **DONE** | |

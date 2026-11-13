@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, type ArchivedRow, type BacklogCard, type Status } from "../api";
 import { SeriesIcons } from "../components/Icons";
+import { useSeriesAdmin } from "../components/SeriesAdmin";
 import { useI18n } from "../i18n";
 
 type Box = Status & { cards: BacklogCard[] };
@@ -11,9 +12,9 @@ type MachineAsk = { drag: Drag; to: number; machines: { id: number; name: string
 const ARCHIVED = 5;
 const MIME = "application/x-tripplet-series";
 
-function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging }: {
+function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu }: {
   c: BacklogCard; statusId: number; onOpen: () => void; onDragStart: (e: DragEvent) => void;
-  onDragEnd: () => void; dragging: boolean;
+  onDragEnd: () => void; dragging: boolean; onMenu: (e: React.MouseEvent) => void;
 }) {
   const { t } = useI18n();
   // second line like the desktop card: Experiment ID • Machine • Status • Prio n • Owner
@@ -26,7 +27,7 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging }: {
   return (
     <div className={"bl-card" + (dragging ? " dragging" : "")} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={c.owner_colour ? { borderLeftColor: c.owner_colour } : undefined}
-      onDoubleClick={onOpen} title={retestTip ?? t("exp.open")}>
+      onDoubleClick={onOpen} onContextMenu={onMenu} title={retestTip ?? t("exp.open")}>
       <div className="bl-title">
         <span>{c.series_name}</span>
         {c.retest.length > 0 && <span className="bl-retest">{t("bl.retest")}</span>}
@@ -39,9 +40,10 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging }: {
   );
 }
 
-function Archived({ rows, onOpen, onDragStart, onDragEnd }: {
+function Archived({ rows, onOpen, onDragStart, onDragEnd, onMenu }: {
   rows: ArchivedRow[]; onOpen: (r: ArchivedRow) => void;
   onDragStart: (e: DragEvent, r: ArchivedRow) => void; onDragEnd: () => void;
+  onMenu: (e: React.MouseEvent, r: ArchivedRow) => void;
 }) {
   const { t } = useI18n();
   const [q, setQ] = useState("");
@@ -88,7 +90,8 @@ function Archived({ rows, onOpen, onDragStart, onDragEnd }: {
                       {xOpen &&
                         list.map((r) => (
                           <div key={r.series_id} className="arch-row" draggable onDragStart={(e) => onDragStart(e, r)}
-                            onDragEnd={onDragEnd} onDoubleClick={() => onOpen(r)} title={t("exp.open")}>
+                            onDragEnd={onDragEnd} onDoubleClick={() => onOpen(r)} onContextMenu={(e) => onMenu(e, r)}
+                            title={t("exp.open")}>
                             <span>{r.experiment_id} · {r.series_name}</span>
                             <span className="muted">{r.machine}</span>
                           </div>
@@ -139,6 +142,7 @@ export default function Backlog() {
   }, [toast]);
 
   const open = (seriesId: number) => navigate(`/series/${seriesId}`);
+  const admin = useSeriesAdmin({ onChanged: () => { void load(); }, onMessage: (kind, text) => setToast({ kind, text }) });
 
   const startDrag = (e: DragEvent, d: Drag) => {
     e.dataTransfer.setData(MIME, String(d.seriesId));
@@ -217,6 +221,7 @@ export default function Backlog() {
                 {b.cards.map((c) => (
                   <Card key={c.series_id} c={c} statusId={b.id} onOpen={() => open(c.series_id)}
                     dragging={drag?.seriesId === c.series_id} onDragEnd={endDrag}
+                    onMenu={(e) => admin.open(e, { series_id: c.series_id, name: c.series_name })}
                     onDragStart={(e) => startDrag(e, { seriesId: c.series_id, from: b.id, name: c.series_name })} />
                 ))}
                 {b.cards.length === 0 && <div className="muted bl-empty">{t("bl.empty")}</div>}
@@ -229,11 +234,13 @@ export default function Backlog() {
               <span className="bl-count">{archived.length}</span>
             </div>
             <Archived rows={archived} onOpen={(r) => open(r.series_id)} onDragEnd={endDrag}
+              onMenu={(e, r) => admin.open(e, { series_id: r.series_id, name: r.series_name })}
               onDragStart={(e, r) => startDrag(e, { seriesId: r.series_id, from: ARCHIVED, name: r.series_name })} />
           </div>
         </div>
       )}
 
+      {admin.dialogs}
       {toast && <div className={"toast " + toast.kind} onClick={() => setToast(null)}>{toast.text}</div>}
 
       {ask && (
