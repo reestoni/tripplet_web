@@ -31,7 +31,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   **dort** in ein Qt-freies Modul gezogen (Desktop nutzt es dann auch), nie hier nachgebaut.
   Bisher so herausgezogen: `db/nav_counts.py` (Badges), `db/user_profile.py` (Login-Profil),
   `feature_access.rules_for()` (Rechte für beliebigen Benutzer), `db/experiment_create.py`
-  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13), `db/yarn_stock.py` (Yarn Stock, 2026-11-13).
+  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13), `db/jets_admin.py` (Manage Jets / New Jet, 2026-11-13), `db/yarn_admin.py` (Manage Yarn / New Yarn, 2026-11-13), `db/yarn_stock.py` (Yarn Stock, 2026-11-13), `db/user_admin.py` (Manage User, 2026-11-13).
   Alle Regeln der Desktop-`CLAUDE.md` zu Schreibpfaden gelten auch hier (Änderungsprotokoll,
   `dy_ratio`, Papierkorb, Plausibilität, `exclude_references_sql`, `execute_insert` …).
 - Offline-Modus (SQLite) gibt es im Web nicht (offen, ob je nötig).
@@ -182,6 +182,12 @@ Platz, Ergebnisse, Excel; Superuser starten/schliessen Runden und lassen Plätze
 Umlagern/Wieder-Einlagern sofort, Fehlende nur beim Abschluss auf Klick ausbuchen). Die Scan-Liste hält der Browser
 (wie der Desktop-Dialog), den Scan-Text wertet der Server aus (`/parse`). Tests `tests/test_stock_take_api.py` (echte
 Test-Runde mit Test-Spulen auf ZZ97, wird übersprungen, wenn eine echte Runde offen ist; räumt alles ab).
+**Manage User** (2026-11-13, nur Superuser): `/superuser/users`, `app/user_admin_api.py` auf `db/user_admin.py` (aus
+`ui/screen_manage_user.py` gezogen) + `db/feature_access.py` ("Access…"-Matrix). Passwortspalten kommen nie in die Seite;
+neu/zurücksetzen = Argon2. Bewusst nicht im Web: API-Key/Tokens (KI). Strenger als Desktop: Benutzernamen eindeutig und
+höchstens so lang wie die Spalte (`UserName` ist auf dev_local VARCHAR(5)!), eigenes Konto nicht löschbar.
+Tests `tests/test_user_admin.py` (Test-Benutzer wird angelegt und gelöscht, Zugriffsregeln danach exakt wiederhergestellt).
+
 **Yarn-Stock-Hilfe** (2026-11-13): eigenes Desktop-Format (`ui/widgets/yarn_stock_help_dialog.py` + `yarn_stock_help_texts.py`)
 -> `help._yarn_stock_help()` baut daraus Reiter/Bausteine für den normalen Hilfe-Dialog (`EXTRA_HELP`); "?" auf Yarn Stock,
 Inventur springt auf Reiter `stocktake`. Knopfnamen in den Texten bleiben die englischen des Desktops.
@@ -201,7 +207,9 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
+  2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, dann Settings, dann
+  nacheinander die Werkzeuge. **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
   Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen

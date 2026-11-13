@@ -23,7 +23,8 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
-| **Total** | 263 | 8 | 14 | 4 | 289 |
+| 12. Manage User | 7 | 0 | 0 | 1 | 8 |
+| **Total** | 270 | 8 | 14 | 5 | 297 |
 
 Most important gaps (judgement, updated 2026-11-13): Backlog multi-select + move several, Ctrl+double-click = new tab
 (lists), Show Experiment material line with stock symbol, jet / spool / housing tooltips, Jet Air "Sync physical jets" /
@@ -400,3 +401,16 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Check a location: expected list, scan (also label QR), mark by hand (double-click) / undo (right-click), move / put back at once, finish with discard / keep missing; check without a round | `StockTakeDialog` | **DONE** | `stock_take.move_spool/restock_spool/discard_missing`; scan parsed on the server (`/parse`) |
 | Yarn Stock help dialog (tasks / screen guide / background / stock take) | `show_yarn_stock_help` | **DONE** | `help._yarn_stock_help()` turns the desktop texts into help blocks; "?" on Yarn Stock, the stock take opens tab "stocktake". Button names in the texts stay the desktop's English ones |
 | "Open in Yarn Stock" from Create Experiment's stock dialog | `YarnLocationsDialog(on_open_yarn_stock)` | **DONE** | web opens a new tab `/tools/yarn-stock?yarn=&charge=` (keeps the form) |
+
+## 12. Manage User (`ui/screen_manage_user.py`, `ui/widgets/feature_access_dialog.py` → `fe/pages/ManageUsers.tsx`, `be/user_admin_api.py`, logic `db/user_admin.py` + `db/feature_access.py`) – added 2026-11-13
+
+| Feature | Desktop (file:function) | Web status | Notes / logic location |
+|---|---|---|---|
+| Users table (no password columns), filter first / last name, edit + Save | `reload_data`, `save_changes` | **DONE** | `user_admin.load_users/save_changes`; checks: access right from the list, colours `#RRGGBB`, bools 0/1 |
+| Access right as drop-down, colour with picker + swatch | `AccessRightDelegate`, `QColorDialog` | **DONE** | native colour input in the cell |
+| New user with initial password (default name "newuser…", password rules) | `_on_new` | **DONE** | `next_username`, `check_new_password`, `create_user` (Argon2); web form also takes first / last name and access right |
+| Reset password | `_on_reset_password` | **DONE** | `reset_password` (`update_user_password`) |
+| Delete users | `_on_delete` | **DONE** | own account refused in the web |
+| Access… (tools / screens per group or person) | `FeatureAccessDialog` | **DONE** | `feature_access.load_all/save_all`; labels = sidebar texts |
+| User names unique and within the column length | (desktop does not check) | **DONE (stricter)** | `UserName` is VARCHAR(5) on dev_local |
+| 🔑 API key + token limit (AI) | `_on_set_api_key` | **NOT IN WEB (on purpose)** | AI stays out of the web like "Ask AI" / Athena |
