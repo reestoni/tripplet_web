@@ -92,6 +92,14 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 
 ## Offene Punkte
 
+- **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen
+  Qt-frei teilen, Server rechnet + schickt ausgedünnte Kurven, Plotly zeichnet, Garngraf im Browser neu aus
+  Server-Daten. Zuerst DTY, dann ATY. TDMS liegen auf `H:\Technik\TrippleT\YarnScopeTDMS` bzw. `...\ATYtdms`
+  (auf dem PC des Nutzers erreichbar).
+- **Liste für die IT (späterer Intranet-Server):** VM/Server mit HTTPS; Lesezugriff des Dienstkontos auf die
+  Freigaben für YarnScope-TDMS und Serien-Anhänge (Bilder/PDFs, `\heb-fil-003\heberlein	echnik	ripplet\...`
+  = `H:\Technik\TrippleT\...`); evtl. Firmen-Login.
+
 - Passwort ändern gibt es im Web noch nicht (Login mit Passwort = Benutzername wird mit
   Hinweis auf die Desktop-App abgewiesen).
 - Beim Desktop-Login laufen zusätzlich Draft-Request-Bereinigung und Athena-Token-Reset –
