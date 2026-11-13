@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, notesTip, type MachineData } from "../api";
 import { useI18n } from "../i18n";
+import { EditCell, useEdit } from "../edit";
 
 const MODE_KEY = "tripplet.machine.mode";
 
@@ -19,6 +20,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine" }:
   const [data, setData] = useState<MachineData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [off, setOff] = useState<string[]>([]);
+  const ed = useEdit();
+  const locked = !!ed?.hasDirty(source);   // unsaved edits refer to this view's rows/columns
 
   useEffect(() => {
     let alive = true;
@@ -30,7 +33,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine" }:
     return () => {
       alive = false;
     };
-  }, [seriesId, mode, source]);
+  }, [seriesId, mode, source, ed?.reloadKey]);
 
   const choose = (m: string) => {
     setMode(m);
@@ -67,7 +70,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine" }:
         {(["single", "groups", "compact"] as const).map((m) =>
           m === "groups" && data && !data.has_groups ? null : (
             <label key={m} className="md-radio">
-              <input type="radio" checked={mode === m} onChange={() => choose(m)} /> {t(`md.${m}`)}
+              <input type="radio" checked={mode === m} disabled={locked && mode !== m} onChange={() => choose(m)} /> {t(`md.${m}`)}
             </label>
           ),
         )}
@@ -115,10 +118,10 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine" }:
                   {visible.map(({ c, i }) => {
                     const cell = row.cells[i];
                     return (
-                      <td key={i} className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
-                        title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined}>
-                        {cell.v}
-                      </td>
+                      <EditCell key={i} addr={{ tab: source, r: row.r, c: c.c }} text={cell.v} raw={cell.raw}
+                        editable={!!cell.e} options={row.options ?? null}
+                        className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
+                        title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined} />
                     );
                   })}
                 </tr>

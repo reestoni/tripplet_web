@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { request } from "../api";
 import { useI18n } from "../i18n";
+import { EditCell, useEdit } from "../edit";
 
-type Grid = { columns: string[]; rows: { title: string; cells: { v: string }[] }[] };
+type Grid = { columns: string[]; rows: { title: string; r: number; cells: { v: string; e?: number }[] }[] };
 type JetAir = { unit: string; units: Record<string, string>; consumption: Grid; atm: Grid; temp: Grid };
 
 const UNIT_KEY = "tripplet.jetair.unit";
 
-function Table({ title, g }: { title: string; g: Grid }) {
+function Table({ title, g, tab }: { title: string; g: Grid; tab: string }) {
   return (
     <div className="ja-block">
       <h3>{title}</h3>
@@ -23,7 +24,7 @@ function Table({ title, g }: { title: string; g: Grid }) {
             {g.rows.map((r) => (
               <tr key={r.title}>
                 <th scope="row">{r.title}</th>
-                {r.cells.map((c, i) => <td key={i}>{c.v}</td>)}
+                {r.cells.map((c, i) => <EditCell key={i} addr={{ tab, r: r.r, c: i }} text={c.v} editable={!!c.e} />)}
               </tr>
             ))}
           </tbody>
@@ -45,6 +46,7 @@ export default function JetAirView({ seriesId }: { seriesId: number }) {
   });
   const [data, setData] = useState<JetAir | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const ed = useEdit();
 
   useEffect(() => {
     let alive = true;
@@ -54,7 +56,7 @@ export default function JetAirView({ seriesId }: { seriesId: number }) {
     return () => {
       alive = false;
     };
-  }, [seriesId, unit]);
+  }, [seriesId, unit, ed?.reloadKey]);
 
   if (error) return <div className="card error">{error}</div>;
   if (!data) return <div className="muted">{t("app.loading")}</div>;
@@ -72,13 +74,13 @@ export default function JetAirView({ seriesId }: { seriesId: number }) {
         <span className="muted">{t("ja.unit")}</span>
         {Object.entries(data.units).map(([k, label]) => (
           <label key={k} className="md-radio">
-            <input type="radio" checked={unit === k} onChange={() => pick(k)} /> {label}
+            <input type="radio" checked={unit === k} disabled={!!ed?.hasDirty("jet_air") && unit !== k} onChange={() => pick(k)} /> {label}
           </label>
         ))}
       </div>
-      <Table title={`${t("ja.consumption")} (${data.units[data.unit]})`} g={data.consumption} />
-      <Table title={t("ja.atm")} g={data.atm} />
-      <Table title={t("ja.temp")} g={data.temp} />
+      <Table tab="jet_air" title={`${t("ja.consumption")} (${data.units[data.unit]})`} g={data.consumption} />
+      <Table tab="jet_air_atm" title={t("ja.atm")} g={data.atm} />
+      <Table tab="jet_air_temp" title={t("ja.temp")} g={data.temp} />
     </div>
   );
 }

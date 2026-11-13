@@ -100,6 +100,15 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 5. Bereits Web-nahes: Knowledge Base, Hilfen, Yarn Count, Dashboards/Report
 6. Tools später oder bewusst Desktop-only
 
+**Bearbeiten in Show Experiment** (2026-11-13): `app/series_edit.py` `POST /api/series/{id}/save`
+{edits:[{tab,r,c,value}], mode, unit, confirmed}. Der Browser schickt NUR Ort (Reiter, Datenzeile, Datenspalte)
+und Wert; der Server baut den Reiter neu und nimmt die Bindung selbst (nie Tabelle/Feld vom Client),
+`series_save.normalize_input` (Housing/Jet = ID), `plausibility.check` -> `{kind:"confirm", warnings}` bis
+`confirmed`, dann `series_save.save_series_edits` (Änderungsprotokoll, DY-Ratio, Zeitstempel, Itemat).
+Ab Zugriffsstufe 2. Frontend `src/edit.tsx` (`EditProvider` pro Serie mit `key={id}`, `EditCell`; gelb =
+ungespeichert, Strg+S, Strg+Z, Warnung beim Verlassen); Ansicht/Einheit sind gesperrt, solange in Machine
+Data/Jet Air Ungespeichertes liegt (Zeilen-/Spaltennummern gelten pro Ansicht).
+
 ## Offene Punkte
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen

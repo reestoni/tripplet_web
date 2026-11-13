@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, notesTip, type SeriesData } from "../api";
 import { useI18n } from "../i18n";
+import { EditCell, EditProvider } from "../edit";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
@@ -25,10 +26,13 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
+  const [reload, setReload] = useState(0);
+  const lastId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let alive = true;
-    setData(null);
+    if (lastId.current !== id) setData(null);   // new series: clear; reload after saving keeps the page
+    lastId.current = id;
     setError(null);
     api
       .series(Number(id))
@@ -38,14 +42,14 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
         const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []),
           ...d.tabs.map((x) => x.key)];
         const want = lastTab();
-        setTab(want && keys.includes(want) ? want : "machine");
+        setTab((cur) => (cur && keys.includes(cur) ? cur : want && keys.includes(want) ? want : "machine"));
       })
       .catch((e) => alive && setError(e instanceof ApiError && e.status === 404 ? t("se.notFound") : e.message));
     return () => {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, reload]);
 
   const choose = (k: string) => {
     setTab(k);
@@ -103,6 +107,9 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
 
+      <EditProvider key={s.id} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
+        machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
+        jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
       <div className="se-tabs" role="tablist">
         <button role="tab" aria-selected={tab === "machine"} className={"se-tab" + (tab === "machine" ? " on" : "")}
           onClick={() => choose("machine")}>
@@ -195,12 +202,13 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
                 {current.rows.map((row, r) => (
                   <tr key={r} className={row.info ? "info" : ""}>
                     <th scope="row">{tr("row", row.title, row.title)}</th>
-                    {row.cells.map((cell, c) => (
-                      <td key={c} className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
-                        title={notesTip(cell.notes) || undefined}>
-                        {cell.v}
-                      </td>
-                    ))}
+                    {row.cells.map((cell, c) => (row.r == null ? (
+                      <td key={c} className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "")}>{cell.v}</td>
+                    ) : (
+                      <EditCell key={c} addr={{ tab: current.key, r: row.r, c }} text={cell.v} editable={!!cell.e}
+                        className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
+                        title={notesTip(cell.notes) || undefined} />
+                    )))}
                   </tr>
                 ))}
               </tbody>
@@ -211,6 +219,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           )}
         </>
       )}
+      </EditProvider>
     </div>
   );
 }

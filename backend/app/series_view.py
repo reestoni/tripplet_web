@@ -49,6 +49,18 @@ def _where(n: Dict[str, Any], seen: Dict[int, tuple]) -> Dict[str, Any]:
     return {"where_tab": None, "where_row": f"{table} · {n.get('FieldName')}"}
 
 
+def _options(pairs) -> List[List[Any]]:
+    """[[id, name], ...] for a dropdown row (ids as int where possible)."""
+    out = []
+    for k, v in pairs:
+        try:
+            k = int(k)
+        except (TypeError, ValueError):
+            pass
+        out.append([k, str(v)])
+    return out
+
+
 def _flags(series_id: int, lab_source: str, trial_col: Dict[int, int]) -> Dict[int, str]:
     """Column -> tooltip for open retest flags (same text as the desktop)."""
     out: Dict[int, str] = {}
@@ -86,6 +98,8 @@ def _tab_json(lt: stb.LabTab, p: stb.LabPivot, info: list, series_id: int, trial
             if stb.cv_limit_alert(title, _text(value)):
                 alert = "red"
             cell: Dict[str, Any] = {"v": _text(value)}
+            if binding is not None:
+                cell["e"] = 1                     # editable (has a DB binding)
             if alert:
                 cell["alert"] = alert
             notes = cell_notes.notes_for_binding(by_key, binding)
@@ -95,7 +109,7 @@ def _tab_json(lt: stb.LabTab, p: stb.LabPivot, info: list, series_id: int, trial
                     for n in notes:
                         seen.setdefault(int(n["ID"]), (lt.key, title))
             cells.append(cell)
-        rows.append({"title": title, "cells": cells})
+        rows.append({"title": title, "r": r, "cells": cells})
     return {"key": lt.key, "title": lt.title, "rows": rows,
             "flags": {str(c): tip for c, tip in _flags(series_id, lt.lab_source, trial_col).items()}}
 
@@ -178,6 +192,7 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
             trial_notes.setdefault(int(n["TrialID"]), []).append(_note_json(n))
     columns = [{
         "notes": trial_notes.get(int(c.get("trial_id") or 0), []),
+        "c": i,
         "filter": mdm.column_label(md.col_specs[i], mode == "groups"),
         "trial_id": c.get("trial_id"),
         "trial_label": c.get("trial_label"),
@@ -187,6 +202,10 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
         "colour": c.get("yarn_colour_css"),
         "colour_name": c.get("yarn_colour") or "",
     } for i, c in enumerate(md.columns) if not col_hidden[i]]
+    ro = set(md.read_only_rows or ())
+    dd_rows: Dict[int, Any] = {mdm.HOUSING_ROW: _options(housing.list), mdm.JET_ROW: _options(jets.list)}
+    for rr, lst in (md.dropdown_lists or {}).items():
+        dd_rows[rr] = _options(lst)
     rows = []
     for r, title in enumerate(md.row_titles):
         if r in hidden:
@@ -194,6 +213,10 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
         cells = []
         for c in keep:
             cell: Dict[str, Any] = {"v": mdm.display_text(md, r, c, jets.map, housing.map)}
+            if md.cells[r][c][1] is not None and r not in ro:
+                cell["e"] = 1
+                if r in dd_rows:
+                    cell["raw"] = None if md.cells[r][c][0] in (None, "") else str(md.cells[r][c][0])
             tip = md.cell_tooltips.get((r, c))
             if tip:
                 cell["tip"] = tip
@@ -204,7 +227,9 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
             if notes:
                 cell["notes"] = [_note_json(n) for n in notes]
             cells.append(cell)
-        rows.append({"title": title, "key": md.row_keys[r] if r < len(md.row_keys) else "",
+        rows.append({"r": r, "rule": md.validators[r] if r < len(md.validators) else None,
+                     "options": dd_rows.get(r),
+                     "title": title, "key": md.row_keys[r] if r < len(md.row_keys) else "",
                      "readonly": r in set(md.read_only_rows or ()), "cells": cells})
     return {"mode": mode, "has_groups": has_groups, "message": None, "columns": columns, "rows": rows,
             "filter_labels": list(md.filter_labels or []) if mode != "compact" else [],
@@ -214,7 +239,8 @@ def machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] = D
 # --------------------------------------------------------------------------- Jet Air Consumption
 def _grid(p: stb.LabPivot) -> Dict[str, Any]:
     return {"columns": list(p.col_titles or []),
-            "rows": [{"title": t, "cells": [{"v": _text(v)} for v, _b in p.cells[r]]} for r, t in enumerate(p.row_titles)]}
+            "rows": [{"title": t, "r": r, "cells": [dict({"v": _text(v)}, **({"e": 1} if b is not None else {}))
+                                                     for v, b in p.cells[r]]} for r, t in enumerate(p.row_titles)]}
 
 
 @router.get("/series/{series_id}/jet-air")
@@ -273,16 +299,24 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
     by_key = cell_notes.by_cell(all_notes)
     columns = [{
         "notes": [],
+        "c": i,
         "filter": mdm.column_label(rd.col_specs[i], mode == "groups"),
         "trial_id": c.get("trial_id"), "trial_label": c.get("trial_label"), "reference": c.get("reference"),
         "ply": c.get("ply_label"), "ply_tooltip": c.get("ply_tooltip") or "",
         "colour": c.get("yarn_colour_css"), "colour_name": c.get("yarn_colour") or "",
     } for i, c in enumerate(rd.columns) if not col_hidden[i]]
+    rd_dd: Dict[int, Any] = {0: _options(housing.list), 1: _options(jets.list)}
+    for rr, lst in (rd.dropdown_lists or {}).items():
+        rd_dd[rr] = _options(lst)
     rows = []
     for r, title in enumerate(rd.row_titles):
         cells = []
         for c in keep:
             cell: Dict[str, Any] = {"v": mdm.rd_display_text(rd, r, c, jets.map, housing.map)}
+            if rd.cells[r][c][1] is not None:
+                cell["e"] = 1
+                if r in rd_dd:
+                    cell["raw"] = None if rd.cells[r][c][0] in (None, "") else str(rd.cells[r][c][0])
             # housing rows: the desktop shows a picture (tblHousing.Link) - not as text here
             tip = "" if r in rd.housing_rows else mdm.rd_tooltip(rd, r, c, jets.tooltip_map, {})
             if tip:
@@ -294,7 +328,8 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
             if notes:
                 cell["notes"] = [_note_json(n) for n in notes]
             cells.append(cell)
-        rows.append({"title": title, "key": rd.row_keys[r] if r < len(rd.row_keys) else "", "readonly": False,
+        rows.append({"r": r, "rule": rd.validators[r] if r < len(rd.validators) else None, "options": rd_dd.get(r),
+                     "title": title, "key": rd.row_keys[r] if r < len(rd.row_keys) else "", "readonly": False,
                      "cells": cells})
     return {"mode": mode, "has_groups": bool(md.has_groups), "message": None, "visible": True,
             "columns": columns, "rows": rows,
