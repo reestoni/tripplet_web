@@ -20,6 +20,7 @@ import ManageUsers from "./pages/ManageUsers";
 import Settings from "./pages/Settings";
 import SmartChart from "./pages/SmartChart";
 import Dashboards from "./pages/Dashboards";
+import YarnCount from "./pages/YarnCount";
 import { DisplayProvider } from "./display";
 
 export default function App() {
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
+        <Route path="/tools/yarn-count" element={<YarnCount />} />
         <Route path="/knowledge-base" element={<KnowledgeBase />} />
         <Route path="/knowledge-base/:key" element={<KnowledgeBase />} />
         <Route path="*" element={<NotYet />} />

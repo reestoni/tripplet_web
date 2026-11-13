@@ -446,3 +446,9 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Folders and favourites for views | `group_views`, `smart_favs` (new) | **DONE** | both apps |
 | Unsaved changes: draft + restore, warning when leaving | – | **DONE (web only)** | the desktop keeps the screen open |
 
+## 14. Tools (one after another since 2026-11-13)
+
+| Tool | Desktop | Web status | Notes / logic location |
+|---|---|---|---|
+| Yarn Count Converter (all systems, filaments & plies, diameter, designation, notation reader, formulas, copy) | `ui/screen_yarn_count.py` | **DONE** | `be/yarn_count_api.py` on `ui/yarn_count.py`; last input in localStorage |
+

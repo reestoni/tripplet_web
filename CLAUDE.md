@@ -208,6 +208,11 @@ Versuchsbestände mit gleichem Katalog); Formelvorschau auch über die gefiltert
 `config_limit()` richtet sich nach der Spalte). Nur Web: ungespeicherte Änderungen (`summary.dirty`, Punkt im Titel), Entwurf
 in localStorage `tripplet.smart.draft` (pro Benutzer) mit "Wiederherstellen" (`/restore`), Warnung beim Verlassen.
 
+**Werkzeuge** (ab 2026-11-13 eins nach dem anderen, Nutzerentscheid; Reihenfolge Yarn Count, Jet ROI, Air Supply, Image
+Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requirement Hub):
+- Yarn Count Converter `/tools/yarn-count`: `app/yarn_count_api.py` auf `ui/yarn_count.py` (neu `filament_values`, Desktop nutzt
+  es), Seite `YarnCount.tsx`, letzte Eingabe in localStorage `tripplet.yarnCount`. Einheiten-/Materialnamen bleiben technisch (EN).
+
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,

@@ -1052,3 +1052,34 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .sc-lib { width: 100%; margin-bottom: 8px; }
 .dsb-folder { margin-left: 6px; }
 .dsb-folder-head { color: #165C2B; font-size: 12px; margin: 6px 0 2px; }
+
+/* Yarn Count Converter (pages/YarnCount.tsx) */
+.yc-page { max-width: 1250px; }
+.yc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.yc-card { background: #fff; border: 1px solid #DADFD8; border-radius: 8px; padding: 14px 18px; }
+.yc-card h2 { font-size: 16px; margin: 0 0 10px; }
+.yc-row { display: flex; gap: 8px; margin-bottom: 6px; }
+.yc-in { border: 1px solid #C9D1C8; border-radius: 5px; padding: 6px 8px; font-size: 15px; min-width: 0; flex: 1; }
+.yc-err { color: #B23B00; font-size: 12px; }
+.yc-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+.yc-tile { border: 1px solid #DADFD8; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+.yc-tile.on { border-color: #39A650; background: #E6F2EA; }
+.yc-tile-unit { color: #5A6460; font-size: 13px; }
+.yc-tile-val { font-size: 28px; font-weight: 700; }
+.yc-unit { display: grid; grid-template-columns: 1fr auto 70px; gap: 8px; align-items: center; padding: 5px 6px; border-bottom: 1px solid #EEF1ED; cursor: pointer; }
+.yc-unit:hover { background: #F4F8F4; }
+.yc-unit.on { background: #E6F2EA; }
+.yc-unit b { font-size: 15px; text-align: right; }
+.yc-copy { border: 1px solid #C9D1C8; border-radius: 4px; padding: 1px 8px; background: #fff; color: #1F7A3A; font-size: 11px; cursor: pointer; }
+.yc-form { display: grid; grid-template-columns: 1fr; gap: 6px; margin-bottom: 10px; }
+.yc-form label { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; align-items: center; color: #5A6460; font-size: 13px; }
+.yc-form input, .yc-form select { border: 1px solid #C9D1C8; border-radius: 5px; padding: 5px 8px; font-size: 14px; }
+.yc-res { width: 100%; border-collapse: collapse; }
+.yc-res td { padding: 3px 4px; }
+.yc-res td:first-child { color: #5A6460; font-size: 13px; }
+.yc-res td:nth-child(2) { font-size: 16px; font-weight: 600; }
+.yc-res tr.big td:nth-child(2) { font-size: 19px; font-weight: 700; }
+.yc-head { color: #5A6460; font-size: 11px; font-weight: 700; letter-spacing: 1px; margin: 12px 0 4px; }
+.yc-desig { background: #E6F2EA; border-radius: 6px; padding: 8px 10px; font-size: 15px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.yc-fold { border: none; background: none; font-size: 14px; font-weight: 700; cursor: pointer; padding: 0; }
+.yc-formulas td { padding: 2px 14px 2px 0; font-size: 12px; }
