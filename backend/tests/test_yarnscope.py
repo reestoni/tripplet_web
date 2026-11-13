@@ -61,3 +61,29 @@ def test_save_is_for_write_users_and_uses_shared_save(client, monkeypatch):
     monkeypatch.setattr(svc, "save_analysis", lambda t, vals, user: calls.append((t, user["id"])) or True)
     assert client.post(f"/api/series/{sid}/yarnscope/{tid}/save").json()["ok"]
     assert calls and calls[0][0] == tid
+
+
+def test_batch_runs_selected_trials_and_saves(client, monkeypatch):
+    import time
+    sid = _series_with_tdms()
+    trials = [t for t in client.get(f"/api/series/{sid}/yarnscope").json()["trials"] if t["has_file"]][:2]
+    monkeypatch.setattr(yarnscope, "log_usage_event", lambda *a: None)
+    monkeypatch.setattr(svc, "analyse_trial", lambda path, tid: ({"_y_raw": []}, {"FPm": 90.0 + tid % 7, "CV_FP": 20.0}))
+    saved = []
+    monkeypatch.setattr(svc, "save_analysis", lambda tid, vals, user: saved.append(tid) or True)
+    jid = client.post(f"/api/series/{sid}/yarnscope/batch",
+                      json={"save": True, "trial_ids": [t["trial_id"] for t in trials]}).json()["job_id"]
+    for _ in range(50):
+        job = client.get(f"/api/yarnscope/batch/{jid}").json()
+        if job["finished"]:
+            break
+        time.sleep(0.1)
+    assert job["finished"] and job["done"] == len(trials)
+    assert sorted(saved) == sorted(t["trial_id"] for t in trials)
+    assert all(r["status"] in ("saved", "not selected") for r in job["rows"])
+    assert "_path" not in job["rows"][0]                      # no file paths to the browser
+
+
+def test_start_route_defaults_to_backlog(client):
+    me = client.get("/api/me").json()
+    assert me["start_route"] in ("/backlog", "/experiments", "/requests")

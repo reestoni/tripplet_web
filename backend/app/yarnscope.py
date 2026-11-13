@@ -154,3 +154,124 @@ def has_yarnscope(series_id: int) -> bool:
         return bool(svc.series_has_tdms(series_id))
     except Exception:
         return False
+
+
+# --------------------------------------------------------------------------- batch (like the desktop "⚡ Batch")
+import time as _time
+import uuid as _uuid
+from concurrent.futures import ThreadPoolExecutor
+from pydantic import BaseModel
+
+# one analysis at a time on the server (each takes seconds and a lot of memory)
+_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="yarnscope-batch")
+_jobs: Dict[str, Dict[str, Any]] = {}
+BATCH_COLUMNS = ["FPm", "CV_FP", "AvgKL", "CV_KL", "AvgOL", "CV_OL", "AKnots", "BKnots", "CKnots",
+                 "Stab_03", "Stab_06", "Stab_10", "Stab_13"]
+
+
+class BatchBody(BaseModel):
+    only_pending: bool = True          # desktop default: skip trials already saved
+    trial_ids: Optional[list] = None   # explicit selection wins (desktop: selected rows)
+    save: bool = True
+
+
+def _run_batch(job: Dict[str, Any], user: Dict[str, Any]) -> None:
+    from .user_context import reset, set_user
+    token = set_user(user)                       # save_analysis / usage log see the right user
+    try:
+        for row in job["rows"]:
+            if job["stop"]:
+                row["status"] = "skipped"
+                continue
+            if row["status"] != "pending":
+                continue
+            row["status"] = "running"
+            job["current"] = row["label"]
+            try:
+                path = Path(row["_path"])
+                res, vals = svc.analyse_trial(path, row["trial_id"])
+                with _lock:
+                    k = _key(row["trial_id"], path)
+                    _cache[k] = (res, vals)
+                    _cache.move_to_end(k)
+                    while len(_cache) > CACHE_SIZE:
+                        _cache.popitem(last=False)
+                row["values"] = {c: vals.get(c) for c in BATCH_COLUMNS}
+                if job["save"]:
+                    ok = svc.save_analysis(int(row["trial_id"]), vals, user)
+                    row["status"] = "saved" if ok else "error"
+                    if not ok:
+                        row["error"] = "The values could not be written to the database."
+                else:
+                    row["status"] = "analysed"
+            except Exception as e:                # one bad file must not stop the others
+                row["status"] = "error"
+                row["error"] = str(e)[:300]
+            job["done"] += 1
+        job["current"] = None
+    finally:
+        job["finished"] = True
+        job["ended"] = _time.time()
+        reset(token)
+
+
+@router.post("/series/{series_id}/yarnscope/batch")
+def start_batch(series_id: int, body: BatchBody, user: Dict[str, Any] = Depends(current_user)):
+    if body.save and int(user.get("access_level") or 0) < 2:
+        return JSONResponse(status_code=403, content={"code": "read_only", "detail": "You have read-only access."})
+    running = [j for j in _jobs.values() if j["series_id"] == series_id and not j["finished"]]
+    if running:
+        return {"job_id": running[0]["id"]}
+    st = stb.load_trials(series_id)
+    labels = {int(t["ID"]): st.labels[i] for i, t in enumerate(st.trials)}
+    files = svc.trial_files(series_id, st.trials, set(st.reference_names), with_analysed=True)
+    wanted = {int(x) for x in body.trial_ids} if body.trial_ids else None
+    rows = []
+    for f in files:
+        if f["tdms"] is None:
+            continue
+        tid = int(f["trial_id"])
+        selected = tid in wanted if wanted is not None else (not body.only_pending or not f.get("analysed"))
+        rows.append({"trial_id": tid, "label": labels.get(tid, f"V{f['vno']}"), "file": f["tdms"].name,
+                     "_path": str(f["tdms"]), "status": "pending" if selected else "not selected",
+                     "error": "", "values": None})
+    job = {"id": _uuid.uuid4().hex[:12], "series_id": series_id, "rows": rows, "save": body.save,
+           "total": sum(r["status"] == "pending" for r in rows), "done": 0, "current": None,
+           "stop": False, "finished": False, "started": _time.time(), "ended": None}
+    _jobs[job["id"]] = job
+    if job["total"]:
+        log_usage_event("feature", "yarnscope_dty_batch", f"web {job['total']}")
+        _executor.submit(_run_batch, job, dict(user))
+    else:
+        job["finished"] = True
+    return {"job_id": job["id"]}
+
+
+def _job_json(job: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: v for k, v in job.items() if k != "rows"} | {
+        "rows": [{k: v for k, v in r.items() if not k.startswith("_")} for r in job["rows"]],
+        "columns": BATCH_COLUMNS}
+
+
+@router.get("/yarnscope/batch/{job_id}")
+def batch_status(job_id: str, _user: Dict[str, Any] = Depends(current_user)):
+    job = _jobs.get(job_id)
+    if job is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "Batch not found."})
+    return _json(_job_json(job))
+
+
+@router.post("/yarnscope/batch/{job_id}/stop")
+def batch_stop(job_id: str, _user: Dict[str, Any] = Depends(current_user)):
+    job = _jobs.get(job_id)
+    if job is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "Batch not found."})
+    job["stop"] = True                          # the running trial finishes, the rest is skipped
+    return {"ok": True}
+
+
+@router.get("/series/{series_id}/yarnscope/batch/current")
+def batch_current(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """The newest batch of this series (to show it again after reloading the page)."""
+    jobs = sorted((j for j in _jobs.values() if j["series_id"] == series_id), key=lambda j: j["started"])
+    return _json(_job_json(jobs[-1])) if jobs else {"job": None}

@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import { api, ApiError, type Me } from "./api";
 import Login from "./pages/Login";
 import Shell from "./components/Shell";
-import Home from "./pages/Home";
 import NotYet from "./pages/NotYet";
 import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
@@ -49,7 +48,7 @@ export default function App() {
   return (
     <Shell me={me} onLogout={logout}>
       <Routes>
-        <Route path="/" element={<Home me={me} />} />
+        <Route path="/" element={<Navigate to={me.start_route || "/backlog"} replace />} />
         <Route path="/experiments" element={<AllExperiments />} />
         <Route path="/backlog" element={<Backlog />} />
         <Route path="/series/:id" element={<SeriesView accessLevel={me.user.access_level} />} />

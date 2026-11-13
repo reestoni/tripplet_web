@@ -413,3 +413,32 @@ td.rq-new { background: #f3ecfd; }
 .rq-status.s1 { background: #fff7e0; } .rq-status.s2 { background: #ffe5e5; } .rq-status.s3 { background: #e6f6ea; } .rq-status.s4 { background: #e8eefc; }
 .rq-reason { width: 100%; min-height: 90px; font: inherit; }
 @media (max-width: 800px) { .rq-form { grid-template-columns: 1fr; } }
+.ys-card.hl { background: var(--accent); border-color: var(--accent); color: white; min-width: 110px; }
+.ys-card.hl .ys-card-l { color: rgba(255,255,255,0.9); font-weight: 700; font-size: 12px; }
+.ys-card.hl .ys-card-v { font-size: 22px; }
+.ys-updating { font-size: 12px; color: var(--accent); font-weight: 600; margin-left: 10px; }
+.ys-top { display: flex; gap: 12px; align-items: stretch; }
+.ys-top .ys-cards { flex: 1; align-content: flex-start; }
+.ys-pie { width: 180px; flex: 0 0 180px; }
+.ys-pie .ys-plot { height: 160px; }
+
+/* sidebar: brand is a button (collapse), narrow mode = icons only */
+button.sb-brand { background: none; border: none; cursor: pointer; font: inherit; text-align: left; width: 100%; }
+.sidebar { transition: width 0.15s ease, flex-basis 0.15s ease; }
+.sidebar.narrow { width: 64px; flex: 0 0 64px; }
+.sidebar.narrow .sb-brand { padding: 16px 0 10px; justify-content: center; }
+.sidebar.narrow .sb-brand > div, .sidebar.narrow .sb-label, .sidebar.narrow .sb-section-head span,
+.sidebar.narrow .sb-env, .sidebar.narrow .sb-user span, .sidebar.narrow .sb-flags, .sidebar.narrow .sb-logout { display: none; }
+.sidebar.narrow .sb-scroll { padding: 4px 6px 12px; }
+.sidebar.narrow .sb-item { justify-content: center; padding: 8px 0; position: relative; }
+.sidebar.narrow .sb-badge { position: absolute; top: 2px; right: 4px; min-width: 15px; height: 15px; font-size: 9px; padding: 0 3px; }
+.sidebar.narrow .sb-section-head { justify-content: center; }
+.sidebar.narrow .sb-account { align-items: center; }
+.ys-batch-btn { margin-bottom: 6px; }
+.ys-batch { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.ys-progress { display: flex; align-items: center; gap: 10px; }
+.ys-bar { flex: 0 0 260px; height: 10px; border-radius: 5px; background: #e2e8e3; overflow: hidden; }
+.ys-bar > div { height: 100%; background: var(--accent); transition: width 0.4s; }
+.ysb-st.ok { color: #1f8a3a; font-weight: 600; }
+.ysb-st.err { color: var(--danger); font-weight: 600; }
+.ysb-st.run { color: var(--accent); font-weight: 600; }

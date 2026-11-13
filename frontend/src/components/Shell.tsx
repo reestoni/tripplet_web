@@ -4,6 +4,7 @@ import { api, img, type Me, type Nav, type NavItem } from "../api";
 import { LangFlags, useI18n } from "../i18n";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
+const NARROW_KEY = "tripplet.sidebar.narrow";
 
 function loadClosed(): string[] {
   try {
@@ -30,6 +31,24 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
   const { t } = useI18n();
   const [nav, setNav] = useState<Nav | null>(null);
   const [closed, setClosed] = useState<string[]>(loadClosed);
+  // click on the TrippleT logo = sidebar narrow (icons only) / wide, like the desktop
+  const [narrow, setNarrow] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(NARROW_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleNarrow = () => {
+    setNarrow((v) => {
+      try {
+        localStorage.setItem(NARROW_KEY, v ? "0" : "1");
+      } catch {
+        /* storage blocked */
+      }
+      return !v;
+    });
+  };
 
   useEffect(() => {
     api.nav().then(setNav).catch(() => setNav({ pinned: [], sections: [] }));
@@ -60,14 +79,14 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
 
   return (
     <div className="shell">
-      <aside className="sidebar">
-        <NavLink to="/" className="sb-brand">
+      <aside className={"sidebar" + (narrow ? " narrow" : "")}>
+        <button type="button" className="sb-brand" onClick={toggleNarrow} title={narrow ? t("sb.expand") : t("sb.collapse")}>
           <img className="sb-logo" src={img("tricolour.png")} alt="TrippleT" />
           <div>
             <div className="sb-brand-title">TrippleT</div>
             <div className="sb-brand-sub">HEBERLEIN · WEB {me.version}</div>
           </div>
-        </NavLink>
+        </button>
         {me.mode !== "prod" && <div className="sb-env">{me.mode.toUpperCase()} · {me.db}</div>}
         <nav className="sb-scroll">
           {nav?.pinned.map((it) => <Item key={it.key} it={it} />)}

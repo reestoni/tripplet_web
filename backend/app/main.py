@@ -68,7 +68,9 @@ def logout(response: Response) -> Dict[str, Any]:
 
 @app.get("/api/me")
 def me(user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
-    return {"user": user, "mode": core.MODE, "db": core.DB_NAME, "version": core.APP_VERSION}
+    from .start_page import start_route
+    return {"user": user, "mode": core.MODE, "db": core.DB_NAME, "version": core.APP_VERSION,
+            "start_route": start_route(user)}
 
 
 @app.get("/api/nav")

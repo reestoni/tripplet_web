@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
+import YarnScopeBatch from "./YarnScopeBatch";
 
 /* DTY YarnScope (read + analyse + save). Everything is computed on the server by the
    desktop's shared module (ui/yarnscope/dty_service.py); this page only draws. */
@@ -21,6 +22,13 @@ type Signal = { bars: Trace; step_m: number; thresholds: { T: number; ab: number
 type Mirror = { rows: { base: number; half: number[]; spans: [number, number, string][] }[];
   x_step_mm: number; xlim: [number, number]; ylim: [number, number];
   colours: { open: string; open_alpha: number; abc: Record<string, string>; abc_alpha: number; background: string } };
+
+// clearer than the desktop's repeated "CV": say which value the CV belongs to
+const CARD_LABEL: Record<string, string> = {
+  CV_FP: "CV FP/m", AvgKL: "Ø KL (knot length)", CV_KL: "CV KL", AvgOL: "Ø OL (open length)", CV_OL: "CV OL",
+  AKnots: "A knots", BKnots: "B knots", CKnots: "C knots",
+};
+const ABC_COLOURS: Record<string, string> = { A: "#e05050", B: "#f0a030", C: "#9060c0" };
 
 type PlotlyLike = { react: (el: HTMLElement, data: unknown[], layout: unknown, cfg?: unknown) => void;
   purge: (el: HTMLElement) => void };
@@ -112,10 +120,17 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   const [view, setView] = useState<"segment" | "signal" | "mirror">("segment");
   const [start, setStart] = useState(0);
   const [win, setWin] = useState(3);
+  const [pos, setPos] = useState({ start: 0, win: 3 });   // what the charts show (debounced)
+  const [loadingView, setLoadingView] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setPos({ start, win }), 250);
+    return () => window.clearTimeout(id);
+  }, [start, win]);
   const [seg, setSeg] = useState<Segment | null>(null);
   const [sig, setSig] = useState<Signal | null>(null);
   const [mir, setMir] = useState<Mirror | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [batch, setBatch] = useState(false);
   const base = `/api/series/${seriesId}/yarnscope`;
 
   const loadTrials = () => request<{ trials: YsTrial[] }>("GET", base).then((d) => setTrials(d.trials));
@@ -130,6 +145,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
     setSeg(null); setSig(null); setMir(null);
     setError(null); setSaved(null);
     setStart(0);
+    setPos({ start: 0, win });
     setBusy(true);
     request<Result>("POST", `${base}/${tid}/analyse`)
       .then((r) => { setResult(r); return loadTrials(); })
@@ -140,16 +156,17 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   useEffect(() => {
     if (sel == null || !result) return;
     let alive = true;
-    const q = `?start=${start}&window=${win}`;
+    setLoadingView(true);
+    const q = `?start=${pos.start}&window=${pos.win}`;
     const go = view === "segment" ? request<Segment>("GET", `${base}/${sel}/segment${q}`).then((d) => alive && setSeg(d))
-      : view === "signal" ? request<Signal>("GET", `${base}/${sel}/signal?start=${start}&window=${Math.min(win, 2)}`).then((d) => alive && setSig(d))
-      : request<Mirror>("GET", `${base}/${sel}/garnspiegel?start=${start}`).then((d) => alive && setMir(d));
-    go.catch((e) => alive && setError(e.message));
+      : view === "signal" ? request<Signal>("GET", `${base}/${sel}/signal${q}`).then((d) => alive && setSig(d))
+      : request<Mirror>("GET", `${base}/${sel}/garnspiegel?start=${pos.start}`).then((d) => alive && setMir(d));
+    go.catch((e) => alive && setError(e.message)).finally(() => alive && setLoadingView(false));
     return () => {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, result, view, start, win]);
+  }, [sel, result, view, pos]);
 
   const segPlot = useMemo(() => {
     if (!seg) return null;
@@ -161,16 +178,26 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
         type: "scatter", mode: "lines", x: tr.x, y: tr.y, line: { color: tr.colour, width: 2 }, name: tr.title })),
     ];
     const th = seg.thresholds;
-    return { data, layout: { xaxis: { range: seg.x_range, title: { text: "m" } },
+    return { data, layout: { xaxis: { range: seg.x_range, title: { text: `m  (${seg.x_range[0].toFixed(1)} – ${seg.x_range[1].toFixed(1)})` } },
       shapes: [hline(th.T, "#333"), hline(th.cb, seg.colours.abc.C, "dot"), hline(th.ba, seg.colours.abc.A, "dot")] } };
   }, [seg]);
+
+  const pie = useMemo(() => {
+    if (!result?.pie) return null;
+    const keys = ["A", "B", "C"].filter((k) => result.pie[k] != null);
+    if (!keys.length) return null;
+    return { data: [{ type: "pie", labels: keys.map((k) => `${k}`), values: keys.map((k) => result.pie[k]), sort: false,
+      marker: { colors: keys.map((k) => ABC_COLOURS[k]) }, textinfo: "label+percent", textposition: "inside", insidetextorientation: "horizontal", hole: 0.3,
+      hovertemplate: "%{label}: %{percent}<extra></extra>" }],
+      layout: { margin: { l: 5, r: 5, t: 5, b: 5 }, showlegend: false } };
+  }, [result]);
 
   const sigPlot = useMemo(() => {
     if (!sig) return null;
     const half = sig.step_m / 2;
     return { data: [{ type: "bar", x: sig.bars.x.map((x) => x + half), y: sig.bars.y, width: sig.step_m,
       marker: { color: "#7a8a7d" }, hoverinfo: "x+y" }],
-      layout: { bargap: 0, xaxis: { range: sig.xlim, title: { text: "m" } }, yaxis: { range: sig.ylim, title: { text: "µm" } },
+      layout: { bargap: 0, xaxis: { range: sig.xlim, title: { text: `m  (${sig.xlim[0].toFixed(2)} – ${sig.xlim[1].toFixed(2)})` } }, yaxis: { range: sig.ylim, title: { text: "µm" } },
         shapes: [hline(sig.thresholds.T, "#333"), hline(sig.thresholds.ab, "#e05050", "dot"), hline(sig.thresholds.bc, "#9060c0", "dot")] } };
   }, [sig]);
 
@@ -188,6 +215,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   return (
     <div className="ys">
       <div className="ys-list">
+        <button className="btn-green ys-batch-btn" onClick={() => setBatch(true)} disabled={busy}>Batch</button>
         {trials.map((tr) => (
           <button key={tr.trial_id} disabled={!tr.has_file || busy}
             className={"ys-trial" + (tr.trial_id === sel ? " on" : "")} onClick={() => analyse(tr.trial_id)}
@@ -200,6 +228,9 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
         ))}
       </div>
       <div className="ys-main">
+        {batch && <YarnScopeBatch seriesId={seriesId} canWrite={canWrite} onClose={() => setBatch(false)}
+          onDone={() => { loadTrials(); }} />}
+        {!batch && <>
         {sel == null && <div className="card muted">{t("ys.pick")}</div>}
         {busy && <div className="card muted">{t("ys.analysing", { label: cur?.label ?? "" })}</div>}
         {error && <div className="card error">{error}</div>}
@@ -210,13 +241,16 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
               {canWrite && <button className="btn-green" onClick={save}>{t("ys.save")}</button>}
               {saved && <span className="muted">{saved}</span>}
             </div>
+            <div className="ys-top">
             <div className="ys-cards">
               {result.metrics_card.map((c, i) => (
-                <div key={i} className="ys-card">
-                  <div className="ys-card-l">{c.label}</div>
+                <div key={i} className={"ys-card" + (c.key === "FPm" || c.key === "CV_FP" ? " hl" : "")}>
+                  <div className="ys-card-l">{CARD_LABEL[c.key] ?? c.label}</div>
                   <div className="ys-card-v">{c.value == null ? "–" : `${c.value.toFixed(c.decimals)}${c.unit}`}</div>
                 </div>
               ))}
+            </div>
+            {pie && <div className="ys-pie"><Plot data={pie.data} layout={pie.layout} /></div>}
             </div>
             <div className="md-bar">
               {(["segment", "signal", "mirror"] as const).map((v) => (
@@ -239,6 +273,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
                   </>
                 )}
               </span>
+              {loadingView && <span className="ys-updating">{t("ys.updating")}</span>}
             </div>
             {view === "segment" && segPlot && <Plot data={segPlot.data} layout={segPlot.layout} />}
             {view === "segment" && seg && (
@@ -251,6 +286,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
             <div className="muted ys-status">{result.status_text}</div>
           </>
         )}
+        </>}
       </div>
     </div>
   );
