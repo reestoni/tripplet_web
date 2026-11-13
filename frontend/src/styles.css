@@ -1211,3 +1211,38 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .ic-bar button { background: none; border: none; color: #ff5050; cursor: pointer; font-size: 12px; }
 .ic-bar button.on { color: #39A650; }
 .ic-empty { position: absolute; inset: 0; display: grid; place-items: center; color: #777; font-size: 12px; text-align: center; padding: 10px; pointer-events: none; }
+
+/* Label Generator (pages/LabelGenerator.tsx) */
+.lg-page { max-width: none; }
+.lg-body { display: grid; grid-template-columns: 330px 1fr; gap: 12px; align-items: start; }
+.lg-left { display: flex; flex-direction: column; gap: 10px; }
+.lg-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0; font-size: 13px; }
+.lg-row label { display: flex; gap: 4px; align-items: center; color: #5A6460; }
+.lg-row input, .lg-row select { border: 1px solid #C9D1C8; border-radius: 4px; padding: 3px 6px; max-width: 140px; }
+.lg-row input[type=number] { width: 70px; }
+.lg-work { display: grid; grid-template-columns: 1fr 300px; gap: 10px; align-items: start; }
+.lg-canvas { position: relative; background: #e8e8e8; overflow: visible; user-select: none; }
+.lg-canvas img, .lg-canvas svg { position: absolute; left: 0; top: 0; }
+.lg-canvas img { image-rendering: auto; }
+.lg-el { position: absolute; border: 1px dashed #2F6DB5; background: rgba(47,109,181,0.06); cursor: move; box-sizing: border-box; }
+.lg-el.on { border: 2px solid #2F6DB5; background: rgba(47,109,181,0.12); }
+.lg-el.anchored { border-color: #8C6BB1; }
+.lg-el span { position: absolute; left: 1px; top: -14px; font-size: 9px; color: #2F6DB5; white-space: nowrap; pointer-events: none; }
+.lg-el i { position: absolute; right: -5px; bottom: -5px; width: 10px; height: 10px; background: #2F6DB5; cursor: nwse-resize; }
+.lg-props { background: #fff; border: 1px solid #DADFD8; border-radius: 6px; padding: 8px 10px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; max-height: 70vh; overflow: auto; }
+.lg-part { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.lg-part select { max-width: 140px; }
+.lg-part input { min-width: 0; flex: 1; border: 1px solid #C9D1C8; border-radius: 4px; padding: 3px 5px; }
+.lg-counter { display: flex; gap: 4px; }
+.lg-counter input { width: 46px; }
+.lg-cell { display: flex; gap: 4px; align-items: center; }
+.lg-cell > span { font-size: 11px; color: #888; width: 26px; }
+.lg-geo input { width: 56px; }
+.lg-print { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.lg-tpl { display: flex; flex-direction: column; gap: 4px; }
+.lg-tpl label { display: grid; grid-template-columns: 1fr 90px; gap: 6px; font-size: 13px; align-items: center; }
+.lg-sheet { display: grid; gap: 3px; margin-top: 4px; }
+.lg-sheet button { border: 1px solid #C9D1C8; background: #fff; border-radius: 3px; font-size: 10px; padding: 3px 0; cursor: pointer; }
+.lg-sheet button.used { background: #9FE1CB; }
+.lg-sheet button.on { outline: 2px solid #1F7A3A; }
+@media (max-width: 1300px) { .lg-body, .lg-work { grid-template-columns: 1fr; } }

@@ -20,6 +20,7 @@ import ManageUsers from "./pages/ManageUsers";
 import Settings from "./pages/Settings";
 import SmartChart from "./pages/SmartChart";
 import Dashboards from "./pages/Dashboards";
+import LabelGenerator from "./pages/LabelGenerator";
 import ImageCompare from "./pages/ImageCompare";
 import AirSupply from "./pages/AirSupply";
 import JetRoi from "./pages/JetRoi";
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="/settings" element={<Settings />} />
         <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
+        <Route path="/tools/label-generator" element={<LabelGenerator />} />
         <Route path="/tools/image-compare" element={<ImageCompare />} />
         <Route path="/tools/air-supply" element={<AirSupply />} />
         <Route path="/tools/jet-roi" element={<JetRoi />} />

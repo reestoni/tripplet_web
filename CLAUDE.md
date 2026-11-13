@@ -228,6 +228,11 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Farben/Dicken, Rückgängig pro Feld, Rasterlinien, ATY-Radar (verschieb-/skalierbar), Zoom/Pan, Felder tauschen per Ziehen,
   Strg+V, PNG-Export (Feld / alle), Projektdatei `.ttcompare` (Web: Serienbild per ID; lokale Pfade bleiben leer).
   Bewusst anders: Drehen per Doppelklick dreht nur die Ansicht (der Desktop schreibt das Bild auf die Freigabe zurück).
+- Label Generator `/tools/label-generator`: `app/label_generator_api.py` auf `ui/label_designer.py` (Elemente, Entwürfe
+  tblLabelDesign, `make_draw_cell`, Vorschau-PNG, Serien-/Versuchsdaten, Etikettenliste `build_items`; aus dem Screen gezogen)
+  und `db/label_sheets.py` (Bogen "CustomLabel"). Seite `LabelGenerator.tsx`: Zeichenfläche 8 px/mm mit 10-mm-Raster/Lineal,
+  Ziehen/Grösse (0.5 mm), Anker-Gruppen, Text-Teile (fest/Feld/laufende Nummer), Tabellen, Logo, Druckdialog mit Startplatz.
+  Etikettengrösse wird wie im Desktop sofort ins Bogen-Template geschrieben. Das Web legt tblLabelDesign nie an.
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
