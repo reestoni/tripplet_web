@@ -108,6 +108,7 @@ export type MachineData = {
   multi_ply?: boolean;
   machine_id?: number | null;
   custom_row?: number | null;
+  schema?: "dty" | "aty" | null;   // machine path schema available (SchemaPanel.tsx)
 };
 
 /** What the logged-in user may do in a series (backend/app/series_actions.py rights()). */

@@ -105,7 +105,8 @@ def module(key: str, lang: str = "en", _user: Dict[str, Any] = Depends(current_u
     if m is None or not (ASSETS_DIR / f"{m.key}.html").is_file():
         return JSONResponse(status_code=404, content={"code": "not_found", "detail": cat.text(cat.UI["missing"], lang)})
     return {"key": m.key, "title": cat.text(m.title, lang), "summary": cat.text(m.summary, lang),
-            "scenes": cat.scene_names(m.key, lang), "url": f"/kb-assets/{m.key}.html"}
+            "scenes": cat.scene_names(m.key, lang), "url": f"/kb-assets/{m.key}.html",
+            "scene_base": cat.scene_param_base(m.key)}   # ?scene= of the page is 0- or 1-based
 
 
 class Opened(BaseModel):

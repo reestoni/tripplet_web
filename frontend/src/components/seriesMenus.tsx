@@ -18,8 +18,10 @@ type Dialog =
 
 export type Trial = { id: number; label: string };
 
-export function useSeriesMenus({ seriesId, rights, trials, mode, onChanged }: {
+export function useSeriesMenus({ seriesId, rights, trials, mode, onChanged, trialExtras }: {
   seriesId: number; rights: SeriesRights | null; trials: Trial[]; mode: () => string; onChanged: () => void;
+  /** more entries for the trial header (copy trials, reference samples) - from SeriesView */
+  trialExtras?: (trial: Trial, selected: number[]) => MenuItem[];
 }) {
   const { t } = useI18n();
   const ed = useEdit();
@@ -70,6 +72,7 @@ export function useSeriesMenus({ seriesId, rights, trials, mode, onChanged }: {
       items.push({ label: t("cm.retestMenu", { trial: trial.label }),
         onClick: () => setDialog({ kind: "retest", tab: lab.tab, tabTitle: lab.title, trial }) });
     }
+    if (trialExtras) items.push(...trialExtras(trial, selTrials.includes(trial.id) ? selTrials : [trial.id]));
     if (rights?.write) {
       const sel = selTrials.includes(trial.id) && selTrials.length > 1 ? selTrials : [trial.id];
       items.push({ sep: true });
@@ -83,7 +86,7 @@ export function useSeriesMenus({ seriesId, rights, trials, mode, onChanged }: {
       items.push({ sep: true }, { label: t("cm.seriesHistory"), onClick: () => setDialog({ kind: "history", target: null, where: "" }) });
     }
     cm.open(e, items);
-  }, [rights, selTrials, cm, t, ed]);
+  }, [rights, selTrials, cm, t, ed, trialExtras]);
 
   /** Click on a trial header selects it (Ctrl/Shift+click adds) - "Delete n selected trials". */
   const clickTrial = useCallback((e: RME, id: number) => {

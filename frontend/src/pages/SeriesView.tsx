@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, ApiError, notesTip, type SeriesData, type SeriesRights } from "../api";
+import { api, ApiError, notesTip, request, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
-import { EditCell, EditProvider } from "../edit";
+import { confirmLeave, EditCell, EditProvider } from "../edit";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
 import YarnScopeView from "../components/YarnScopeView";
-import { useSeriesMenus } from "../components/seriesMenus";
+import { useSeriesMenus, type Trial } from "../components/seriesMenus";
+import type { MenuItem } from "../components/ContextMenu";
+import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -29,6 +31,13 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
   const [showNotes, setShowNotes] = useState(false);
   const [reload, setReload] = useState(0);
   const [rights, setRights] = useState<SeriesRights | null>(null);
+  const [tool, setTool] = useState<Tool | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 3000);
+    return () => window.clearTimeout(id);
+  }, [toast]);
   const lastId = useRef<string | undefined>(undefined);
 
   useEffect(() => {
@@ -81,11 +90,19 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
   if (!data) return <div className="page muted">{t("se.loading")}</div>;
 
   const s = data.series;
+  const canWrite = accessLevel >= 2;
+  const reloadAll = (msg?: string) => { setTool(null); setReload((x) => x + 1); if (msg) setToast(msg); };
+  // tools that add/change trials reload the page - unsaved values would be lost (desktop asks the same)
+  const openTool = (x: Tool) => { if (confirmLeave()) setTool(x); };
+  const refAction = async (url: string, body: unknown, msg: string) => {
+    await request("POST", url, body);
+    reloadAll(msg);
+  };
 
   return (
     <div className="page page-wide">
       <div className="se-head">
-        <button className="btn-plain" onClick={() => navigate(-1)} title={t("se.back")}>←</button>
+        <button className="btn-plain" onClick={() => confirmLeave() && navigate(-1)} title={t("se.back")}>←</button>
         <div className="se-title">
           <h1>{s.experiment_id} – {s.name}</h1>
           <div className="se-facts">
@@ -103,8 +120,18 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           </div>
         </div>
         <div className="se-actions">
-          <button className="btn-green" onClick={() => navigate(`/series/${s.id}/report`)}>{t("rep.open")}</button>
-          
+          {canWrite && data.trials.length > 0 && (
+            <>
+              <button className="btn-plain" onClick={() => openTool({ kind: "yarns" })} title={t("tl.yarnsTip")}>{t("tl.yarns")}</button>
+              <button className="btn-plain" onClick={() => openTool({ kind: "copy", ids: [] })}>{t("tl.copy")}</button>
+              <button className="btn-plain" onClick={() => openTool({ kind: "ref-add" })} title={t("tl.addRefTip")}>{t("tl.addRef")}</button>
+              <button className="btn-plain" onClick={() => setTool({ kind: "compare", ref: null })} title={t("tl.cmpTip")}>{t("tl.cmp")}</button>
+              <button className="btn-plain" onClick={() => openTool({ kind: "import", which: "statimat" })}>{t("tl.statImport")}</button>
+              <button className="btn-plain" onClick={() => openTool({ kind: "import", which: "itemat" })}>{t("tl.itemImport")}</button>
+            </>
+          )}
+          {data.trials.length > 0 && <button className="btn-plain" onClick={() => setTool({ kind: "labels" })}>{t("tl.labels")}</button>}
+          <button className="btn-green" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)}>{t("rep.open")}</button>
         </div>
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
@@ -113,21 +140,108 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
         <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={rights}
-          onChanged={() => setReload((x) => x + 1)} />
+          onChanged={() => setReload((x) => x + 1)} onTool={openTool} />
       </EditProvider>
+      {tool?.kind === "labels" && <LabelsDialog seriesId={s.id} onClose={() => setTool(null)} />}
+      {tool?.kind === "compare" && <RefCompareDialog seriesId={s.id} refId={tool.ref} onClose={() => setTool(null)} />}
+      {tool?.kind === "copy" && <CopyTrialsDialog seriesId={s.id} preselected={tool.ids} onClose={() => setTool(null)}
+        onDone={(n) => reloadAll(t("tl.copied", { n }))} />}
+      {tool?.kind === "yarns" && <YarnsDialog seriesId={s.id} onClose={() => setTool(null)} onDone={() => reloadAll(t("tl.yarnsSaved"))} />}
+      {tool?.kind === "import" && <PdfImportDialog seriesId={s.id} kind={tool.which} onClose={() => setTool(null)}
+        onDone={() => setReload((x) => x + 1)} />}
+      {tool?.kind === "ref-add" && <RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
+        onOk={(name) => refAction(`/api/series/${s.id}/references`, { name }, t("tl.refAdded"))} />}
+      {tool?.kind === "ref-mark" && <RefNameDialog title={t("tl.markRefTitle", { trial: tool.trial.label })} initial="" onClose={() => setTool(null)}
+        onOk={(name) => refAction(`/api/series/${s.id}/references/${tool.trial.id}/flag`, { make_reference: true, name }, t("sa.saved"))} />}
+      {tool?.kind === "ref-rename" && <RefNameDialog title={t("tl.renameRefTitle")} initial={tool.name} onClose={() => setTool(null)}
+        onOk={(name) => refAction(`/api/series/${s.id}/references/${tool.trial.id}/rename`, { name }, t("sa.saved"))} />}
+      {toast && <div className="toast ok" onClick={() => setToast(null)}>{toast}</div>}
     </div>
   );
 }
 
-function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged }: {
+/** Notes of the series (desktop: Notes tab, auto-save 1.5 s after typing and when leaving the field). */
+function SeriesNotes({ seriesId, initial, canWrite, onSaved }: {
+  seriesId: number; initial: string; canWrite: boolean; onSaved: () => void;
+}) {
+  const { t } = useI18n();
+  const [text, setText] = useState(initial);
+  const [state, setState] = useState<"" | "saving" | "saved" | "error">("");
+  const saved = useRef(initial);
+  const timer = useRef<number | undefined>(undefined);
+  const save = async (v: string, reload: boolean) => {
+    window.clearTimeout(timer.current);
+    if (v === saved.current) return;
+    setState("saving");
+    try {
+      await request("POST", `/api/series/${seriesId}/notes-text`, { text: v });
+      saved.current = v;
+      setState("saved");
+      if (reload) onSaved();
+    } catch {
+      setState("error");
+    }
+  };
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  return (
+    <div className="card se-notes-edit">
+      <div className="se-notes-head">
+        <b>{t("nt.seriesNotes")}</b>
+        <span className="muted">{state === "saving" ? t("ed.saving") : state === "saved" ? t("ed.saved") : state === "error" ? t("nt.saveError") : canWrite ? t("nt.autoSave") : t("se.readonlyShort")}</span>
+      </div>
+      <textarea rows={5} value={text} readOnly={!canWrite} placeholder={canWrite ? t("nt.placeholder") : ""}
+        onChange={(e) => {
+          const v = e.target.value;
+          setText(v);
+          window.clearTimeout(timer.current);
+          timer.current = window.setTimeout(() => save(v, false), 1500);
+        }}
+        onBlur={() => save(text, true)} />
+    </div>
+  );
+}
+
+type Tool =
+  | { kind: "labels" } | { kind: "yarns" } | { kind: "copy"; ids: number[] } | { kind: "ref-add" }
+  | { kind: "ref-mark"; trial: Trial } | { kind: "ref-rename"; trial: Trial; name: string }
+  | { kind: "import"; which: "statimat" | "itemat" } | { kind: "compare"; ref: number | null };
+
+function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool }: {
   data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;
-  accessLevel: number; rights: SeriesRights | null; onChanged: () => void;
+  accessLevel: number; rights: SeriesRights | null; onChanged: () => void; onTool: (x: Tool) => void;
 }) {
   const { t } = useI18n();
   const s = data.series;
   const current = data.tabs.find((x) => x.key === tab) ?? null;
-  const menus = useSeriesMenus({ seriesId: s.id, rights, trials: data.trials, onChanged,
+  // trial header: Copy trials…, reference samples (desktop _on_trial_header_menu)
+  const trialExtras = (trial: Trial, selected: number[]): MenuItem[] => {
+    if (accessLevel < 2) {
+      const r = data.trials.find((x) => x.id === trial.id)?.reference ?? null;
+      return r !== null ? [{ label: t("tl.cmpWithRef"), onClick: () => onTool({ kind: "compare", ref: trial.id }) }] : [];
+    }
+    const ref = data.trials.find((x) => x.id === trial.id)?.reference ?? null;
+    const items: MenuItem[] = [];
+    if (ref === null) items.push({ label: t("tl.copyMenu"), onClick: () => onTool({ kind: "copy", ids: selected }) });
+    items.push({ sep: true }, { label: t("tl.addRef"), onClick: () => onTool({ kind: "ref-add" }) });
+    if (ref !== null) {
+      items.push({ label: t("tl.cmpWithRef"), onClick: () => onTool({ kind: "compare", ref: trial.id }) });
+      items.push({ label: t("tl.renameRef"), onClick: () => onTool({ kind: "ref-rename", trial, name: ref }) });
+      items.push({ label: t("tl.unmarkRef"), onClick: async () => {
+        if (!confirmLeave() || !window.confirm(t("tl.unmarkQ"))) return;
+        try { await request("POST", `/api/series/${s.id}/references/${trial.id}/flag`, { make_reference: false }); onChanged(); }
+        catch (e) { window.alert(e instanceof ApiError ? e.message : String(e)); }
+      } });
+    } else items.push({ label: t("tl.markRef", { trial: trial.label }), onClick: () => onTool({ kind: "ref-mark", trial }) });
+    return items;
+  };
+  const menus = useSeriesMenus({ seriesId: s.id, rights, trials: data.trials, onChanged, trialExtras,
     mode: () => localStorage.getItem("tripplet.machine.mode") || "single" });
+  // right-click on the ply row of Machine Data (MachineTable) opens the Yarns… dialog
+  useEffect(() => {
+    const h = () => onTool({ kind: "yarns" });
+    window.addEventListener("tripplet:yarns", h);
+    return () => window.removeEventListener("tripplet:yarns", h);
+  }, [onTool]);
   const trialNotes = (id: number) => data.notes.filter((n) => n.trial_note && n.trial_id === id);
   return (
     <>
@@ -174,6 +288,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged }: {
       {data.trials.length > 0 && tab === "machine" && (
         <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} />
       )}
+      {tab === "notes" && <SeriesNotes seriesId={s.id} initial={s.notes} canWrite={accessLevel >= 2} onSaved={onChanged} />}
       {tab === "notes" && (
         data.notes.length === 0 ? <div className="card muted">{t("nt.none")}</div> : (
           <div className="table-wrap">

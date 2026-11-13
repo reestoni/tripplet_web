@@ -172,7 +172,8 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
     if mode not in mdm.VIEW_MODES:
         mode = "single"
     st = stb.load_trials(series_id)
-    md = mdm.build_machine_data(st, mode)
+    cache = mdm.load_machine_cache(st.series_id, st.trial_ids)
+    md = mdm.build_machine_data(st, mode, cache)
     has_groups = bool(md.has_groups)
     if md.message or not st.trials:
         return {"mode": mode, "has_groups": has_groups, "message": md.message, "columns": [], "rows": [], "spans": []}
@@ -235,7 +236,16 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
     return {"mode": mode, "has_groups": has_groups, "message": None, "columns": columns, "rows": rows,
             "filter_labels": list(md.filter_labels or []) if mode != "compact" else [],
             "multi_ply": bool(md.has_multi_ply), "machine_id": md.machine_id,
-            "custom_row": md.custom_group_row if has_custom else None}
+            "custom_row": md.custom_group_row if has_custom else None,
+            "schema": _schema_profile(cache, md.row_keys)}   # "dty" / "aty" / None (app/schema.py)
+
+
+def _schema_profile(cache, row_keys):
+    from db import machine_schema
+    try:
+        return machine_schema.profile(cache, list(row_keys or []))
+    except Exception:
+        return None
 
 
 # --------------------------------------------------------------------------- Jet Air Consumption
@@ -258,11 +268,13 @@ def jet_air(series_id: int, unit: str = "Nm3h", _user: Dict[str, Any] = Depends(
 
 # --------------------------------------------------------------------------- attachments
 @router.get("/series/{series_id}/attachments")
-def attachments(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+def attachments(series_id: int, user: Dict[str, Any] = Depends(current_user)):
     from db import series_attachments as sa
+    from db.experiment_request_images import can_delete
 
     def _items(rows):
-        return [{"id": r.get("ID"), "name": r.get("OriginalFilename") or r.get("StoredFilename")}
+        return [{"id": r.get("ID"), "name": r.get("OriginalFilename") or r.get("StoredFilename"),
+                 "can_delete": can_delete(user, r)}
                 for r in rows if r.get("ID") is not None]
     return {"images": _items(sa.list_images(series_id)), "pdfs": _items(sa.list_pdfs(series_id))}
 

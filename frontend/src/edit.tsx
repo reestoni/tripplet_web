@@ -52,6 +52,12 @@ export function neighbour(td: HTMLElement, dr: number, dc: number): HTMLElement 
   return null;
 }
 
+/** Unsaved values of the open series - buttons that navigate away call confirmLeave() first. */
+const leaveGuard = { n: 0, text: "" };
+export function confirmLeave(): boolean {
+  return leaveGuard.n === 0 || window.confirm(leaveGuard.text);
+}
+
 const EditCtx = createContext<Ctx | null>(null);
 export const useEdit = () => useContext(EditCtx);
 
@@ -267,6 +273,22 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       document.removeEventListener("paste", onPaste);
     };
   }, [save, doUndo, canWrite, setMany, t]);
+
+  // leaving inside the app (sidebar, links, buttons using confirmLeave): ask first, like the desktop
+  useEffect(() => {
+    leaveGuard.n = dirty.size;
+    leaveGuard.text = t("ed.leaveQ", { n: dirty.size });
+    if (!dirty.size) return;
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank" || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+      if (a.origin !== window.location.origin) return;
+      if (!window.confirm(leaveGuard.text)) { e.preventDefault(); e.stopPropagation(); }
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [dirty.size, t]);
+  useEffect(() => () => { leaveGuard.n = 0; }, []);
 
   // warn before leaving with unsaved values
   useEffect(() => {

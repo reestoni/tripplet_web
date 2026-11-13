@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 
@@ -13,7 +13,7 @@ type Mod = { key: string; title: string; summary: string; minutes: number; quiz:
 type Cat = { key: string; title: string; modules: Mod[]; groups: { key: string; title: string; modules: Mod[] }[] };
 type Catalog = { lang: string; start: Mod | null; areas: { key: string; title: string; categories: Cat[] }[];
   ui: Record<string, string> };
-type ModInfo = { key: string; title: string; summary: string; scenes: string[]; url: string };
+type ModInfo = { key: string; title: string; summary: string; scenes: string[]; url: string; scene_base?: number };
 
 const LAST = "tripplet.kb.module";
 const CLOSED = "tripplet.kb.closedAreas";
@@ -40,6 +40,10 @@ export default function KnowledgeBase() {
   const { lang } = useI18n();
   const navigate = useNavigate();
   const { key: routeKey } = useParams();
+  const [search] = useSearchParams();
+  // ?scene=&station= (1-based, ui/kb_links.py targets, e.g. from the machine schema)
+  const wantScene = Number(search.get("scene")) || 0;
+  const wantStation = Number(search.get("station")) || 0;
   const [cat, setCat] = useState<Catalog | null>(null);
   const [mod, setMod] = useState<ModInfo | null>(null);
   const [scene, setScene] = useState(0);
@@ -70,8 +74,11 @@ export default function KnowledgeBase() {
         const isNew = modRef.current?.key !== m.key;
         setMod(m);
         if (isNew) {
-          setScene(0);
-          setSrc(`${m.url}?lang=${langRef.current}&embedded=1`);
+          // the page reads ?scene= 0- or 1-based (scene_base, ui/onboarding_catalog.scene_param_base)
+          const sc = wantScene > 0 ? `&scene=${wantScene - 1 + (m.scene_base ?? 0)}` : "";
+          const stn = wantStation > 0 ? `&station=${wantStation}` : "";
+          setScene(wantScene > 0 ? wantScene - 1 : 0);
+          setSrc(`${m.url}?lang=${langRef.current}&embedded=1${sc}${stn}`);
           store(LAST, m.key);
           request("POST", "/api/kb/opened", { key: m.key }).catch(() => undefined);
         } else {
@@ -86,7 +93,7 @@ export default function KnowledgeBase() {
     return () => {
       alive = false;
     };
-  }, [key, lang, routeKey]);
+  }, [key, lang, routeKey, wantScene, wantStation]);
 
   const open = (k: string) => navigate(`/knowledge-base/${k}`);
 

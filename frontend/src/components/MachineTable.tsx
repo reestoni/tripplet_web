@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, notesTip, type CellNote, type MachineData } from "../api";
 import { useI18n } from "../i18n";
 import { EditCell, useEdit } from "../edit";
 import type { MenuItem } from "./ContextMenu";
 import type { SeriesMenus } from "./seriesMenus";
+import SchemaPanel, { type SchemaHighlight } from "./SchemaPanel";
+
+const SCHEMA_KEY = "tripplet.machine.schema";   // desktop QSettings dty_schema/visible, default on
 
 const MODE_KEY = "tripplet.machine.mode";
 
@@ -35,6 +38,16 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
   const [custom, setCustom] = useState(false);              // desktop: Custom Group row off at start
   const [hidden, setHidden] = useState<string[]>([]);       // rows the user hid (by title, per machine; Machine Data only)
   const [selRows, setSelRows] = useState<string[]>([]);
+  // machine path schema (SchemaPanel.tsx): shown, rows/columns of the clicked station, cell clicked in the table
+  const [schemaOn, setSchemaOn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(SCHEMA_KEY) !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const [hl, setHl] = useState<SchemaHighlight>(null);
+  const [follow, setFollow] = useState<{ trial: number; key: string | null; c: number; n: number } | null>(null);
   const ed = useEdit();
   const locked = !!ed?.hasDirty(source);   // unsaved edits refer to this view's rows/columns
 
@@ -133,6 +146,35 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
     menus.open(e, items);
   };
 
+  // schema: a station was clicked -> its first row into view (desktop set_highlight scrolls too)
+  const tableRef = useRef<HTMLTableElement>(null);
+  useEffect(() => {
+    if (hl) tableRef.current?.querySelector("tr.schema-hl")?.scrollIntoView({ block: "nearest" });
+  }, [hl]);
+  useEffect(() => setHl(null), [seriesId, mode, data]);
+  const schemaShown = source === "machine" && !!data?.schema && schemaOn;
+  const toggleSchema = () => {
+    const on = !schemaOn;
+    setSchemaOn(on);
+    if (!on) setHl(null);
+    try {
+      localStorage.setItem(SCHEMA_KEY, on ? "1" : "0");
+    } catch {
+      /* storage blocked */
+    }
+  };
+  // a click in the table: the schema follows the trial of the cell and marks the station of the row
+  const schemaFollow = (e: React.MouseEvent) => {
+    if (!schemaShown || !data) return;
+    const td = (e.target as HTMLElement).closest("td");
+    const tr = td?.closest("tr");
+    if (!td || !tr || td.cellIndex < 1) return;
+    const col = visible[td.cellIndex - 1];
+    const row = data.rows[Number(tr.dataset.r)];
+    if (!col || !row) return;
+    setFollow((f) => ({ trial: col.c.trial_id, key: row.key || null, c: col.c.c, n: (f?.n ?? 0) + 1 }));
+  };
+
   if (error) return <div className="card error">{error}</div>;
   const nHidden = data ? data.rows.filter((r) => hidden.includes(r.title)).length : 0;
 
@@ -157,7 +199,16 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
             ))}
           </span>
         )}
+        {source === "machine" && data?.schema && (
+          <button className={"schema-btn" + (schemaOn ? " on" : "")} aria-pressed={schemaOn} title={t("md.schemaTip")}
+            onClick={toggleSchema}>{t("md.schema")}</button>
+        )}
       </div>
+      {schemaShown && data && (
+        <SchemaPanel seriesId={seriesId} mode={mode} reloadKey={ed?.reloadKey} follow={follow} onHighlight={setHl}
+          visibleKeys={data.rows.filter((r) => !hidden.includes(r.title) && r.key).map((r) => r.key)}
+          openMenu={menus ? (e, items) => menus.open(e, items) : undefined} />
+      )}
       {nHidden > 0 && data && (
         <div className="md-hidden">
           <button className="btn-plain" onClick={(e) => menus?.open(e, [
@@ -171,7 +222,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
       {data?.message && <div className="card muted">{data.message}</div>}
       {data && !data.message && (
         <div className="table-wrap pivot-wrap">
-          <table className="pivot machine">
+          <table className="pivot machine" ref={tableRef}>
             <thead>
               <tr>
                 <th className="pv-corner" rowSpan={2} />
@@ -188,6 +239,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
               <tr className="ply-row">
                 {visible.map(({ c, i }) => (
                   <th key={i} className={(c.reference ? "ref" : "") + (c.notes.length ? " has-note" : "")}
+                    onContextMenu={(e) => menus?.open(e, [{ label: t("tl.yarns"),
+                      onClick: () => window.dispatchEvent(new Event("tripplet:yarns")) }])}
                     title={[c.ply_tooltip, c.colour_name ? t("md.colour", { c: c.colour_name }) : "", notesTip(c.notes)]
                       .filter(Boolean).join("\n") || undefined}>
                     {c.colour && <span className="yarn-dot" style={{ background: c.colour }} />}
@@ -196,9 +249,9 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody onClick={schemaFollow}>
               {data.rows.map((row, r) => hidden.includes(row.title) ? null : (
-                <tr key={r} className={row.readonly ? "info" : ""}>
+                <tr key={r} data-r={r} className={(row.readonly ? "info" : "") + (hl && row.key && hl.keys.includes(row.key) ? " schema-hl" : "")}>
                   <th scope="row" className={(markers.get(r) ? `hid-${markers.get(r)!.where}` : "") + (selRows.includes(row.title) ? " th-sel" : "")}
                     title={markers.get(r) ? t("cm.hiddenHere", { rows: markers.get(r)!.titles.map(rowTitle).join(", ") }) : undefined}
                     onClick={(e) => {
@@ -215,7 +268,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                     return (
                       <EditCell key={i} addr={{ tab: source, r: row.r, c: c.c }} text={cell.v} raw={cell.raw}
                         editable={!!cell.e} options={row.options ?? null}
-                        className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")}
+                        className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")
+                          + (hl && row.key && hl.keys.includes(row.key) && hl.cols.includes(c.c) ? " schema-hl-cell" : "")}
                         title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined}
                         onContextMenu={menus ? (e, a) => menus.cellMenu(e, a, cell, `${c.trial_label}${c.ply ? " · " + c.ply : ""} · ${rowTitle(row.title)}`,
                           ed?.canWrite && !row.readonly ? [{ label: t("cm.fillRow"), onClick: () => menus.openFill(source, row.r, rowTitle(row.title),

@@ -185,3 +185,64 @@ def reassign_yarn(series_id: int, body: YarnPlan, user: Dict[str, Any] = Depends
     n = ta.apply_yarn_reassign(series_id, plan, user)
     log_usage_event("feature", "reassign_yarn", f"web {n}")
     return {"conflicts": [], "applied": True, "changes": n}
+
+
+# ------------------------------------------------------------------ trial labels (Print labels)
+from fastapi.responses import Response  # noqa: E402
+
+from db import label_sheets as ls  # noqa: E402
+from db import trial_labels as tl  # noqa: E402
+
+
+@router.get("/{series_id}/labels")
+def labels_info(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
+    """Trial range, header line and the saved 'TrialLabel' sheet template (desktop PrintLabelsDialog)."""
+    rng = tl.trial_label_range(series_id)
+    return {"range": list(rng) if rng else None, "header": tl.trial_label_header(series_id),
+            "template": {k: ls.load_label_template(tl.TEMPLATE_NAME).get(k) for k, _l in ls.TEMPLATE_FIELDS},
+            "fields": [[k, label] for k, label in ls.TEMPLATE_FIELDS]}
+
+
+class LabelReq(BaseModel):
+    from_no: int
+    to_no: int
+    start_index: int = 0
+    template: Dict[str, float]
+
+
+def _clean_template(tpl: Dict[str, float]) -> Optional[Dict[str, float]]:
+    keys = {k for k, _l in ls.TEMPLATE_FIELDS}
+    if set(tpl) != keys or any(not (0 <= float(v) <= 2000) for v in tpl.values()):
+        return None
+    out = {k: float(v) for k, v in tpl.items()}
+    out["ColumnCount"], out["RowCount"] = int(out["ColumnCount"]), int(out["RowCount"])
+    if out["ColumnCount"] < 1 or out["RowCount"] < 1:
+        return None
+    return out
+
+
+@router.post("/{series_id}/labels/pdf")
+def labels_pdf(series_id: int, body: LabelReq, _user: Dict[str, Any] = Depends(current_user)):
+    tpl = _clean_template(body.template)
+    if tpl is None:
+        return _err(400, "bad_template", "The sheet settings are not valid.")
+    data = tl.trial_labels_pdf(series_id, body.from_no, body.to_no, max(0, body.start_index), tpl)
+    if data is None:
+        return _err(404, "no_trials", "No trials in this series.")
+    log_usage_event("feature", "print_trial_labels", "web")
+    return Response(content=data, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="labels_{series_id}.pdf"'})
+
+
+class LabelTemplate(BaseModel):
+    template: Dict[str, float]
+
+
+@router.post("/labels/template")
+def save_labels_template(body: LabelTemplate, _user: Dict[str, Any] = Depends(current_user)):
+    """'Save template' - like the desktop, everybody may save the sheet settings."""
+    tpl = _clean_template(body.template)
+    if tpl is None:
+        return _err(400, "bad_template", "The sheet settings are not valid.")
+    ls.save_label_template(tl.TEMPLATE_NAME, tpl)
+    return {"ok": True}

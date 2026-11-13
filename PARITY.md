@@ -112,24 +112,24 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Redo Ctrl+Y / Ctrl+Shift+Z | `_init_undo` | **MISSING** | frontend only |
 | Discard unsaved | Save/Discard/Cancel prompt | **DONE** | "Discard" button |
 | Unsaved mark on tab (dot) | `_apply_unsaved_tab_mark` | **MISSING** | frontend only |
-| Prompt Save/Discard/Cancel on leaving (tab close, back, series switch, logout, exit) | `confirm_close_with_unsaved` / `_back_all_experiments` / `closeEvent` | **PARTIAL** | only `beforeunload` (reload/close); in-app navigation (back arrow, sidebar) not guarded |
+| Prompt Save/Discard/Cancel on leaving (tab close, back, series switch, logout, exit) | `confirm_close_with_unsaved` / `_back_all_experiments` / `closeEvent` | **PARTIAL** | `confirmLeave()` + link guard in `edit.tsx` (OK/Cancel instead of Save/Discard/Cancel; browser back not guarded) |
 | Refresh ↻ / F5 | `_on_refresh` | **DONE** | browser reload (warns if unsaved) |
 | Back to list | `_back_all_experiments` | **DONE** | back arrow (`navigate(-1)`) |
 | Show attached images (gallery) | `_open_series_images_dialog` | **PARTIAL** | `fe/components/Attachments.tsx` views only; desktop dialog (`ExperimentRequestImagesDialog`) also zoom/rotate/rename/batch rename/delete/save as |
 | Show attached PDFs | `_open_series_pdfs_dialog` | **PARTIAL** | list + open in browser; no rename/delete |
-| Upload images | `_upload_series_images` / `_insert_trialseries_image_row` | **MISSING** | Qt (paths + insert in screen); `db/series_attachments` only lists/downloads |
-| Garnspiegel CV analysis of uploaded images | `_analyze_and_save_garnspiegel` | **MISSING** | Qt screen |
-| Upload PDFs | `_upload_series_pdfs` / `_insert_trialseries_pdf_row` | **MISSING** | Qt |
-| Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **MISSING** | Qt-free `db/lab_pdf_import.can_import/propose_statimat/import_statimat` |
-| Itemat import | `_itemat_import` | **MISSING** | Qt-free `db/lab_pdf_import.parse_itemat/propose_itemat/import_itemat` |
+| Upload images | `_upload_series_images` / `_insert_trialseries_image_row` | **DONE** | `be/uploads.py`, `fe/components/Attachments.tsx`, `db/series_uploads.py` (2026-11-13) |
+| Garnspiegel CV analysis of uploaded images | `_analyze_and_save_garnspiegel` | **DONE** | `db/series_uploads.analyze_garnspiegel` on upload (2026-11-13) |
+| Upload PDFs | `_upload_series_pdfs` / `_insert_trialseries_pdf_row` | **DONE** | `be/uploads.py` (2026-11-13) |
+| Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **DONE** | `fe/components/SeriesTools.tsx` PdfImportDialog, `be/series_tools.pdf_import` (web: write access needed) |
+| Itemat import | `_itemat_import` | **DONE** | same as Statimat |
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
 | Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **PARTIAL** | report page has its own load list; no picker in header (`?report=` supported) |
-| Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **MISSING** | Qt-free `db/trial_labels.trial_label_range/trial_labels_pdf` |
+| Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **DONE** | LabelsDialog (range, start cell, template, save template) → PDF in new tab |
 | Add empty trial (→ Create Experiment "add trials") | `_add_empty_trial` | **MISSING** | Qt-free `db/trial_actions.add_trials`, but needs the add-trials form |
-| "+ Ref" add reference sample | `_add_reference_sample` | **MISSING** | Qt-free `db/trial_actions.add_reference_sample` |
-| "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **MISSING** | Qt-free `ui/ref_compare.py`, `db/ref_criteria.py`; `gather_sources()` is Qt (reads models) |
-| "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **MISSING** | Qt-free `db/trial_copy.*`, `db/trial_actions.copy_trials_setup/copy_trials` |
-| "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **MISSING** | Qt-free `db/series_yarns.load_state/plan/describe/apply_plan/load_yarns/filter_yarns` |
+| "+ Ref" add reference sample | `_add_reference_sample` | **DONE** | header button + trial menu |
+| "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **PARTIAL** | RefCompareDialog, `be/series_tools.ref_compare` (same `ui/ref_compare.py`, sources = LAB_TABS, parity 3 series); no 'only passing' filter yet |
+| "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **DONE** | CopyTrialsDialog, `be/series_tools.copy_trials_ep` |
+| "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **PARTIAL** | YarnsDialog, `be/series_tools.yarns_apply` ("+ Trial output" not yet) |
 | Help button (EN/DE/ES) | `_open_help` | **MISSING** | data `ui/widgets/help_texts_show_experiment.py` |
 | Read-only for access level ≤ 1 | `_get_access_level` / `_sync_save_button_access` | **DONE** | `canWrite = accessLevel >= 2` |
 | Recycle-bin preview mode (read-only series) | `set_recycle_preview` | **MISSING** | Recycle Bin not in web |
@@ -144,7 +144,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Unused DTY process rows hidden | `machine_row_visibility.apply` | **DONE** | `md.process_hidden_rows` |
 | Custom Group row hidden by default, toggle | `_toggle_custom_group_row` | **DONE** | |
 | R&D Machine Data tab | `_build_rd_machine_tab` | **DONE** | `GET /api/series/{id}/rd` |
-| DTY/ATY Schema panel ("Schema" button, stations, speeds, merge warnings, click station = highlight rows) | `ui/dty_schema_panel.py`, `ui/aty_schema.py` | **MISSING** | Qt-free `ui/dty_stations.py` (`resolve_topology`, `speeds`, `FIELD_STATION`), `ui/aty_stations.py`; drawing Qt (`aty_schema.paint`) |
+| DTY/ATY Schema panel ("Schema" button, stations, speeds, merge warnings, click station = highlight rows) | `ui/dty_schema_panel.py`, `ui/aty_schema.py` | **DONE** | `fe/components/SchemaPanel.tsx`, `be/schema.py`, `db/machine_schema.py` (2026-11-13; KB opens as page, not popup) |
 | All lab tabs (Titer, Statimat M/DS, Waterbath, EKB, 3x Shrinkage, Rapid 600, Itemat Lab/Plus, DTYoMat, ATYoMat) | `_ensure_*_tab` / `_build_*_tab` | **DONE** | `db/series_tables.LAB_TABS` |
 | Info rows Jet / Jet Plate / Air Pressure on lab tabs | `_get_jet_info_rows` | **DONE** | `series_tables.jet_info_rows` |
 | Red/orange CV-limit alerts + legend | `cell_alert` / `cv_limit_alert` | **DONE** | |
@@ -155,7 +155,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Jet Air Consumption: 3 grids, unit Nm³/h ↔ l/min, editable | `_build_jet_air_tab` / `_on_jet_air_unit_changed` | **DONE** | `fe/components/JetAirView.tsx` |
 | Jet Air: "Sync physical jets" | `_sync_jet_air_physical_jets` | **MISSING** | Qt-free `db/trial_actions.physical_jets_for_series/save_jet_air_consumption_rows` |
 | Jet Air: "Apply to all" for atm / temperature | `_fill_all_jet_air` | **MISSING** | frontend only (marks dirty) |
-| Notes tab: series free-text notes, auto-save | `_load_notes` / `_on_notes_text_changed` / `_save_notes` | **PARTIAL** | web shows series notes read-only (header toggle); write Qt-free `db/series_actions.can_save_notes/save_notes` |
+| Notes tab: series free-text notes, auto-save | `_load_notes` / `_on_notes_text_changed` / `_save_notes` | **DONE** | `SeriesNotes` in SeriesView (auto-save 1.5 s + blur) |
 | Notes tab: list of all notes on values | `cell_notes_ui` (Notes tab list) | **DONE** | `SeriesView.tsx` notes table |
 | Athena (AI advisor) tab: wake, chat, reset | `ui/advisor_tab.py` | **MISSING** | Qt: `ui/advisor_worker.py` (QThread); `collect_advisor_context` could be split out |
 | DTY YarnScope tab | `ui/dty_yarnscope_tab.py` | **PARTIAL** | see section 5 |
@@ -193,13 +193,13 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Row title: Hide row / Hide n rows / Show hidden here / Show all | `machine_row_visibility.add_context_actions` | **DONE** | web stores in localStorage, desktop in QSettings (not shared) |
 | "n rows hidden" button with menu | `btn_hidden_rows` | **DONE** | |
 | Row title: Show/Hide Custom Group | `_toggle_custom_group_row` | **DONE** | |
-| Ply header (row 2) right-click → Yarns dialog | `_manage_plies_for_col_spec_idx` | **MISSING** | see "Yarns…" |
+| Ply header (row 2) right-click → Yarns dialog | `_manage_plies_for_col_spec_idx` | **DONE** | MachineTable ply row → Yarns… |
 | Trial header: click / Ctrl / Shift = select trials | `_GridView.mousePressEvent` | **DONE** | `seriesMenus.clickTrial` |
 | Trial header: Add note to Vn / Notes on Vn | `cell_notes_ui.add_trial_note_action` | **DONE** | |
-| Trial header: Copy trials… | `_on_trial_header_menu` / `_multiply_trial_from_col_spec_idx` | **MISSING** | Qt-free `db/trial_actions.copy_trials` |
+| Trial header: Copy trials… | `_on_trial_header_menu` / `_multiply_trial_from_col_spec_idx` | **DONE** | trial menu (selected trials preselected) |
 | Trial header: Open Vn in Process Playground… | `_process_playground_available` | **MISSING** | Process Playground not in web; stats Qt-free `ui/dty_whatif.py` |
-| Trial header: Add reference sample… | `_add_reference_sample` | **MISSING** | Qt-free `trial_actions.add_reference_sample` |
-| Trial header: Mark Vn as reference / Rename reference / Turn into normal trial | `_set_reference_flag` / `_rename_reference_sample` | **MISSING** | Qt-free `trial_actions.set_reference_flag/rename_reference_sample/unmark_number` |
+| Trial header: Add reference sample… | `_add_reference_sample` | **DONE** | trial menu |
+| Trial header: Mark Vn as reference / Rename reference / Turn into normal trial | `_set_reference_flag` / `_rename_reference_sample` | **DONE** | trial menu |
 | Trial header (ref): Compare trials with this reference… | `_open_ref_compare` | **MISSING** | see "vs Ref / Target" |
 | Trial header: Delete Vn / Delete n selected trials (blocked if unsaved) | `_delete_trials` / `_trial_delete_blocker` | **DONE** | `DeleteTrialsDialog` → `recycle_bin.delete_trials` |
 | Lab trial header: Flag Vn for retest… (superuser) | `_on_lab_header_context_menu` / `_mark_trial_for_retest` | **DONE** | `RetestDialog` → `db/retest_flags` |
