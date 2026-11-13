@@ -428,7 +428,9 @@ export default function YarnStock() {
           <div className="toolbar st-btns">
             <label className="st-goto">{t("st.rack_label")}<input className="st-rack" value={rack} placeholder="C" onChange={(e) => setRack(e.target.value)} /></label>
             <span className="st-grow" />
-            <button className="btn-plain" disabled title={t("st.stocktake_soon")}>{t("st.stocktake")}</button>
+            <Link className={"btn-plain" + (ro ? " disabled" : "")} title={ro ? t("st.err.read_only") : t("st.stocktake_tip")}
+              to={ro ? "#" : `/tools/yarn-stock/stock-take?rack=${encodeURIComponent(rack.trim())}`}
+              onClick={(e) => { if (ro) e.preventDefault(); else if (dirty && !window.confirm(t("mj.discard"))) e.preventDefault(); }}>{t("st.stocktake")}</Link>
             <button className="btn-plain" onClick={() => {
               if (!rack.trim()) { setMsg({ kind: "err", text: t("st.rack_first") }); return; }
               download(`/api/yarn-stock/export/rack?prefix=${encodeURIComponent(rack.trim())}`, `rack_${rack.trim().toUpperCase()}.xlsx`)

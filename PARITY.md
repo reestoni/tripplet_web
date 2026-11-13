@@ -392,6 +392,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Label queue: add, remove, Print Labels… (sheet template, start cell, PDF, mark printed) | `_queue_labels`, `_on_print_labels`, `PrintLabelsDialog` | **DONE** | PDF opens in a new tab (desktop: save dialog); `labels_pdf()` |
 | Rack lookup (+ Excel) | `_apply_rack_filter`, `_on_export_rack_excel` | **DONE** | `rack_groups`, `rack_xlsx` |
 | Low / empty stock bell notifications on load | `reload_data` → `ui/notifications` | **DONE** | `refresh_notifications()` |
-| Stock take round | `StockTakeRoundDialog` (`db/stock_take.py`) | **MISSING** | button shown disabled with hint |
+| Stock take round: overview tiles per location (rack × level, open / fine / differences / left out), results (only differences, location filter, "seen at"), Excel | `StockTakeRoundDialog` | **DONE** | `fe/pages/StockTake.tsx` (`/tools/yarn-stock/stock-take`), `be/stock_take_api.py`; `stock_take.tile_columns`, `export_excel_bytes` |
+| Start round (name, untick locations), close round, leave out / include (superusers) | `StartRoundDialog`, `_on_close_round`, `_set_excluded` | **DONE** | right-click menu on a tile |
+| Check a location: expected list, scan (also label QR), mark by hand (double-click) / undo (right-click), move / put back at once, finish with discard / keep missing; check without a round | `StockTakeDialog` | **DONE** | `stock_take.move_spool/restock_spool/discard_missing`; scan parsed on the server (`/parse`) |
 | Yarn Stock help dialog (tasks / screen guide / background / stock take) | `show_yarn_stock_help` | **MISSING** | own dialog like the Request help |
 | "Open in Yarn Stock" from Create Experiment's stock dialog | `YarnLocationsDialog(on_open_yarn_stock)` | **DONE** | web opens a new tab `/tools/yarn-stock?yarn=&charge=` (keeps the form) |

@@ -884,3 +884,36 @@ table.at.st tr.st-gone td { color: #999; }
 .st-form .st-check { display: flex; grid-column: 1 / -1; gap: 8px; font-weight: normal; }
 .st-warn { background: #FFF3CD; color: #7A5B00; padding: 6px 10px; border-radius: 4px; font-size: 13px; }
 .ce-picked td { background: #b7d6ff !important; }
+
+/* ---------- Stock take (StockTake.tsx) ---------- */
+.stk-page { display: flex; flex-direction: column; gap: 8px; padding-bottom: 24px; }
+.stk-info { margin: 0; color: #444; }
+.stk-prog { display: flex; align-items: center; gap: 12px; }
+.stk-bar { flex: 1; height: 12px; background: #eee; border-radius: 6px; overflow: hidden; }
+.stk-bar > div { height: 100%; background: var(--accent); }
+.stk-legend { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; font-size: 13px; }
+.stk-legend i.stk-tile { display: inline-block; width: 22px; height: 14px; padding: 0; vertical-align: middle; }
+.stk-rack { border: 1px solid #e0e0e0; border-radius: 6px; background: #fcfcfc; padding: 6px 10px 8px; }
+.stk-grid { display: grid; grid-auto-columns: 82px; gap: 6px; margin-top: 6px; overflow-x: auto; }
+.stk-tile { width: 82px; height: 50px; border-radius: 5px; font-size: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 2px; }
+.stk-tile b { font-size: 12px; }
+.stk-open { background: #f2f2f2; border: 1px solid #c8c8c8; color: #444; }
+.stk-ok { background: #EAF3DE; border: 1px solid #9ccc8a; color: #2b5d22; }
+.stk-deviation { background: #FAEEDA; border: 1px solid #e3b866; color: #7a4d00; }
+.stk-excluded { background: #fff; border: 1px dashed #d0d0d0; color: #a0a0a0; }
+button.stk-tile:hover { border-width: 2px; }
+.stk-sum { margin: 0; font-size: 13px; }
+.stk-pre { white-space: pre-wrap; }
+.stk-tree { max-height: 50vh; overflow: auto; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; display: flex; flex-direction: column; gap: 4px; }
+.stk-tree label { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.stk-tree-locs { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 2px 8px; padding: 2px 0 6px 52px; }
+.stk-scan { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; }
+.stk-scan input { flex: 1; font: inherit; font-size: 18px; font-weight: normal; padding: 8px 10px; border: 2px solid var(--accent); border-radius: 8px; }
+.stk-fb { padding: 8px 12px; border-radius: 6px; font-size: 14px; min-height: 20px; }
+.stk-fb-ok { background: #EAF3DE; color: #2b5d22; border: 1px solid #9ccc8a; }
+.stk-fb-warn { background: #FAEEDA; color: #7a4d00; border: 1px solid #e3b866; }
+.stk-fb-error { background: #FCEBEB; color: #8a1f1f; border: 1px solid #e09a9a; }
+.stk-fb-info { background: #f2f2f2; color: #444; border: 1px solid #d0d0d0; }
+.st-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+a.btn-plain { text-decoration: none; color: inherit; display: inline-block; }
+a.btn-plain.disabled { opacity: 0.5; cursor: default; }

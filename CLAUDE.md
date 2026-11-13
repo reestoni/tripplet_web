@@ -174,8 +174,15 @@ Garn), Spulen bearbeiten/neu/ausbuchen, Verwendet in, Verlauf (`tblYarnSpoolLog`
 Etiketten-Warteschlange + Bogen-PDF (Vorlage "Default"; PDF markiert die Warteschlange als gedruckt, wie Desktop),
 Gestell-Suche, Excel-Exporte, Glocken-Meldungen beim Laden. Schreiben ab Stufe 2, MinStock nur Superuser.
 `?yarn=&charge=` springt zu einer Batch ("In Garnlager öffnen" aus dem Lagerplatz-Dialog von Create Experiment, neuer Tab).
-Noch offen: Inventur-Runde (`ui/widgets/stock_take_round_dialog.py`, Logik schon Qt-frei in `db/stock_take.py`) und
-die eigene Yarn-Stock-Hilfe. Tests `tests/test_yarn_stock.py` (Durchlauf mit Test-Batch, räumt Spulen/Log/Warteschlange ab).
+Tests `tests/test_yarn_stock.py` (Durchlauf mit Test-Batch, räumt Spulen/Log/Warteschlange ab).
+**Inventur** (2026-11-13): `/tools/yarn-stock/stock-take` (Knopf "Inventur…" in der Gestell-Suche, `?rack=` = Vorgabe für
+"ohne Runde"), `app/stock_take_api.py` auf `db/stock_take.py` (dazu neu Qt-frei: `move_spool`, `restock_spool`,
+`discard_missing`, `tile_columns`, `export_excel_bytes`; Desktop-Dialoge nutzen sie). Seite `StockTake.tsx`: Kacheln pro
+Platz, Ergebnisse, Excel; Superuser starten/schliessen Runden und lassen Plätze aus; Prüfen ab Stufe 2 (Scan-Ansicht:
+Umlagern/Wieder-Einlagern sofort, Fehlende nur beim Abschluss auf Klick ausbuchen). Die Scan-Liste hält der Browser
+(wie der Desktop-Dialog), den Scan-Text wertet der Server aus (`/parse`). Tests `tests/test_stock_take_api.py` (echte
+Test-Runde mit Test-Spulen auf ZZ97, wird übersprungen, wenn eine echte Runde offen ist; räumt alles ab).
+Noch offen: die eigene Yarn-Stock-Hilfe (Desktop `ui/widgets/yarn_stock_help_dialog.py`, Reiter + Skizzen).
 
 **Hilfe** (2026-11-13): `backend/app/help.py` (`/api/help/screen/<screen>` = Kontext-Hilfe aller Sprachen aus den
 Desktop-Textmodulen `ui/widgets/help_texts_*.py` als Bausteine, Skizzen als data-URL; `/api/help/search` = Suche aus
@@ -192,8 +199,8 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock (siehe unten;
-  offen dort: Inventur-Runde, Yarn-Stock-Hilfe). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur (siehe unten;
+  offen dort: Yarn-Stock-Hilfe). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
   Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen
