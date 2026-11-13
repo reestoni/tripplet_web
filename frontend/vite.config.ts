@@ -12,6 +12,7 @@ export default defineConfig({
       "/api": "http://127.0.0.1:8000",
       "/report": "http://127.0.0.1:8000",
       "/report-assets": "http://127.0.0.1:8000",
+      "/kb-assets": "http://127.0.0.1:8000",
     },
   },
 });
