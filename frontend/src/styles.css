@@ -247,3 +247,39 @@ table.grid td.icon-col img { width: 16px; height: 16px; vertical-align: middle; 
 .arch-row:hover { background: var(--card-bg); }
 @media (max-width: 1500px) { .board { overflow-y: auto; align-content: start; } .bl-box { max-height: 460px; } }
 @media (max-width: 700px) { .board { grid-template-columns: 1fr; } }
+
+/* language flags */
+.lang-flags { display: flex; gap: 6px; }
+.lang-flags button {
+  padding: 2px; border: 2px solid transparent; border-radius: 5px; background: none; cursor: pointer; line-height: 0;
+  opacity: 0.6;
+}
+.lang-flags button:hover { opacity: 1; }
+.lang-flags button.on { border-color: var(--accent); opacity: 1; }
+.lang-flags img { width: 24px; height: 16px; object-fit: cover; border-radius: 2px; }
+.login-flags { align-self: flex-end; margin-bottom: -6px; }
+.sb-account { flex-direction: column; align-items: stretch; }
+.sb-account-row { display: flex; align-items: center; gap: 8px; }
+.sb-flags { justify-content: flex-start; }
+.sb-flags button.on { border-color: white; }
+
+/* drag & drop */
+.bl-card[draggable="true"], .arch-row[draggable="true"] { cursor: grab; }
+.bl-card.dragging { opacity: 0.4; }
+.bl-box.can-drop { outline: 2px dashed rgba(57, 166, 80, 0.45); outline-offset: -2px; }
+.bl-box.drop-over { outline: 2px solid var(--accent); background: #e3f1e6; }
+
+/* toast + modal */
+.toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 50;
+  max-width: min(640px, calc(100vw - 32px)); padding: 10px 16px; border-radius: 10px;
+  color: white; box-shadow: 0 6px 20px rgba(0,0,0,0.18); cursor: pointer;
+}
+.toast.ok { background: var(--accent); }
+.toast.err { background: var(--danger); }
+.modal-back { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: grid; place-items: center; z-index: 40; padding: 16px; }
+.modal { background: var(--card-bg); border-radius: 12px; padding: 20px 22px; width: min(440px, 100%); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+.modal h2 { margin: 0 0 8px; font-size: 18px; }
+.modal select { width: 100%; }
+.modal-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.btn-plain { font: inherit; background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; cursor: pointer; }

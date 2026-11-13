@@ -20,7 +20,7 @@ export default function App() {
     } catch (e) {
       setMe(null);
       if (!(e instanceof ApiError && e.status === 401)) {
-        setError("The TrippleT server is not reachable. Is the backend running?");
+        setError("app.serverDown");
       }
     } finally {
       setChecked(true);

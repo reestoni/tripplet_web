@@ -1,20 +1,17 @@
 import type { Me } from "../api";
+import { useI18n } from "../i18n";
 
 export default function Home({ me }: { me: Me }) {
+  const { t } = useI18n();
   const first = me.user.first_name || me.user.username;
+  const level = `${me.user.access_level}${me.user.access_right ? ` (${me.user.access_right})` : ""}`;
   return (
     <div className="page">
-      <h1>Welcome, {first}</h1>
+      <h1>{t("home.welcome", { name: first })}</h1>
       <div className="card">
-        <p>
-          This is the web version of TrippleT. It is being built step by step and uses the same database as the
-          desktop app.
-        </p>
-        <p className="muted">
-          Connected to <b>{me.db}</b> ({me.mode}) · access level {me.user.access_level}
-          {me.user.access_right ? ` (${me.user.access_right})` : ""}
-        </p>
-        <p className="muted">Entries shown in grey in the sidebar are not available in the web version yet.</p>
+        <p>{t("home.intro")}</p>
+        <p className="muted">{t("home.connected", { db: me.db, mode: me.mode, level })}</p>
+        <p className="muted">{t("home.grey")}</p>
       </div>
     </div>
   );

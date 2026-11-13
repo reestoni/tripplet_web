@@ -91,7 +91,7 @@ def test_login_success_sets_cookie(client, monkeypatch):
 def test_tampered_cookie_is_ignored(client):
     username = _a_real_user()
     good = auth.make_cookie(username)
-    client.cookies.set(auth.COOKIE_NAME, good[:-2] + ("A" if good[-1] != "A" else "B") + good[-1])
+    client.cookies.set(auth.COOKIE_NAME, good[:-2] + ("A" if good[-2] != "A" else "B") + good[-1])
     assert client.get("/api/me").status_code == 401
 
 

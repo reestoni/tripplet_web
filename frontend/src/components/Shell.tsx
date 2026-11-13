@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { api, img, type Me, type Nav, type NavItem } from "../api";
+import { LangFlags, useI18n } from "../i18n";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
 
@@ -13,17 +14,20 @@ function loadClosed(): string[] {
 }
 
 function Item({ it }: { it: NavItem }) {
+  const { t } = useI18n();
+  const label = t(`nav.${it.route}`) === `nav.${it.route}` ? it.label : t(`nav.${it.route}`);
   return (
     <NavLink to={it.route} end className={({ isActive }) => "sb-item" + (isActive ? " active" : "") + (it.web ? "" : " soon")}
-      title={it.web ? it.label : `${it.label} – not in the web version yet`}>
+      title={it.web ? label : `${label} – ${t("sb.notYet")}`}>
       {it.icon ? <img src={img(it.icon)} alt="" /> : <span className="sb-dot" />}
-      <span className="sb-label">{it.label}</span>
+      <span className="sb-label">{label}</span>
       {it.badge > 0 && <span className="sb-badge">{it.badge > 9 ? "9+" : it.badge}</span>}
     </NavLink>
   );
 }
 
 export default function Shell({ me, onLogout, children }: { me: Me; onLogout: () => void; children: ReactNode }) {
+  const { t } = useI18n();
   const [nav, setNav] = useState<Nav | null>(null);
   const [closed, setClosed] = useState<string[]>(loadClosed);
 
@@ -35,8 +39,15 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
     if (me.user.accent_colour) document.documentElement.style.setProperty("--accent", me.user.accent_colour);
   }, [me.user.accent_colour]);
 
+  // badges change when cards move - pages announce it with this event
+  useEffect(() => {
+    const reload = () => api.nav().then(setNav).catch(() => undefined);
+    window.addEventListener("tripplet:nav-changed", reload);
+    return () => window.removeEventListener("tripplet:nav-changed", reload);
+  }, []);
+
   const toggle = (title: string) => {
-    const next = closed.includes(title) ? closed.filter((t) => t !== title) : [...closed, title];
+    const next = closed.includes(title) ? closed.filter((x) => x !== title) : [...closed, title];
     setClosed(next);
     try {
       localStorage.setItem(COLLAPSE_KEY, JSON.stringify(next));
@@ -66,7 +77,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
               <div key={s.title} className="sb-section">
                 <button className="sb-section-head" onClick={() => toggle(s.title)}>
                   <img src={img(s.icon)} alt="" />
-                  <span>{s.title}</span>
+                  <span>{t(`sec.${s.title}`)}</span>
                   <span className="sb-caret">{isClosed ? "▸" : "▾"}</span>
                 </button>
                 {!isClosed && s.items.map((it) => <Item key={it.key} it={it} />)}
@@ -75,11 +86,14 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
           })}
         </nav>
         <div className="sb-account">
-          <div className="sb-user" title={me.user.access_right ?? ""}>
-            <img src={img("user_white.png")} alt="" />
-            <span>{name}</span>
+          <div className="sb-account-row">
+            <div className="sb-user" title={me.user.access_right ?? ""}>
+              <img src={img("user_white.png")} alt="" />
+              <span>{name}</span>
+            </div>
+            <button className="sb-logout" onClick={onLogout}>{t("sb.logout")}</button>
           </div>
-          <button className="sb-logout" onClick={onLogout}>Log Out</button>
+          <LangFlags className="sb-flags" />
         </div>
       </aside>
       <main className="content">{children}</main>

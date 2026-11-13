@@ -6,7 +6,17 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
 ## Sprache
 
 - Zusammenarbeit mit dem Nutzer auf **Deutsch**.
-- Alle sichtbaren Texte der Anwendung auf **Englisch** (wie in der Desktop-App).
+- **Die Web-App ist viersprachig: EN / DE / ES / ZH** (Nutzerwunsch 2026-11-13, anders als die
+  Desktop-App). Umschalten per Flaggen auf der Login-Seite und unten in der Seitenleiste
+  (`LangFlags` in `src/i18n.tsx`, Wahl in localStorage `tripplet.lang`, sonst Browsersprache).
+  **Jeder sichtbare Text** steht in `frontend/src/texts.ts` (`en` definiert die Schlüssel, die
+  anderen Sprachen sind dagegen typisiert → fehlender Schlüssel = Build-Fehler) und wird mit
+  `t("key", {vars})` aus `useI18n()` geholt – nie Text hart in Komponenten schreiben.
+  Das Backend schickt für Meldungen **Codes** (`{"code": ..., "detail": <englisch>}`), die Seite
+  übersetzt `<bereich>.err.<code>`. Navigation wird über die Route übersetzt (`nav.<route>`,
+  `sec.<Sektion>`), Backlog-Status über die ID (`status.<id>`). Daten aus der DB (Serien-,
+  Maschinen-, Garnnamen) werden nicht übersetzt.
+- "Backlog" heisst auch auf Deutsch (und Spanisch) "Backlog" (Nutzerentscheid); Chinesisch 待办.
 
 ## Rahmen (Nutzerentscheide 2026-11-13)
 
@@ -49,7 +59,8 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
 - Python: `C:\Users\soj\AppData\Local\Programs\Python\Python312\python.exe` (hat FastAPI etc.).
 - Entwicklung: `start_dev.ps1` (FastAPI mit Reload auf :8000 + Vite auf :5173, Browser öffnet sich).
 - Gebaute Version: `start.ps1` (ein Prozess, http://127.0.0.1:8000).
-- Tests Backend: im Ordner `backend/` `python -m pytest` (gegen dev_local).
+- Tests Backend: im Ordner `backend/` `python -m pytest` (gegen dev_local; `test_move_real_roundtrip_restores` schreibt echt und stellt danach wieder her).
+- Läuft `start_dev.ps1` beim Nutzer, belegt es Port 8000/5173 – für eigene Tests einen anderen Port nehmen (z. B. 8001), nicht seinen Server beenden. Der `--reload` lädt Backend-Änderungen nicht immer zuverlässig neu → nach Backend-Änderungen dem Nutzer Neustart empfehlen.
 - Frontend prüfen: im Ordner `frontend/` `npm run build` (Typecheck + Build).
 - API-Doku: http://127.0.0.1:8000/api/docs
 
@@ -62,7 +73,7 @@ My Requests (137/5), Create Experiment Request (87/4). Wenig: Image Compare, TDM
 Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 
 1. ✅ Fundament: Login, Rechte, Seitenleiste, Startskripte (2026-11-13)
-2. ✅ All Experiments + Backlog nur lesend (2026-11-13; Status ändern, Prio, Drag & Drop, Kontextmenüs, ER-Popup, Report-Symbol folgen) – offen: Show Experiment **nur lesend**
+2. ✅ All Experiments + Backlog (2026-11-13; Backlog-Karten per Drag & Drop verschiebbar = `POST /api/backlog/move`, Regeln aus `db/backlog_moves.py`, Joker-Maschine fragt per Dialog; noch offen: Prio, Mehrfachauswahl, Kontextmenüs, ER-Popup, Report-Symbol, Status in All Experiments) – offen: Show Experiment **nur lesend**
 3. Experiment Requests (Create + My Requests) – erster Schreib-Teil
 4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
    Add Trial Series, Add Lab Machines

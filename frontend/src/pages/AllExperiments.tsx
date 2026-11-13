@@ -1,29 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, img, type ExperimentRow } from "../api";
+import { useI18n } from "../i18n";
 
 type SortKey = "experiment_id" | "series_name" | "machine" | "creation_date" | "owner" | "status_id" | "has_attach"
   | "experiment_request_id" | "has_notes" | "reports";
 
-const COLUMNS: { key: SortKey; label: string; icon?: boolean }[] = [
-  { key: "experiment_id", label: "Experiment ID" },
-  { key: "series_name", label: "Trial Series Name" },
-  { key: "machine", label: "Machine" },
-  { key: "creation_date", label: "Creation Date" },
-  { key: "owner", label: "Owner" },
-  { key: "status_id", label: "Status" },
-  { key: "has_attach", label: "AM", icon: true },
-  { key: "experiment_request_id", label: "ER", icon: true },
-  { key: "has_notes", label: "NT", icon: true },
-  { key: "reports", label: "RE", icon: true },
+const COLUMNS: { key: SortKey; icon?: boolean }[] = [
+  { key: "experiment_id" },
+  { key: "series_name" },
+  { key: "machine" },
+  { key: "creation_date" },
+  { key: "owner" },
+  { key: "status_id" },
+  { key: "has_attach", icon: true },
+  { key: "experiment_request_id", icon: true },
+  { key: "has_notes", icon: true },
+  { key: "reports", icon: true },
 ];
-
-const TITLES: Partial<Record<SortKey, string>> = {
-  has_attach: "Attachment (image or PDF)",
-  experiment_request_id: "Experiment Request",
-  has_notes: "Notes",
-  reports: "Saved reports",
-};
 
 // same sort keys as the desktop (_sort_key in screen_all_experiments.py)
 function sortValue(r: ExperimentRow, k: SortKey): string | number {
@@ -51,6 +45,7 @@ function fmtDate(v: string | null) {
 }
 
 export default function AllExperiments() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [machines, setMachines] = useState<string[]>([]);
   const [machine, setMachine] = useState("All");
@@ -98,20 +93,22 @@ export default function AllExperiments() {
   return (
     <div className="page page-wide">
       <div className="page-head">
-        <h1>Experiments</h1>
-        <span className="muted">{rows ? `${shown.length} of ${rows.length} series` : "Loading…"}</span>
+        <h1>{t("exp.title")}</h1>
+        <span className="muted">
+          {rows ? t("exp.count", { shown: shown.length, total: rows.length }) : t("app.loading")}
+        </span>
       </div>
       <div className="toolbar">
         <div className="chips">
           {machines.map((m) => (
             <button key={m} className={"chip" + (m === machine ? " on" : "")} onClick={() => setMachine(m)}>
-              {m}
+              {m === "All" ? t("exp.all") : m}
             </button>
           ))}
         </div>
-        <input className="search" placeholder="Filter Trial Series Name…" value={seriesFilter}
+        <input className="search" placeholder={t("exp.filterSeries")} value={seriesFilter}
           onChange={(e) => setSeriesFilter(e.target.value)} />
-        <input className="search narrow" placeholder="Filter Experiment ID…" value={expFilter}
+        <input className="search narrow" placeholder={t("exp.filterExp")} value={expFilter}
           onChange={(e) => setExpFilter(e.target.value)} />
       </div>
       {error && <div className="card error">{error}</div>}
@@ -120,8 +117,9 @@ export default function AllExperiments() {
           <thead>
             <tr>
               {COLUMNS.map((c) => (
-                <th key={c.key} className={c.icon ? "icon-col" : ""} title={TITLES[c.key]} onClick={() => clickHeader(c.key)}>
-                  {c.label}
+                <th key={c.key} className={c.icon ? "icon-col" : ""} title={c.icon ? t(`exp.tip.${c.key}`) : undefined}
+                  onClick={() => clickHeader(c.key)}>
+                  {t(`exp.col.${c.key}`)}
                   {sort.key === c.key && <span className="sort">{sort.asc ? "▲" : "▼"}</span>}
                 </th>
               ))}
@@ -129,22 +127,22 @@ export default function AllExperiments() {
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.series_id} onDoubleClick={() => navigate(`/series/${r.series_id}`)} title="Double-click to open">
+              <tr key={r.series_id} onDoubleClick={() => navigate(`/series/${r.series_id}`)} title={t("exp.open")}>
                 <td className="nowrap">{r.experiment_id}</td>
                 <td>{r.series_name}</td>
                 <td className="nowrap">{r.machine}</td>
                 <td className="nowrap">{fmtDate(r.creation_date)}</td>
                 <td>{r.owner ?? ""}</td>
-                <td className="nowrap">{r.status ?? ""}</td>
+                <td className="nowrap">{r.status_id != null ? t(`status.${r.status_id}`) : ""}</td>
                 <td className="icon-col">{r.has_attach && <img src={img("attach.png")} alt="yes" />}</td>
                 <td className="icon-col">
                   {r.experiment_request_id != null && (
-                    <img src={img("experiment_request.png")} alt="yes" title={`Experiment Request ${r.experiment_request_id}`} />
+                    <img src={img("experiment_request.png")} alt="yes" title={t("icon.request", { id: r.experiment_request_id })} />
                   )}
                 </td>
                 <td className="icon-col">{r.has_notes && <img src={img("notes.png")} alt="yes" />}</td>
                 <td className="icon-col">
-                  {r.reports > 0 && <img src={img("analytics.png")} alt="yes" title={`${r.reports} saved report(s)`} />}
+                  {r.reports > 0 && <img src={img("analytics.png")} alt="yes" title={t("icon.reports", { n: r.reports })} />}
                 </td>
               </tr>
             ))}

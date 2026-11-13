@@ -76,10 +76,12 @@ export type ArchivedRow = {
 export class ApiError extends Error {
   status: number;
   code?: string;
-  constructor(status: number, message: string, code?: string) {
+  data?: Record<string, unknown>;
+  constructor(status: number, message: string, code?: string, data?: Record<string, unknown>) {
     super(message);
     this.status = status;
     this.code = code;
+    this.data = data;
   }
 }
 
@@ -93,14 +95,16 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   if (!res.ok) {
     let detail = res.statusText;
     let code: string | undefined;
+    let data: Record<string, unknown> | undefined;
     try {
       const j = await res.json();
       detail = typeof j.detail === "string" ? j.detail : detail;
       code = j.code;
+      data = j;
     } catch {
       /* no JSON body */
     }
-    throw new ApiError(res.status, detail, code);
+    throw new ApiError(res.status, detail, code, data);
   }
   return (await res.json()) as T;
 }
@@ -117,6 +121,8 @@ export const api = {
     ),
   backlog: () =>
     request<{ boxes: (Status & { cards: BacklogCard[] })[]; archived: ArchivedRow[] }>("GET", "/api/backlog"),
+  moveCard: (series_id: number, to_status: number, machine_id?: number) =>
+    request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
   logout: () => request<{ ok: boolean }>("POST", "/api/auth/logout"),
 };
 

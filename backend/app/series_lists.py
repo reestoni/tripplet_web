@@ -4,10 +4,13 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from . import core  # noqa: F401
 from .deps import require_feature
 
+from db import backlog_moves as bm  # noqa: E402
 from db import series_overview as so  # noqa: E402
 from db.trial_reference import format_trial_number  # noqa: E402
 
@@ -117,3 +120,42 @@ def backlog(_user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict
             "xx": parts[1] if len(parts) >= 2 else "?",
         })
     return {"boxes": boxes, "archived": archived}
+
+
+# --------------------------------------------------------------------------- moving cards
+class MoveBody(BaseModel):
+    series_id: int
+    to_status: int
+    machine_id: Optional[int] = None
+
+
+@router.post("/backlog/move")
+def move_card(body: MoveBody, user: Dict[str, Any] = Depends(require_feature("backlog"))):
+    """Same rules and writes as the desktop drag & drop (db/backlog_moves.py).
+    The old status is read from the DB (not trusted from the page)."""
+    if body.to_status not in (1, 2, 3, 4, 5):
+        return JSONResponse(status_code=400, content={"code": "bad_status", "detail": "Unknown status."})
+    state = bm.series_state(body.series_id)
+    if state is None:
+        return JSONResponse(status_code=404, content={"code": "not_found", "detail": "This series no longer exists."})
+    old, owner = state
+    if old == body.to_status:
+        return {"ok": True, "moved": False}
+    uid = user.get("id")
+    level = int(user.get("access_level") or 0)
+    reason = bm.check_move(old or 0, body.to_status, user_id=uid, access_level=level, owner_id=owner)
+    if reason:
+        return JSONResponse(status_code=403, content={"code": reason, "detail": bm.DENY_MESSAGES[reason]})
+    machine_id = None
+    if bm.needs_machine(old or 0, body.to_status, body.series_id):
+        machines = [{"id": int(m["ID"]), "name": m["Maschine"]} for m in bm.non_joker_machines()]
+        if body.machine_id is None:
+            return JSONResponse(status_code=409, content={
+                "code": "need_machine", "machines": machines,
+                "detail": "This series has a placeholder (joker) machine. Please choose the real machine."})
+        if body.machine_id not in {m["id"] for m in machines}:
+            return JSONResponse(status_code=400, content={"code": "bad_machine", "detail": "Unknown machine."})
+        machine_id = body.machine_id
+    bm.update_backlog_status(body.series_id, body.to_status, old, uid, machine_id)
+    bm.after_move(body.series_id, body.to_status, uid)
+    return {"ok": True, "moved": True}
