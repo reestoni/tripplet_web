@@ -1270,6 +1270,20 @@ const en = {
   "help.tip.manage_jets": "How does Manage Jets work?",
   "help.tip.manage_yarn": "How does Manage Yarn work?",
   "help.tip.yarn_stock": "How does Yarn Stock work?",
+  "bl.cardTip": "Double-click to open · Ctrl+double-click or middle click = new tab · Ctrl/Shift+click selects several cards",
+  "exp.openTip": "Double-click to open · Ctrl+double-click or middle click = new tab",
+  "bl.welcome": "Welcome, {name}",
+  "bl.selected": "{n} selected",
+  "bl.expand": "Show this column full screen",
+  "bl.collapse": "Back to all columns",
+  "bl.many.title": "Move series",
+  "bl.many.ask": "Move {n} series to \"{status}\"?",
+  "bl.many.ok": "Move",
+  "bl.many.done": "{n} series moved to \"{status}\".",
+  "bl.many.some": "{moved} of {n} series moved. The others stay where they are:",
+  "bl.many.none": "None of the {n} series could be moved:",
+  "bl.many.noMachine": "{series}: no machine chosen",
+  "sa.openWindow": "Open in new window",
 };
 
 export type TextKey = keyof typeof en;
@@ -2533,6 +2547,20 @@ const de: Texts = {
   "help.tip.manage_jets": "Wie funktioniert Manage Jets?",
   "help.tip.manage_yarn": "Wie funktioniert Manage Yarn?",
   "help.tip.yarn_stock": "Wie funktioniert das Garnlager?",
+  "bl.cardTip": "Doppelklick öffnet · Strg+Doppelklick oder Mittelklick = neuer Tab · Strg/Umschalt+Klick wählt mehrere Karten",
+  "exp.openTip": "Doppelklick öffnet · Strg+Doppelklick oder Mittelklick = neuer Tab",
+  "bl.welcome": "Willkommen, {name}",
+  "bl.selected": "{n} gewählt",
+  "bl.expand": "Diese Spalte als Vollbild zeigen",
+  "bl.collapse": "Zurück zu allen Spalten",
+  "bl.many.title": "Serien verschieben",
+  "bl.many.ask": "{n} Serien nach \"{status}\" verschieben?",
+  "bl.many.ok": "Verschieben",
+  "bl.many.done": "{n} Serien nach \"{status}\" verschoben.",
+  "bl.many.some": "{moved} von {n} Serien verschoben. Die anderen bleiben, wo sie sind:",
+  "bl.many.none": "Keine der {n} Serien konnte verschoben werden:",
+  "bl.many.noMachine": "{series}: keine Maschine gewählt",
+  "sa.openWindow": "In neuem Fenster öffnen",
 };
 
 const es: Texts = {
@@ -3794,6 +3822,20 @@ const es: Texts = {
   "help.tip.manage_jets": "¿Cómo funciona Manage Jets?",
   "help.tip.manage_yarn": "¿Cómo funciona Manage Yarn?",
   "help.tip.yarn_stock": "¿Cómo funciona el stock de hilo?",
+  "bl.cardTip": "Doble clic abre · Ctrl+doble clic o clic central = pestaña nueva · Ctrl/Mayús+clic selecciona varias tarjetas",
+  "exp.openTip": "Doble clic abre · Ctrl+doble clic o clic central = pestaña nueva",
+  "bl.welcome": "Bienvenido/a, {name}",
+  "bl.selected": "{n} seleccionadas",
+  "bl.expand": "Mostrar esta columna a pantalla completa",
+  "bl.collapse": "Volver a todas las columnas",
+  "bl.many.title": "Mover series",
+  "bl.many.ask": "¿Mover {n} series a \"{status}\"?",
+  "bl.many.ok": "Mover",
+  "bl.many.done": "{n} series movidas a \"{status}\".",
+  "bl.many.some": "Se movieron {moved} de {n} series. Las demás se quedan donde están:",
+  "bl.many.none": "No se pudo mover ninguna de las {n} series:",
+  "bl.many.noMachine": "{series}: no se eligió máquina",
+  "sa.openWindow": "Abrir en ventana nueva",
 };
 
 const zh: Texts = {
@@ -5051,6 +5093,20 @@ const zh: Texts = {
   "help.tip.manage_jets": "Manage Jets 如何使用？",
   "help.tip.manage_yarn": "Manage Yarn 如何使用？",
   "help.tip.yarn_stock": "纱线库存如何使用？",
+  "bl.cardTip": "双击打开 · Ctrl+双击或中键 = 新标签页 · Ctrl/Shift+单击可多选卡片",
+  "exp.openTip": "双击打开 · Ctrl+双击或中键 = 新标签页",
+  "bl.welcome": "欢迎，{name}",
+  "bl.selected": "已选 {n} 个",
+  "bl.expand": "全屏显示此列",
+  "bl.collapse": "返回所有列",
+  "bl.many.title": "移动系列",
+  "bl.many.ask": "将 {n} 个系列移至“{status}”？",
+  "bl.many.ok": "移动",
+  "bl.many.done": "已将 {n} 个系列移至“{status}”。",
+  "bl.many.some": "已移动 {n} 个系列中的 {moved} 个。其余保持不变：",
+  "bl.many.none": "{n} 个系列均无法移动：",
+  "bl.many.noMachine": "{series}：未选择机器",
+  "sa.openWindow": "在新窗口中打开",
 };
 
 export const TEXTS = { en, de, es, zh } as const;

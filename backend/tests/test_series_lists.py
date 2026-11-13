@@ -113,3 +113,17 @@ def test_move_real_roundtrip_restores(client):
                 [before["BacklogStatusID"], before["BacklogOwner"], before["MachineID"], sid])
     assert fetch_all("SELECT BacklogStatusID, BacklogOwner, MachineID FROM tblTrialSeries WHERE ID = ?",
                      [sid])[0] == before
+
+
+def test_backlog_sends_the_welcome_line():
+    from fastapi.testclient import TestClient
+    from app import auth
+    from app.main import app
+    from db.connection import fetch_all
+    from db.user_account import load_welcome_message
+    u = fetch_all("SELECT u.ID, u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                  "WHERE ar.AccessLevel >= 1 AND COALESCE(u.Active, 1) <> 0 ORDER BY u.ID LIMIT 1")[0]
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(u["Username"]))
+    w = c.get("/api/backlog").json()["welcome"]
+    assert w["message"] == load_welcome_message(u["ID"]) and "first_name" in w

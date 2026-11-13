@@ -12,9 +12,9 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 
 | Screen | Done | Partial | Missing | Not in web (on purpose) | Rows |
 |---|---|---|---|---|---|
-| 1. All Experiments | 21 | 0 | 1 | 0 | 22 |
-| 2. Backlog | 26 | 0 | 6 | 0 | 32 |
-| 3. Show Experiment | 75 | 8 | 16 | 0 | 99 |
+| 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
+| 2. Backlog | 31 | 0 | 0 | 1 | 32 |
+| 3. Show Experiment | 75 | 8 | 15 | 1 | 99 |
 | 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
@@ -23,7 +23,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
 | 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
-| **Total** | 241 | 13 | 33 | 2 | 289 |
+| **Total** | 247 | 13 | 25 | 4 | 289 |
 
 Most important gaps (judgement, updated 2026-11-13): Backlog multi-select + move several, Ctrl+double-click = new tab
 (lists), Show Experiment material line with stock symbol, jet / spool / housing tooltips, Jet Air "Sync physical jets" /
@@ -45,7 +45,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Columns ExpID/Name/Machine/Created/Owner/Status/AM/ER/NT/RE | `_load_data` | **DONE** | `db/series_overview.all_experiments_rows` |
 | Header click = sort asc/desc + indicator | `_on_header_clicked` | **DONE** | same sort keys as `_sort_key` |
 | Double-click row opens Show Experiment | `_on_cell_double_clicked` | **DONE** | navigate `/series/:id` |
-| Ctrl+double-click = open in new tab | `_open_in_new_window` | **MISSING** | rows are not links; use `<a href>` so Ctrl/middle-click works (frontend only) |
+| Ctrl+double-click = open in new tab | `_open_in_new_window` | **DONE** | Ctrl/Cmd+double-click or middle click → new browser tab (`openSeriesFrom`) |
 | Status column = editable dropdown (role-filtered list, saves at once, joker-machine prompt) | `_create_status_combobox` / `_on_status_combo_changed` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | "Copy TrialSeries" button (enabled on row selection) | `_on_copy_trialseries` | **DONE** | right-click menu "Copy trial series…" → `/series/new?copy=<id>` (experiment + jet rows prefilled, 2026-11-13) |
 | AM icon + tooltip "Has attachments" | `_set_attach_cell` | **DONE** | |
@@ -74,12 +74,12 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | ER icon click → read-only request popup | `BacklogDnDTable.mousePressEvent` | **DONE** | `SeriesIcons` → `RequestIcon` |
 | RE icon click → saved report (Ctrl = new tab) | `mousePressEvent` / `_open_report_icon_for_series` | **DONE** | `SeriesIcons` → `ReportIcon` |
 | Double-click card opens Show Experiment | `_on_cell_double_clicked` | **DONE** | |
-| Ctrl+double-click = new tab | `_on_cell_double_clicked` | **MISSING** | frontend only |
+| Ctrl+double-click = new tab | `_on_cell_double_clicked` | **DONE** | Ctrl/Cmd+double-click or middle click → new browser tab |
 | Drag & drop card to another status | `startDrag` / `dropEvent` / `_handle_dnd_move` | **DONE** | `POST /api/backlog/move`, `db/backlog_moves` incl. `after_move` (Done notifications) |
 | Joker machine → choose real machine | `MachineSelectDialog` | **DONE** | modal in `Backlog.tsx` |
 | Rule violation messages | `_handle_dnd_move` | **DONE** | toast `bl.err.<code>` |
 | Drop target highlight / drag feedback | `_set_drop_highlight` / `_build_drag_pixmap` | **DONE** | CSS classes |
-| Multi-select cards (Ctrl/Shift+click) + move several, one confirmation, summary of failures | `_handle_dnd_move_many` | **MISSING** | per-card rules Qt-free (`backlog_moves`); loop/summary only in screen |
+| Multi-select cards (Ctrl/Shift+click) + move several, one confirmation, summary of failures | `_handle_dnd_move_many` | **DONE** | Ctrl/Shift+click selects in one column; dragging moves all, one confirmation, joker machine asked per card, summary of failures (same `/api/backlog/move` per card) |
 | Context: Open in New Tab / New Window | `_open_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context: Change priority… (0-999) | `_ctx_change_prio` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context: Change status… (role-filtered list) | `_ctx_change_status` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
@@ -91,11 +91,11 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Archived: Year › XX accordion with counts (open while searching) | `_YearGroup` / `_XxGroup` | **DONE** | |
 | Archived: double-click open | `_ArchivedSeriesRow.mouseDoubleClickEvent` | **DONE** | |
 | Archived: drag back (superuser rules) / drop onto Archived | `_ArchivedSeriesRow.mouseMoveEvent` / `ArchivedPanel.dropEvent` | **DONE** | server checks rules |
-| Archived: context menu Open / New Tab / New Window | `_ArchivedSeriesRow.contextMenuEvent` | **MISSING** | |
-| Expand a column to full screen (⤢) + Close | `_expand_card` / `_collapse_card` | **MISSING** | pure UI |
-| Welcome message from DB with first name | `_refresh_welcome_message` / `_fetch_welcome_message_from_db` | **MISSING** | small query inside the Qt screen (extract) |
+| Archived: context menu Open / New Tab / New Window | `_ArchivedSeriesRow.contextMenuEvent` | **DONE** | series menu: Open / Open in new tab / Open in new window |
+| Expand a column to full screen (⤢) + Close | `_expand_card` / `_collapse_card` | **DONE** | ⤢ in the column header, ✕ back |
+| Welcome message from DB with first name | `_refresh_welcome_message` / `_fetch_welcome_message_from_db` | **DONE** | `/api/backlog` → `welcome` (`db/user_account.load_welcome_message`); default greeting translated |
 | Help button "How does the Backlog work?" | `_open_help` | **DONE** | `HelpButton screen="backlog"` |
-| Athena sleeping-owl easter egg (5 %) | `_spawn_sleeping_athena` | **MISSING** | cosmetic |
+| Athena sleeping-owl easter egg (5 %) | `_spawn_sleeping_athena` | **NOT IN WEB** | belongs to Athena (AI), which stays out of the web like "Ask AI" |
 | Wide/narrow board arrangement | `_arrange_board` | **DONE** | CSS |
 | Reload on show; sidebar badge refresh after move | `showEvent` | **DONE** | `tripplet:nav-changed` event |
 
@@ -160,7 +160,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Jet Air: "Apply to all" for atm / temperature | `_fill_all_jet_air` | **MISSING** | frontend only (marks dirty) |
 | Notes tab: series free-text notes, auto-save | `_load_notes` / `_on_notes_text_changed` / `_save_notes` | **DONE** | `SeriesNotes` in SeriesView (auto-save 1.5 s + blur) |
 | Notes tab: list of all notes on values | `cell_notes_ui` (Notes tab list) | **DONE** | `SeriesView.tsx` notes table |
-| Athena (AI advisor) tab: wake, chat, reset | `ui/advisor_tab.py` | **MISSING** | Qt: `ui/advisor_worker.py` (QThread); `collect_advisor_context` could be split out |
+| Athena (AI advisor) tab: wake, chat, reset | `ui/advisor_tab.py` | **NOT IN WEB** | AI stays out of the web (user decision 2026-11-13, like "Ask AI") |
 | DTY YarnScope tab | `ui/dty_yarnscope_tab.py` | **DONE** | see section 5 |
 | ATY YarnScope tab | `ui/aty_yarnscope_tab.py` | **DONE** | see section 5 |
 | Last tab remembered | `_remember_tab` / `_restore_last_tab` | **DONE** | localStorage |

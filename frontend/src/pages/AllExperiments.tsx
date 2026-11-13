@@ -48,6 +48,7 @@ function fmtDate(v: string | null) {
 
 import { useSeriesAdmin } from "../components/SeriesAdmin";
 import { HelpButton } from "../components/Help";
+import { openSeriesFrom } from "./Backlog";
 
 export default function AllExperiments() {
   const { t } = useI18n();
@@ -141,7 +142,9 @@ export default function AllExperiments() {
           </thead>
           <tbody>
             {shown.map((r) => (
-              <tr key={r.series_id} onDoubleClick={() => navigate(`/series/${r.series_id}`)} title={t("exp.open")}
+              <tr key={r.series_id} onDoubleClick={(e) => openSeriesFrom(e, r.series_id, (id) => navigate(`/series/${id}`))} title={t("exp.openTip")}
+                onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); window.open(`/series/${r.series_id}`, "_blank"); } }}
+                onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
                 onContextMenu={(e) => admin.open(e, { series_id: r.series_id, name: r.series_name })}>
                 <td className="nowrap">{r.experiment_id}</td>
                 <td>{r.series_name}</td>

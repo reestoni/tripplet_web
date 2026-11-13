@@ -88,6 +88,7 @@ export function useSeriesAdmin({ onChanged, onMessage }: {
     const items: MenuItem[] = [
       { label: t("sa.open"), onClick: () => navigate(`/series/${s.series_id}`) },
       { label: t("sa.openTab"), onClick: () => window.open(`/series/${s.series_id}`, "_blank") },
+      { label: t("sa.openWindow"), onClick: () => window.open(`/series/${s.series_id}`, `series${s.series_id}`, "popup,width=1400,height=900") },
       { sep: true },
       { label: t("sa.prio"), disabled: !info.rights.prio, onClick: () => setDialog({ kind: "prio", s, info }) },
       { label: t("sa.status"), sub: info.statuses.map((x) => ({

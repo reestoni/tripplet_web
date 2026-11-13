@@ -94,7 +94,7 @@ def _card(r: Dict[str, Any], status_id: int, reports: Dict[int, int], flags: Dic
 
 
 @router.get("/backlog")
-def backlog(_user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict[str, Any]:
+def backlog(user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict[str, Any]:
     er_field = so.experiment_request_field()
     reports = so.series_report_map()
     flags = so.retest_flags_map()
@@ -119,7 +119,11 @@ def backlog(_user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict
             "year": exp_id[:4] if exp_id[:4].isdigit() else "?",
             "xx": parts[1] if len(parts) >= 2 else "?",
         })
-    return {"boxes": boxes, "archived": archived}
+    # welcome line above the board (desktop _refresh_welcome_message; tblUser.WelcomeMessage via db/user_account) -
+    # the page joins it with the first name, the default greeting is translated there
+    from db.user_account import load_welcome_message
+    return {"boxes": boxes, "archived": archived,
+            "welcome": {"message": load_welcome_message(user.get("id")), "first_name": user.get("first_name") or ""}}
 
 
 # --------------------------------------------------------------------------- moving cards

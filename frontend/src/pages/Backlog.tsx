@@ -7,15 +7,22 @@ import { useI18n } from "../i18n";
 import { HelpButton } from "../components/Help";
 
 type Box = Status & { cards: BacklogCard[] };
-type Drag = { seriesId: number; from: number; name: string };
-type MachineAsk = { drag: Drag; to: number; machines: { id: number; name: string }[] };
+type Drag = { seriesId: number; from: number; name: string; ids?: number[] };
+type MachineAsk = { drag: Drag; to: number; machines: { id: number; name: string }[]; resolve?: (id: number | null) => void };
+
+/** Ctrl / Cmd + double-click or middle click = open in a new browser tab (desktop: new tab / window). */
+export function openSeriesFrom(e: React.MouseEvent, seriesId: number, open: (id: number) => void) {
+  if (e.ctrlKey || e.metaKey || e.button === 1) window.open(`/series/${seriesId}`, "_blank");
+  else open(seriesId);
+}
 
 const ARCHIVED = 5;
 const MIME = "application/x-tripplet-series";
 
-function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu }: {
-  c: BacklogCard; statusId: number; onOpen: () => void; onDragStart: (e: DragEvent) => void;
+function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, selected, onSelect }: {
+  c: BacklogCard; statusId: number; onOpen: (e: React.MouseEvent) => void; onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void; dragging: boolean; onMenu: (e: React.MouseEvent) => void;
+  selected: boolean; onSelect: (e: React.MouseEvent) => void;
 }) {
   const { t } = useI18n();
   // second line like the desktop card: Experiment ID • Machine • Status • Prio n • Owner
@@ -26,9 +33,11 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu }:
     ? `${t("bl.retestTip")}\n` + c.retest.map((f) => `${f.trial} · ${f.lab}${f.note ? ` — ${f.note}` : ""}`).join("\n")
     : undefined;
   return (
-    <div className={"bl-card" + (dragging ? " dragging" : "")} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
+    <div className={"bl-card" + (dragging ? " dragging" : "") + (selected ? " selected" : "")} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={c.owner_colour ? { borderLeftColor: c.owner_colour } : undefined}
-      onDoubleClick={onOpen} onContextMenu={onMenu} title={retestTip ?? t("exp.open")}>
+      onClick={onSelect} onDoubleClick={onOpen} onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e); } }}
+      onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
+      onContextMenu={onMenu} title={retestTip ?? t("bl.cardTip")}>
       <div className="bl-title">
         <span>{c.series_name}</span>
         {c.retest.length > 0 && <span className="bl-retest">{t("bl.retest")}</span>}
@@ -42,7 +51,7 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu }:
 }
 
 function Archived({ rows, onOpen, onDragStart, onDragEnd, onMenu }: {
-  rows: ArchivedRow[]; onOpen: (r: ArchivedRow) => void;
+  rows: ArchivedRow[]; onOpen: (e: React.MouseEvent, r: ArchivedRow) => void;
   onDragStart: (e: DragEvent, r: ArchivedRow) => void; onDragEnd: () => void;
   onMenu: (e: React.MouseEvent, r: ArchivedRow) => void;
 }) {
@@ -91,7 +100,9 @@ function Archived({ rows, onOpen, onDragStart, onDragEnd, onMenu }: {
                       {xOpen &&
                         list.map((r) => (
                           <div key={r.series_id} className="arch-row" draggable onDragStart={(e) => onDragStart(e, r)}
-                            onDragEnd={onDragEnd} onDoubleClick={() => onOpen(r)} onContextMenu={(e) => onMenu(e, r)}
+                            onDragEnd={onDragEnd} onDoubleClick={(e) => onOpen(e, r)} onContextMenu={(e) => onMenu(e, r)}
+                            onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e, r); } }}
+                            onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
                             title={t("exp.open")}>
                             <span>{r.experiment_id} · {r.series_name}</span>
                             <span className="muted">{r.machine}</span>
@@ -120,6 +131,12 @@ export default function Backlog() {
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [ask, setAsk] = useState<MachineAsk | null>(null);
   const [machine, setMachine] = useState<number | "">("");
+  // Ctrl / Shift + click selection (one box at a time) -> drag moves all selected cards (desktop _handle_dnd_move_many)
+  const [sel, setSel] = useState<{ box: number; ids: number[]; anchor: number | null }>({ box: 0, ids: [], anchor: null });
+  const [confirmMany, setConfirmMany] = useState<{ drag: Drag; to: number } | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [welcome, setWelcome] = useState<{ message: string; first_name: string } | null>(null);
 
   const load = useCallback(() => {
     return api
@@ -127,6 +144,7 @@ export default function Backlog() {
       .then((d) => {
         setBoxes(d.boxes);
         setArchived(d.archived);
+        setWelcome(d.welcome);
         setError(null);
       })
       .catch((e) => setError(e.message));
@@ -143,6 +161,22 @@ export default function Backlog() {
   }, [toast]);
 
   const open = (seriesId: number) => navigate(`/series/${seriesId}`);
+  const openFrom = (e: React.MouseEvent, seriesId: number) => openSeriesFrom(e, seriesId, open);
+
+  const selectCard = (e: React.MouseEvent, box: Box, id: number) => {
+    if (!(e.ctrlKey || e.metaKey || e.shiftKey)) { setSel({ box: box.id, ids: [], anchor: id }); return; }
+    setSel((s) => {
+      const same = s.box === box.id;
+      let ids = same ? [...s.ids] : [];
+      if (e.shiftKey && same && s.anchor !== null) {
+        const order = box.cards.map((c) => c.series_id);
+        const a = order.indexOf(s.anchor), b = order.indexOf(id);
+        if (a >= 0 && b >= 0) ids = [...new Set([...ids, ...order.slice(Math.min(a, b), Math.max(a, b) + 1)])];
+      } else if (ids.includes(id)) ids = ids.filter((x) => x !== id);
+      else ids.push(id);
+      return { box: box.id, ids, anchor: id };
+    });
+  };
   const admin = useSeriesAdmin({ onChanged: () => { void load(); }, onMessage: (kind, text) => setToast({ kind, text }) });
 
   const startDrag = (e: DragEvent, d: Drag) => {
@@ -153,6 +187,51 @@ export default function Backlog() {
   const endDrag = () => {
     setDrag(null);
     setOver(null);
+  };
+
+  // one card of several: like doMove, but reasons are collected and a joker machine is asked for in between
+  const moveOne = async (d: Drag, to: number, problems: string[]): Promise<boolean> => {
+    let machineId: number | undefined;
+    for (;;) {
+      try {
+        const r = await api.moveCard(d.seriesId, to, machineId);
+        return r.moved;
+      } catch (e) {
+        if (e instanceof ApiError && e.code === "need_machine" && machineId === undefined) {
+          const machines = (e.data?.machines as { id: number; name: string }[]) ?? [];
+          setMachine("");
+          const picked = await new Promise<number | null>((resolve) => setAsk({ drag: d, to, machines, resolve }));
+          setAsk(null);
+          if (picked === null) { problems.push(t("bl.many.noMachine", { series: d.name })); return false; }
+          machineId = picked;
+          continue;
+        }
+        const key = e instanceof ApiError && e.code ? `bl.err.${e.code}` : "bl.err.other";
+        problems.push(`${d.name}: ${t(key) === key ? t("bl.err.other") : t(key)}`);
+        return false;
+      }
+    }
+  };
+
+  const doMoveMany = async (d: Drag, to: number) => {
+    const all = (boxes ?? []).flatMap((b) => b.cards.map((c) => ({ id: c.series_id, name: c.series_name })))
+      .concat(archived.map((r) => ({ id: r.series_id, name: r.series_name })));
+    const ids = d.ids ?? [d.seriesId];
+    setBusy(true);
+    const problems: string[] = [];
+    let moved = 0;
+    for (const id of ids) {
+      const name = all.find((x) => x.id === id)?.name ?? String(id);
+      if (await moveOne({ seriesId: id, from: d.from, name }, to, problems)) moved++;
+    }
+    setSel({ box: 0, ids: [], anchor: null });
+    await load();
+    window.dispatchEvent(new Event("tripplet:nav-changed"));
+    setBusy(false);
+    if (problems.length) {
+      setSummary((moved ? t("bl.many.some", { moved, n: ids.length }) : t("bl.many.none", { n: ids.length }))
+        + "\n\n" + [...new Set(problems)].map((p) => `- ${p}`).join("\n"));
+    } else setToast({ kind: "ok", text: t("bl.many.done", { n: moved, status: t(`status.${to}`) }) });
   };
 
   const doMove = async (d: Drag, to: number, machineId?: number) => {
@@ -194,7 +273,9 @@ export default function Backlog() {
       e.preventDefault();
       const d = drag;
       endDrag();
-      if (d && d.from !== statusId) void doMove(d, statusId);
+      if (!d || d.from === statusId) return;
+      if (d.ids && d.ids.length > 1) setConfirmMany({ drag: d, to: statusId });
+      else void doMove(d, statusId);
     },
   });
 
@@ -208,45 +289,83 @@ export default function Backlog() {
         <h1>{t("bl.title")}</h1>
         <HelpButton screen="backlog" />
         <span className="muted">{busy ? t("bl.moving") : t("bl.hint")}</span>
+        {welcome && <span className="bl-welcome">{welcome.message.trim()
+          ? `${welcome.message.trim()}, ${welcome.first_name}`.replace(/,\s*$/, "")
+          : t("bl.welcome", { name: welcome.first_name })}</span>}
       </div>
       {error && <div className="card error">{error}</div>}
       {!boxes && !error && <div className="muted">{t("app.loading")}</div>}
       {boxes && (
-        <div className="board">
-          {boxes.map((b) => (
+        <div className={"board" + (expanded !== null ? " board-expanded" : "")}>
+          {boxes.filter((b) => expanded === null || expanded === b.id).map((b) => (
             <div key={b.id} className={boxClass(b.id)} {...dropProps(b.id)}>
               <div className="bl-head">
                 <span>{t(`status.${b.id}`)}</span>
-                <span className="bl-count">{b.cards.length}</span>
+                <span>
+                  {sel.box === b.id && sel.ids.length > 1 && <span className="bl-selcount">{t("bl.selected", { n: sel.ids.length })}</span>}
+                  <span className="bl-count">{b.cards.length}</span>
+                  {expanded === b.id
+                    ? <button className="bl-expand" title={t("bl.collapse")} onClick={() => setExpanded(null)}>✕</button>
+                    : <button className="bl-expand" title={t("bl.expand")} onClick={() => setExpanded(b.id)}>⤢</button>}
+                </span>
               </div>
               <div className="bl-list">
                 {b.cards.map((c) => (
-                  <Card key={c.series_id} c={c} statusId={b.id} onOpen={() => open(c.series_id)}
-                    dragging={drag?.seriesId === c.series_id} onDragEnd={endDrag}
+                  <Card key={c.series_id} c={c} statusId={b.id} onOpen={(e) => openFrom(e, c.series_id)}
+                    dragging={!!drag && (drag.seriesId === c.series_id || !!drag.ids?.includes(c.series_id))} onDragEnd={endDrag}
+                    selected={sel.box === b.id && sel.ids.includes(c.series_id)} onSelect={(e) => selectCard(e, b, c.series_id)}
                     onMenu={(e) => admin.open(e, { series_id: c.series_id, name: c.series_name })}
-                    onDragStart={(e) => startDrag(e, { seriesId: c.series_id, from: b.id, name: c.series_name })} />
+                    onDragStart={(e) => startDrag(e, { seriesId: c.series_id, from: b.id, name: c.series_name,
+                      ids: sel.box === b.id && sel.ids.includes(c.series_id) && sel.ids.length > 1 ? sel.ids : undefined })} />
                 ))}
                 {b.cards.length === 0 && <div className="muted bl-empty">{t("bl.empty")}</div>}
               </div>
             </div>
           ))}
-          <div className={boxClass(ARCHIVED)} {...dropProps(ARCHIVED)}>
+          {(expanded === null || expanded === ARCHIVED) && <div className={boxClass(ARCHIVED)} {...dropProps(ARCHIVED)}>
             <div className="bl-head">
               <span>{t("status.5")}</span>
-              <span className="bl-count">{archived.length}</span>
+              <span>
+                <span className="bl-count">{archived.length}</span>
+                {expanded === ARCHIVED
+                  ? <button className="bl-expand" title={t("bl.collapse")} onClick={() => setExpanded(null)}>✕</button>
+                  : <button className="bl-expand" title={t("bl.expand")} onClick={() => setExpanded(ARCHIVED)}>⤢</button>}
+              </span>
             </div>
-            <Archived rows={archived} onOpen={(r) => open(r.series_id)} onDragEnd={endDrag}
+            <Archived rows={archived} onOpen={(e, r) => openFrom(e, r.series_id)} onDragEnd={endDrag}
               onMenu={(e, r) => admin.open(e, { series_id: r.series_id, name: r.series_name })}
               onDragStart={(e, r) => startDrag(e, { seriesId: r.series_id, from: ARCHIVED, name: r.series_name })} />
-          </div>
+          </div>}
         </div>
       )}
 
       {admin.dialogs}
       {toast && <div className={"toast " + toast.kind} onClick={() => setToast(null)}>{toast.text}</div>}
 
+      {confirmMany && (
+        <div className="modal-back" onClick={() => setConfirmMany(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h2>{t("bl.many.title")}</h2>
+            <p>{t("bl.many.ask", { n: confirmMany.drag.ids!.length, status: t(`status.${confirmMany.to}`) })}</p>
+            <div className="modal-buttons">
+              <button className="btn-plain" onClick={() => setConfirmMany(null)}>{t("bl.machine.cancel")}</button>
+              <button className="btn-green" autoFocus onClick={() => { const c = confirmMany; setConfirmMany(null); void doMoveMany(c.drag, c.to); }}>
+                {t("bl.many.ok")}</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {summary && (
+        <div className="modal-back" onClick={() => setSummary(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h2>{t("bl.many.title")}</h2>
+            <p className="stk-pre">{summary}</p>
+            <div className="modal-buttons"><button className="btn-green" autoFocus onClick={() => setSummary(null)}>OK</button></div>
+          </div>
+        </div>
+      )}
       {ask && (
-        <div className="modal-back" onClick={() => setAsk(null)}>
+        <div className="modal-back" onClick={() => { ask.resolve?.(null); setAsk(null); }}>
           <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
             <h2>{t("bl.machine.title")}</h2>
             <p>{t("bl.machine.text", { series: ask.drag.name })}</p>
@@ -258,9 +377,9 @@ export default function Backlog() {
               ))}
             </select>
             <div className="modal-buttons">
-              <button className="btn-plain" onClick={() => setAsk(null)}>{t("bl.machine.cancel")}</button>
-              <button className="btn-green" disabled={machine === "" || busy}
-                onClick={() => machine !== "" && doMove(ask.drag, ask.to, machine)}>
+              <button className="btn-plain" onClick={() => { ask.resolve?.(null); setAsk(null); }}>{t("bl.machine.cancel")}</button>
+              <button className="btn-green" disabled={machine === "" || (busy && !ask.resolve)}
+                onClick={() => { if (machine === "") return; if (ask.resolve) ask.resolve(machine); else void doMove(ask.drag, ask.to, machine); }}>
                 {t("bl.machine.ok")}
               </button>
             </div>
