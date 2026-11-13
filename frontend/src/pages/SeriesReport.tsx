@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { request } from "../api";
 import { useI18n } from "../i18n";
 import { RequestIcon } from "../components/RequestPopup";
+import { HelpButton } from "../components/Help";
 
 /** The desktop's series Report page, unchanged, in an iframe (served by the backend at /report/series/:id). */
 export default function SeriesReport() {
@@ -23,6 +24,7 @@ export default function SeriesReport() {
       <div className="report-bar">
         <button className="btn-plain" onClick={() => navigate(`/series/${id}`)}>← {t("rep.back")}</button>
         <span className="muted">{t("rep.hint")}</span>
+        <HelpButton screen="report" />
         <span style={{ flex: 1 }} />
         {/* ER icon like the desktop ReportScreen header button (Qt button, not part of the HTML page) */}
         {erId != null && <RequestIcon id={erId} big />}

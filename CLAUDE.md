@@ -30,7 +30,8 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   `C:\python\tripplet_project`). Steckt benötigte Logik noch in einem Qt-Screen, wird sie
   **dort** in ein Qt-freies Modul gezogen (Desktop nutzt es dann auch), nie hier nachgebaut.
   Bisher so herausgezogen: `db/nav_counts.py` (Badges), `db/user_profile.py` (Login-Profil),
-  `feature_access.rules_for()` (Rechte für beliebigen Benutzer).
+  `feature_access.rules_for()` (Rechte für beliebigen Benutzer), `db/experiment_create.py`
+  (Create Experiment / Add Trial Series / Add Lab Machines, 2026-11-13).
   Alle Regeln der Desktop-`CLAUDE.md` zu Schreibpfaden gelten auch hier (Änderungsprotokoll,
   `dy_ratio`, Papierkorb, Plausibilität, `exclude_references_sql`, `execute_insert` …).
 - Offline-Modus (SQLite) gibt es im Web nicht (offen, ob je nötig).
@@ -100,8 +101,29 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    `links_router`: `/api/series/{id}/request`, `/api/series/{id}/reports` (RE-Symbol, `SeriesLinks.tsx`),
    `/api/experiment-series` (Experiment ID -> Serie, Auswahl bei mehreren); Hilfe "Wie funktionieren Requests"
    (`RequestHelp.tsx`). Tests `tests/test_request_links.py`.
-4. Show Experiment bearbeiten (Undo, Bulk Edit, Notizen, Plausibilität), Create Experiment,
-   Add Trial Series, Add Lab Machines
+4. 🟡 Show Experiment bearbeiten (Undo, Bulk Edit = "Fill row", Notizen, Plausibilität – erledigt, siehe unten);
+   ✅ Create Experiment, Add Trial Series, Add Lab Machines (2026-11-13): eine Seite `CreateExperiment.tsx` mit
+   `mode` create | addseries | addlab (Routen `/experiments/new`, `/series/new`, `/lab-machines/new`; Reiter wie im
+   Desktop mit Haken; `?request=`, `?experiment=`, `?series=`, `?copy=<Serie>` = "Copy TrialSeries" aus dem
+   Rechtsklick-Menü). Backend `app/create_api.py` (`/api/create/…`, Rechte = Feature-Keys new_experiment /
+   add_series / add_lab_machines) auf `db/experiment_create.py` (aus `ui/screen_create_experiment.py` gezogen,
+   Desktop nutzt es jetzt auch: Listen, Ply-Regel `ply_label_for`/`renumber_plies`, Labor-"+" `plan_lab_entries`
+   inkl. Itemat-0.0-Grundwert, `create()`/`add_lab_machines()`); Versuche schreibt für alle Wege
+   `trial_actions.insert_trials`. Der Browser schickt nur IDs/Werte; Labortabellen und Maschinenfelder nimmt der
+   Server aus seinen Katalogen. Meldungen der Regeln als `experiment_create.Message` (Text + `code` + `vars`).
+   Bewusst anders als der Desktop: Ply-Neunummerierung nach Löschen folgt der Regel (Desktop zählte stur 1..n,
+   jetzt auch dort korrigiert); Legacy-Import verweigert eine schon vorhandene Experiment-ID (`legacy_id_taken`,
+   Desktop legte still ein Duplikat an - jetzt auch dort gesperrt). Seit 2026-11-13 ausserdem: **Legacy-Import**
+   (`/experiments/legacy`, Strg+Umschalt+J auf Neues Experiment wie der versteckte Desktop-Knopf, Recht =
+   new_experiment), **Add trials** (`/series/:id/add-trials`, Knopf "+T" in Show Experiment, Recht =
+   `trial_actions.can_edit_trials`; Experiment/Serie/Maschine fest, Labormaschinen der Serie vorbelegt, Ply-Regel
+   mit Offset + Serie = `addtrials_setup()`, Schreiben `trial_actions.add_trials`), **"+ Versuch"**
+   (Halbfabrikat-Ply: Suche `search_trials`, Garn `get_or_create_shadow_yarn` - beide jetzt in
+   `db/experiment_create.py`; eine Serie mit daraus entstandenen Garnen sperrt der Papierkorb),
+   **Lagerplätze** per Klick aufs Spulen-Symbol (`/api/create/stock/<garn>`; `load_spools_in_stock`,
+   `location_sort_key`, `tube_colour_candidates` jetzt in `db/yarn_spools.py`) und **Drag & Drop** der Düsenzeilen.
+   Noch offen: "Open in Yarn Stock" im Lagerplatz-Dialog (Yarn Stock gibt es im Web noch nicht).
+   Tests `tests/test_create_api.py` (Durchlauf schreibt echt und räumt per Papierkorb wieder ab).
 5. Bereits Web-nahes: Knowledge Base, Hilfen, Yarn Count, Dashboards/Report
 6. Tools später oder bewusst Desktop-only
 
@@ -114,7 +136,25 @@ Ab Zugriffsstufe 2. Frontend `src/edit.tsx` (`EditProvider` pro Serie mit `key={
 ungespeichert, Strg+S, Strg+Z, Warnung beim Verlassen); Ansicht/Einheit sind gesperrt, solange in Machine
 Data/Jet Air Ungespeichertes liegt (Zeilen-/Spaltennummern gelten pro Ansicht).
 
+**Hilfe** (2026-11-13): `backend/app/help.py` (`/api/help/screen/<screen>` = Kontext-Hilfe aller Sprachen aus den
+Desktop-Textmodulen `ui/widgets/help_texts_*.py` als Bausteine, Skizzen als data-URL; `/api/help/search` = Suche aus
+`ui/help_index` inkl. Knowledge-Base-Treffern mit Web-Route und `web_ready`; `/api/help/log` = die Desktop-Events
+`help_search_open/_noclick/_noresult`, `help_feedback_up/_down` (Usage Stats -> Help)). **"Ask AI" / "KI fragen"
+gibt es im Web bewusst nicht** (Nutzerentscheid 2026-11-13: überall weglassen - auch nicht später ungefragt
+einbauen; `tests/test_help.py` prüft, dass es keinen KI-Weg gibt). Frontend `src/components/Help.tsx`:
+`HelpHost` im Shell (F1 überall, Seitenleisten-Eintrag "Hilfe (F1)" öffnet die Suche statt einer Seite),
+`HelpButton screen=...` (runder "?") auf All Experiments, Backlog, Show Experiment, Report, Create Experiment.
+Hilfetexte gibt es nur EN/DE/ES (Desktop-Entscheid): eigene Flaggen im Dialog, Sprache in localStorage
+`tripplet.helpLang`, Chinesisch -> Englisch; die Fensterbeschriftung kommt aus `texts.ts` (`help.*`, 4 Sprachen).
+Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTES` eintragen. Tests `tests/test_help.py`.
+
 ## Offene Punkte
+
+- **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
+  (siehe "Hilfe" unten), 2. YarnScope ergänzen (Prozessvergleich, Trends, ATY), 3. Manage Jets,
+  Manage Yarn, Yarn Stock. **Kleinkram für später** (nicht vergessen): "Open in Yarn Stock" im Lagerplatz-Dialog
+  von Create Experiment (sobald Yarn Stock im Web ist), "?"-Knopf auf weiteren Seiten, sobald sie ins Web
+  kommen (Manage Yarn/Jets, Yarn Stock, Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen
   Qt-frei teilen, Server rechnet + schickt ausgedünnte Kurven, Plotly zeichnet, Garngraf im Browser neu aus

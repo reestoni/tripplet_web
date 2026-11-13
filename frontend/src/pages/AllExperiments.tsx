@@ -47,6 +47,7 @@ function fmtDate(v: string | null) {
 }
 
 import { useSeriesAdmin } from "../components/SeriesAdmin";
+import { HelpButton } from "../components/Help";
 
 export default function AllExperiments() {
   const { t } = useI18n();
@@ -106,6 +107,7 @@ export default function AllExperiments() {
     <div className="page page-wide">
       <div className="page-head">
         <h1>{t("exp.title")}</h1>
+        <HelpButton screen="all_experiments" />
         <span className="muted">
           {rows ? t("exp.count", { shown: shown.length, total: rows.length }) : t("app.loading")}
         </span>

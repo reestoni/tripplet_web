@@ -11,6 +11,7 @@ import YarnScopeView from "../components/YarnScopeView";
 import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
+import { HelpButton } from "../components/Help";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -136,6 +137,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
             <img src="/api/img/analytics.png" alt={t("rep.open")} />
           </button>
+          <HelpButton screen="show_experiment" />
         </div>
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
@@ -148,6 +150,11 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
             <>
               <button className="tb-icon" onClick={() => setTool({ kind: "labels" })} title={t("tl.labels")}>
                 <img src="/api/img/label.png" alt="" />
+              </button>
+              {/* desktop "Add empty trial" (+T) -> Create Experiment in add-trials mode */}
+              <button className="tb-icon" disabled={!canWrite} onClick={() => confirmLeave() && navigate(`/series/${s.id}/add-trials`)}
+                title={canWrite ? t("tl.addTrials") : t("tl.writeNeeded")}>
+                <img src="/api/img/add_trial.png" alt="+T" />
               </button>
               <button className="tb-ref" disabled={!canWrite} onClick={() => openTool({ kind: "ref-add" })} title={t("tl.addRefTip")}>+ Ref</button>
               <button className="tb-ref outline" onClick={() => setTool({ kind: "compare", ref: null })} title={t("tl.cmpTip")}>{t("tl.cmpShort")}</button>

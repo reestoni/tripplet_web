@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { api, img, type Me, type Nav, type NavItem } from "../api";
 import { LangFlags, useI18n } from "../i18n";
+import { HelpHost, openHelp } from "./Help";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
 const NARROW_KEY = "tripplet.sidebar.narrow";
@@ -17,6 +18,15 @@ function loadClosed(): string[] {
 function Item({ it }: { it: NavItem }) {
   const { t } = useI18n();
   const label = t(`nav.${it.route}`) === `nav.${it.route}` ? it.label : t(`nav.${it.route}`);
+  if (it.route === "/help") {
+    // desktop: the sidebar "Help" opens the search window (also F1), it is not a screen
+    return (
+      <button type="button" className="sb-item sb-btn" onClick={() => openHelp()} title={label}>
+        {it.icon ? <img src={img(it.icon)} alt="" /> : <span className="sb-dot" />}
+        <span className="sb-label">{label}</span>
+      </button>
+    );
+  }
   return (
     <NavLink to={it.route} end className={({ isActive }) => "sb-item" + (isActive ? " active" : "") + (it.web ? "" : " soon")}
       title={it.web ? label : `${label} – ${t("sb.notYet")}`}>
@@ -116,6 +126,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
         </div>
       </aside>
       <main className="content">{children}</main>
+      <HelpHost />
     </div>
   );
 }

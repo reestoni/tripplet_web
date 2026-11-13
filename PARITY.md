@@ -44,7 +44,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Double-click row opens Show Experiment | `_on_cell_double_clicked` | **DONE** | navigate `/series/:id` |
 | Ctrl+double-click = open in new tab | `_open_in_new_window` | **MISSING** | rows are not links; use `<a href>` so Ctrl/middle-click works (frontend only) |
 | Status column = editable dropdown (role-filtered list, saves at once, joker-machine prompt) | `_create_status_combobox` / `_on_status_combo_changed` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
-| "Copy TrialSeries" button (enabled on row selection) | `_on_copy_trialseries` | **MISSING** | opens Create Experiment in copy mode - needs Create Experiment in the web first |
+| "Copy TrialSeries" button (enabled on row selection) | `_on_copy_trialseries` | **DONE** | right-click menu "Copy trial series…" → `/series/new?copy=<id>` (experiment + jet rows prefilled, 2026-11-13) |
 | AM icon + tooltip "Has attachments" | `_set_attach_cell` | **DONE** | |
 | ER icon click → read-only Experiment Request popup | `_set_er_cell` / `open_experiment_request_popup` | **PARTIAL** | icon + tooltip shown, not clickable. Popup = `_ExperimentRequestReadOnlyDialog` (Qt, `ui/screen_show_experiment.py`); data Qt-free in `db/experiment_requests` (web could link `/requests/:id`) |
 | NT icon "Has notes" | `_set_notes_cell` | **DONE** | |
@@ -125,7 +125,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
 | Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **PARTIAL** | report page has its own load list; no picker in header (`?report=` supported) |
 | Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **DONE** | LabelsDialog (range, start cell, template, save template) → PDF in new tab |
-| Add empty trial (→ Create Experiment "add trials") | `_add_empty_trial` | **MISSING** | Qt-free `db/trial_actions.add_trials`, but needs the add-trials form |
+| Add empty trial (→ Create Experiment "add trials") | `_add_empty_trial` | **DONE** | "+T" button in the Machine Data tool bar (2026-11-13) |
 | "+ Ref" add reference sample | `_add_reference_sample` | **DONE** | header button + trial menu |
 | "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **PARTIAL** | RefCompareDialog, `be/series_tools.ref_compare` (same `ui/ref_compare.py`, sources = LAB_TABS, parity 3 series); no 'only passing' filter yet |
 | "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **DONE** | CopyTrialsDialog, `be/series_tools.copy_trials_ep` |
@@ -308,7 +308,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Search (Ctrl+F quick search) | `main.py` `_sc_search` | **MISSING** | |
 | Recent series menu | `show_recent_menu` | **MISSING** | Qt-free `ui/recent_series.py` |
 | Knowledge Base | `screen_onboarding.py` | **DONE** | `pages/KnowledgeBase.tsx`, `backend/app/kb.py` (same HTML pages, tree, scene tabs, quiz → usage log, open:/tool: links). Popup from app cells (kb_popup) still missing, see Show Experiment |
-| Help (F1) search, Ask AI | `help_search.py` / `help_ai.py` | **MISSING** | |
+| Help (F1) search | `help_search.py` | **DONE** | `fe/components/Help.tsx` (`HelpHost` in the Shell: F1 + sidebar entry), `be/help.py` on `ui/help_index`, `ui/kb_search`; same help_* usage events. KB hits navigate to the KB page (desktop: popup) |
+| Ask AI in the help search | `help_ai.py` | **NOT IN WEB** | deliberately left out (user decision 2026-11-13) |
 | Settings (text size, contrast, crosshair, start screen) | `display_prefs` / `user_settings_dialog` | **MISSING** | |
 | Accent colour picker | `pick_accent_colour` | **PARTIAL** | colour applied, cannot be changed |
 | "Fresh off the Spool" (What's new) + auto popup after login | `ui/whats_new.py` | **MISSING** | data `ui/widgets/whats_new_texts.py` |
@@ -316,3 +317,24 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Mode/DB banner (non-prod), version | footer / title | **DONE** | |
 | Usage tracking of screen opens (`currentChanged` hook) | `main.py` | **PARTIAL** | web logs login + some features, no screen opens |
 | Athena token reset at login | `main.py` | **MISSING** | only relevant with AI features |
+
+## 8. Create Experiment / Add Trial Series / Add Lab Machines (`ui/screen_create_experiment.py` → `fe/pages/CreateExperiment.tsx`, `be/create_api.py`, logic `db/experiment_create.py`) – added 2026-11-13
+
+| Feature | Desktop (file:function) | Web status | Notes / logic location |
+|---|---|---|---|
+| Tabs General / Material / Jet / Machine / Lab Machines with tick icons, Save only when all ticked | `_check_*` | **DONE** | checks in the page; server re-checks (`_check_save`) |
+| General: product group, order type, experiment request (red border while open requests exist), project (locked to the request's), auto number, series name, backlog status (joker = Backlog, locked), priority | `_build_ui`, `_load_*`, `_sync_project_from_request` | **DONE** | `experiment_create.product_groups/order_types/projects/open_requests/request_project/next_experiment_number` |
+| ER icon of the chosen request (popup) | `_open_selected_experiment_request_popup` | **DONE** | `RequestIcon` (modal, not non-modal) |
+| Material tree by yarn group + search, colour square, stock symbol, ends, yarn use, spool choice | `_load_yarns`, `_add_material`, `SpoolPickerDialog` | **DONE** | `yarn_tree()`, `ply_label_for()`, `/api/create/spools` |
+| Click on stock symbol → stock locations dialog | `_on_material_tree_clicked` | **PARTIAL** | `StockDialog`, `/api/create/stock`; data in `db/yarn_spools.py`. Button "Open in Yarn Stock" missing (no Yarn Stock in the web yet) |
+| "+ Trial" (output of another trial as ply, shadow yarn) | `_add_trial_ply`, `get_or_create_shadow_yarn` | **DONE** | `TrialPicker`; `experiment_create.search_trials` / `get_or_create_shadow_yarn` |
+| Remove a ply row → renumber | `_on_yarn_delete_row` | **DONE** | `renumber_plies()` (follows the ply rule; desktop fixed the same way) |
+| Jet tree by group with geometry/titer columns, header sort, search (name + development name) | `_load_jets`, `_on_jet_header_clicked` | **DONE** | `jet_tree()` |
+| Housing, plates 1–20 (each 0–100), air pressure; table edit plates/pressure, copy selected, up/down, drag & drop | `_add_jet_row`, `_on_jet_item_changed`, `_copy_selected_jet_rows`, `_move_jet_row` | **DONE** | |
+| Machine tab: fields of the machine (RDSetting 0), groups with gap, dropdown / int / double / S-Z rules | `_on_machine_changed` | **DONE** | `machine_fields()`, `machine_field_values()` |
+| Lab machines: Itemat tensions + 0.0 baseline, SeriesFreeform list (Jet Air), value, once per value; baseline only removable last | `_add_lab_machine`, `_delete_lab_row` | **DONE** | `plan_lab_entries()`, `can_delete_lab_entry()` |
+| Save create / add series (one transaction, request → status 4, series "NN name", joker flags) | `_on_save` | **DONE** | `experiment_create.create()` + `trial_actions.insert_trials()` |
+| Add Lab Machines: experiment + series + trial checkboxes (select all), save with skip of existing rows, waterbath ×3, Jet Air rows | `_save_addlabmachines` | **DONE** | `add_lab_machines()` |
+| Legacy import (typed experiment ID) | mode `legacy` | **DONE** | `/experiments/legacy`, Ctrl+Shift+J; existing IDs refused (`legacy_id_taken`, desktop too) |
+| Add trials (from Show Experiment) | mode `addtrials` | **DONE** | "+T" → `/series/:id/add-trials`, `addtrials_setup()` + `trial_actions.add_trials` |
+| Context help "How does Create Experiment work?" | `_open_help` | **DONE** | `HelpButton` → `ScreenHelp` (also All Experiments, Backlog, Show Experiment, Report) |

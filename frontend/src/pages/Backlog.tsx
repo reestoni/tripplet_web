@@ -4,6 +4,7 @@ import { api, ApiError, type ArchivedRow, type BacklogCard, type Status } from "
 import { SeriesIcons } from "../components/Icons";
 import { useSeriesAdmin } from "../components/SeriesAdmin";
 import { useI18n } from "../i18n";
+import { HelpButton } from "../components/Help";
 
 type Box = Status & { cards: BacklogCard[] };
 type Drag = { seriesId: number; from: number; name: string };
@@ -205,6 +206,7 @@ export default function Backlog() {
     <div className="page page-wide">
       <div className="page-head">
         <h1>{t("bl.title")}</h1>
+        <HelpButton screen="backlog" />
         <span className="muted">{busy ? t("bl.moving") : t("bl.hint")}</span>
       </div>
       {error && <div className="card error">{error}</div>}

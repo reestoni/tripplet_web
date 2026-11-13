@@ -95,6 +95,8 @@ export function useSeriesAdmin({ onChanged, onMessage }: {
         onClick: () => move(s, x.id) })) },
       { label: t("sa.rename"), disabled: !info.rights.rename, title: info.rights.rename ? undefined : t("sa.noRename"),
         onClick: () => setDialog({ kind: "rename", s, info }) },
+      // desktop "Copy TrialSeries": Add Trial Series with this series' experiment and jet rows
+      { label: t("sa.copySeries"), title: t("sa.copySeriesTip"), onClick: () => navigate(`/series/new?copy=${s.series_id}`) },
       { sep: true },
       { label: t("sa.yarn"), disabled: !info.rights.reassign_yarn, title: info.rights.reassign_yarn ? undefined : t("sa.superOnly"),
         onClick: () => setDialog({ kind: "yarn", s }) },
