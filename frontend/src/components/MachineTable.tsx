@@ -21,8 +21,9 @@ function loadHidden(machine: number | null | undefined): string[] {
   }
 }
 
-export default function MachineTable({ seriesId, rowTitle, source = "machine", menus }: {
+export default function MachineTable({ seriesId, rowTitle, source = "machine", menus, tools }: {
   seriesId: number; rowTitle: (t: string) => string; source?: "machine" | "rd"; menus?: SeriesMenus;
+  tools?: React.ReactNode;   // Show Experiment trial tools (labels, + Ref, vs Ref, copy, yarns) - desktop filter bar
 }) {
   const { t } = useI18n();
   const [mode, setMode] = useState<string>(() => {
@@ -203,6 +204,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
           <button className={"schema-btn" + (schemaOn ? " on" : "")} aria-pressed={schemaOn} title={t("md.schemaTip")}
             onClick={toggleSchema}>{t("md.schema")}</button>
         )}
+        {tools && <span className="md-tools">{tools}</span>}
       </div>
       {schemaShown && data && (
         <SchemaPanel seriesId={seriesId} mode={mode} reloadKey={ed?.reloadKey} follow={follow} onHighlight={setHl}

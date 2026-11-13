@@ -84,8 +84,8 @@ def test_read_only_users_cannot_write():
     sid = _series()
     assert c.post(f"/api/series/{sid}/copy", json={"plan": [{"source": 1}]}).status_code == 403
     assert c.post(f"/api/series/{sid}/references", json={"name": "x"}).status_code in (403, 409)
-    # PDF import is open to read-only users too (desktop rule): an unknown PDF id gives 404, not 403
-    assert c.post(f"/api/series/{sid}/pdf-import", json={"kind": "statimat", "ids": [999999999]}).status_code == 404
+    # desktop: import buttons need write access (uploading attachments does not)
+    assert c.post(f"/api/series/{sid}/pdf-import", json={"kind": "statimat", "ids": [1]}).status_code == 403
     assert c.get(f"/api/series/{sid}/yarns").json()["editable"] is False
 
 

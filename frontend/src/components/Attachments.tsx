@@ -125,15 +125,15 @@ export default function Attachments({ seriesId }: { seriesId: number }) {
 
   return (
     <span className={"up-zone" + (drag && !open ? " drag" : "")} {...dropProps}>
-      {images.length > 0 && (
-        <button className="link-btn" onClick={() => setOpen("image")}>{t("at.images", { n: images.length })}</button>
-      )}
-      {pdfs.length > 0 && (
-        <button className="link-btn" onClick={() => setOpen("pdf")}>{t("at.pdfs", { n: pdfs.length })}</button>
-      )}
-      <button className="link-btn up-btn" onClick={() => fileRef.current?.click()} disabled={progress !== null}
+      <button className="tb-btn" onClick={() => fileRef.current?.click()} disabled={progress !== null}
         title={t("up.tip")}>
         {uploadLabel}
+      </button>
+      <button className="tb-icon" disabled={!images.length} onClick={() => setOpen("image")} title={t("at.images", { n: images.length })}>
+        <img src="/api/img/picture.png" alt="" />{images.length > 0 && <span className="tb-count">{images.length}</span>}
+      </button>
+      <button className="tb-icon" disabled={!pdfs.length} onClick={() => setOpen("pdf")} title={t("at.pdfs", { n: pdfs.length })}>
+        <img src="/api/img/pdf.png" alt="" />{pdfs.length > 0 && <span className="tb-count">{pdfs.length}</span>}
       </button>
       <input ref={fileRef} type="file" multiple accept="image/*,.heic,.heif,.pdf,application/pdf" style={{ display: "none" }}
         onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, ApiError, notesTip, request, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
@@ -111,7 +111,6 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
             <span><b>{t("se.owner")}:</b> {s.owner || "–"}</span>
             <span><b>{t("se.created")}:</b> {s.creation_date ? s.creation_date.replace("T", " ").slice(0, 16) : "–"}</span>
             <span><b>{t("se.trials")}:</b> {data.trials.length}</span>
-            <Attachments seriesId={s.id} />
             {s.notes && (
               <button className="link-btn" onClick={() => setShowNotes((v) => !v)}>
                 {t("se.notes")} {showNotes ? "▾" : "▸"}
@@ -120,23 +119,20 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
           </div>
         </div>
         <div className="se-actions">
-          {canWrite && data.trials.length > 0 && (
-            <>
-              <button className="btn-plain" onClick={() => openTool({ kind: "yarns" })} title={t("tl.yarnsTip")}>{t("tl.yarns")}</button>
-              <button className="btn-plain" onClick={() => openTool({ kind: "copy", ids: [] })}>{t("tl.copy")}</button>
-              <button className="btn-plain" onClick={() => openTool({ kind: "ref-add" })} title={t("tl.addRefTip")}>{t("tl.addRef")}</button>
-            </>
-          )}
+          <Attachments seriesId={s.id} />
           {data.trials.length > 0 && (
             <>
-              {/* comparing only reads; the PDF import is open to every user like on the desktop (and like uploads) */}
-              <button className="btn-plain" onClick={() => setTool({ kind: "compare", ref: null })} title={t("tl.cmpTip")}>{t("tl.cmp")}</button>
-              <button className="btn-plain" onClick={() => openTool({ kind: "import", which: "statimat" })}>{t("tl.statImport")}</button>
-              <button className="btn-plain" onClick={() => openTool({ kind: "import", which: "itemat" })}>{t("tl.itemImport")}</button>
+              <span className="tb-sep" />
+              <button className="tb-btn" disabled={!canWrite} title={canWrite ? undefined : t("tl.writeNeeded")}
+                onClick={() => openTool({ kind: "import", which: "statimat" })}>{t("tl.statImport")}</button>
+              <button className="tb-btn" disabled={!canWrite} title={canWrite ? undefined : t("tl.writeNeeded")}
+                onClick={() => openTool({ kind: "import", which: "itemat" })}>{t("tl.itemImport")}</button>
             </>
           )}
-          {data.trials.length > 0 && <button className="btn-plain" onClick={() => setTool({ kind: "labels" })}>{t("tl.labels")}</button>}
-          <button className="btn-green" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)}>{t("rep.open")}</button>
+          <span className="tb-sep" />
+          <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
+            <img src="/api/img/analytics.png" alt={t("rep.open")} />
+          </button>
         </div>
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
@@ -145,7 +141,17 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
         <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={rights}
-          onChanged={() => setReload((x) => x + 1)} onTool={openTool} />
+          onChanged={() => setReload((x) => x + 1)} onTool={openTool} tools={data.trials.length > 0 && (
+            <>
+              <button className="tb-icon" onClick={() => setTool({ kind: "labels" })} title={t("tl.labels")}>
+                <img src="/api/img/label.png" alt="" />
+              </button>
+              <button className="tb-ref" disabled={!canWrite} onClick={() => openTool({ kind: "ref-add" })} title={t("tl.addRefTip")}>+ Ref</button>
+              <button className="tb-ref outline" onClick={() => setTool({ kind: "compare", ref: null })} title={t("tl.cmpTip")}>{t("tl.cmpShort")}</button>
+              <button className="tb-btn" disabled={!canWrite} onClick={() => openTool({ kind: "copy", ids: [] })}>{t("tl.copyShort")}</button>
+              <button className="tb-btn" onClick={() => openTool({ kind: "yarns" })} title={t("tl.yarnsTip")}>{t("tl.yarns")}</button>
+            </>
+          )} />
       </EditProvider>
       {tool?.kind === "labels" && <LabelsDialog seriesId={s.id} onClose={() => setTool(null)} />}
       {tool?.kind === "compare" && <RefCompareDialog seriesId={s.id} refId={tool.ref} onClose={() => setTool(null)} />}
@@ -211,9 +217,9 @@ type Tool =
   | { kind: "ref-mark"; trial: Trial } | { kind: "ref-rename"; trial: Trial; name: string }
   | { kind: "import"; which: "statimat" | "itemat" } | { kind: "compare"; ref: number | null };
 
-function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool }: {
+function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools }: {
   data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;
-  accessLevel: number; rights: SeriesRights | null; onChanged: () => void; onTool: (x: Tool) => void;
+  accessLevel: number; rights: SeriesRights | null; onChanged: () => void; onTool: (x: Tool) => void; tools?: ReactNode;
 }) {
   const { t } = useI18n();
   const s = data.series;
@@ -291,7 +297,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
         <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} menus={menus} />
       )}
       {data.trials.length > 0 && tab === "machine" && (
-        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} />
+        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} tools={tools} />
       )}
       {tab === "notes" && <SeriesNotes seriesId={s.id} initial={s.notes} canWrite={accessLevel >= 2} onSaved={onChanged} />}
       {tab === "notes" && (

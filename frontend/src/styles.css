@@ -607,3 +607,28 @@ tr.cmp-all td:first-child { box-shadow: inset 3px 0 0 #39A650; }
 table.pivot tr.schema-hl > th { background: #fff3c4; box-shadow: inset 3px 0 0 #FFC107; }
 table.pivot tr.schema-hl > td { background-color: #fffbe8; }
 table.pivot td.schema-hl-cell { background-color: #ffe9a3; outline: 2px solid #FFC107; outline-offset: -2px; }
+
+/* Show Experiment toolbar like the desktop: icon buttons, amber reference buttons */
+.se-actions { align-items: center; }
+.tb-btn { border: 1px solid #c9d2cb; background: #fff; color: #2f3a32; border-radius: 4px; padding: 5px 10px; font: inherit;
+  font-size: 13px; cursor: pointer; white-space: nowrap; }
+.tb-btn:hover:not(:disabled) { background: #e8f5e9; border-color: #9fc7a8; }
+.tb-btn:disabled { color: #aaa; border-color: #ddd; background: #f4f4f4; cursor: default; }
+.tb-icon { position: relative; width: 32px; height: 32px; border: none; background: transparent; padding: 3px; border-radius: 4px;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.tb-icon img { width: 24px; height: 24px; object-fit: contain; }
+.tb-icon.big { width: 36px; height: 36px; }
+.tb-icon.big img { width: 28px; height: 28px; }
+.tb-icon:hover:not(:disabled) { background: #e8f5e9; }
+.tb-icon:disabled { opacity: 0.35; cursor: default; }
+.tb-count { position: absolute; right: -2px; bottom: -2px; background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+  border-radius: 8px; padding: 0 4px; line-height: 14px; min-width: 14px; text-align: center; }
+.tb-sep { width: 1px; height: 22px; background: #d5ddd7; margin: 0 4px; }
+.tb-ref { border: 1px solid #E8C15A; background: #FFF4D6; color: #5a4500; border-radius: 4px; padding: 4px 10px; font: inherit;
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.tb-ref:hover:not(:disabled) { background: #FBE8B5; }
+.tb-ref.outline { background: #fff; font-weight: 500; }
+.tb-ref.outline:hover { background: #FFF4D6; }
+.tb-ref:disabled { border-color: #ddd; background: #f4f4f4; color: #aaa; cursor: default; }
+.md-tools { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; padding-left: 12px; border-left: 1px solid #d5ddd7; }
+.se-actions .up-zone { display: inline-flex; align-items: center; gap: 4px; }
