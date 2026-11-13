@@ -248,17 +248,21 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
   accessLevel: number; rights: SeriesRights | null; onChanged: () => void; onTool: (x: Tool) => void; tools?: ReactNode;
 }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const s = data.series;
   const current = data.tabs.find((x) => x.key === tab) ?? null;
   // trial header: Copy trials…, reference samples (desktop _on_trial_header_menu)
   const trialExtras = (trial: Trial, selected: number[]): MenuItem[] => {
+    // "Open V<n> in Process Playground…" (desktop: DTY series, tool allowed, not for reference samples)
+    const playground = (): MenuItem[] => (data.playground ? [{ label: t("tl.openPlayground", { trial: trial.label }),
+      title: t("tl.openPlaygroundTip"), onClick: () => { if (confirmLeave()) navigate(`/tools/process-playground?trial=${trial.id}`); } }] : []);
     if (accessLevel < 2) {
       const r = data.trials.find((x) => x.id === trial.id)?.reference ?? null;
-      return r !== null ? [{ label: t("tl.cmpWithRef"), onClick: () => onTool({ kind: "compare", ref: trial.id }) }] : [];
+      return r !== null ? [{ label: t("tl.cmpWithRef"), onClick: () => onTool({ kind: "compare", ref: trial.id }) }] : playground();
     }
     const ref = data.trials.find((x) => x.id === trial.id)?.reference ?? null;
     const items: MenuItem[] = [];
-    if (ref === null) items.push({ label: t("tl.copyMenu"), onClick: () => onTool({ kind: "copy", ids: selected }) });
+    if (ref === null) items.push({ label: t("tl.copyMenu"), onClick: () => onTool({ kind: "copy", ids: selected }) }, ...playground());
     items.push({ sep: true }, { label: t("tl.addRef"), onClick: () => onTool({ kind: "ref-add" }) });
     if (ref !== null) {
       items.push({ label: t("tl.cmpWithRef"), onClick: () => onTool({ kind: "compare", ref: trial.id }) });

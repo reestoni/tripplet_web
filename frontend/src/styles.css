@@ -1258,3 +1258,61 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .cv-hint { position: absolute; right: 8px; bottom: 6px; color: #888; font-size: 11px; pointer-events: none; }
 .cv-bg { display: inline-flex; align-items: center; gap: 2px; cursor: pointer; }
 .cv-bg input { width: 22px; height: 18px; padding: 0; border: none; background: none; cursor: pointer; }
+
+/* Process Playground (pages/ProcessPlayground.tsx) */
+.pp-page { max-width: 1700px; }
+.pp-sub { font-size: 12px; }
+.pp-grid { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .pp-grid { grid-template-columns: 1fr; } }
+.pp-combos { position: sticky; top: 8px; }
+.pp-hint { font-size: 11.5px; margin: 2px 0 6px; }
+.pp-search { width: 100%; box-sizing: border-box; border: 1px solid #C9D1C8; border-radius: 5px; padding: 5px 8px; margin-bottom: 6px; }
+.pp-tablewrap { max-height: calc(100vh - 230px); overflow: auto; border: 1px solid #E3E7E2; border-radius: 6px; }
+.pp-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.pp-table th { position: sticky; top: 0; background: #F3F5F2; text-align: left; padding: 4px 6px; font-weight: 600; cursor: pointer; white-space: nowrap; border-bottom: 1px solid #DADFD8; }
+.pp-table td { padding: 3px 6px; border-bottom: 1px solid #EEF1ED; vertical-align: top; }
+.pp-table .num { text-align: right; }
+.pp-table tbody tr { cursor: pointer; }
+.pp-table tbody tr:hover td { background: #F5F8F4; }
+.pp-table tr.sel td { background: #DDEBDD !important; }
+.pp-right { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.pp-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+.pp-opt { width: 100%; margin: 4px 0 8px; border: 1px solid #C9D1C8; border-radius: 5px; padding: 4px 6px; }
+.pp-start label { display: grid; grid-template-columns: 130px 1fr; align-items: center; gap: 8px; font-size: 13px; color: #5A6460; }
+.pp-start input { width: 100px; border: 1px solid #C9D1C8; border-radius: 5px; padding: 4px 8px; }
+.pp-note { font-size: 11px; color: #5A6460; margin: 1px 0 6px 138px; }
+.pp-note.bad { color: #B03A2E; font-weight: 600; }
+.pp-reset { float: right; font-size: 12px; font-weight: normal; }
+.pp-slider { margin-bottom: 8px; }
+.pp-slider.off { opacity: 0.55; }
+.pp-sl-head { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.pp-sl-head input { width: 90px; border: 1px solid #C9D1C8; border-radius: 5px; padding: 3px 6px; }
+.pp-delta { color: #1F7A3A; font-weight: 700; }
+.pp-range { position: relative; }
+.pp-range input[type=range] { width: 100%; accent-color: #1F7A3A; }
+.pp-startmark { position: absolute; top: 0; bottom: 4px; width: 2px; margin-left: -1px; background: #5A6460; pointer-events: none; opacity: 0.6; }
+.pp-c4head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; font-size: 13px; }
+.pp-c4head h2 { margin: 0; }
+.pp-c4head select { border: 1px solid #C9D1C8; border-radius: 5px; padding: 3px 6px; }
+.pp-warn { background: #FFF4D6; border: 1px solid #F0D78C; border-radius: 6px; padding: 5px 10px; font-size: 12.5px; margin-bottom: 6px; }
+.pp-res td.b, .pp-sugg td.b { font-weight: 700; }
+.pp-res td select { border: 1px solid #C9D1C8; border-radius: 4px; padding: 1px 4px; font-size: 12px; }
+.pp-table tr.v-clear td, .pp-table td.v-clear { background: #CFE3F5; }
+.pp-table tr.v-prob td, .pp-table td.v-prob { background: #E1EDF8; }
+.pp-table tr.v-tend td, .pp-table td.v-tend { background: #EEF4FA; }
+.pp-table tr.v-same td, .pp-table td.v-same { background: #E8F3EA; }
+.pp-table tr.v-noclear td, .pp-table td.v-noclear { background: #F4F6F3; }
+.pp-table tr.grey td:nth-child(n+3) { color: #8A938F; }
+.pp-table td.st-met { background: #DCEFE0; }
+.pp-table td.st-violated { background: #F6D5CF; }
+.pp-table td.st-unknown { background: #F1F1EE; }
+.pp-plot .ys-plot { height: 300px; }
+.pp-empty { padding: 30px 0; text-align: center; }
+.pp-page .page-head h1 { white-space: nowrap; }
+.pp-page .page-head button { white-space: nowrap; }
+.pp-res td:nth-child(2), .pp-res td:nth-child(3) { white-space: nowrap; }
+.pp-res td:nth-child(4) { min-width: 170px; }
+.pp-sugg td { white-space: nowrap; }
+.pp-scroll { overflow-x: auto; max-width: 100%; }
+.pp-res td:nth-child(5) { min-width: 220px; font-size: 11.5px; color: #5A6460; }
+.pp-right .jr-card { min-width: 0; }

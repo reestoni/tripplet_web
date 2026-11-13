@@ -219,11 +219,19 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
         "has_rd": has_rd_fields(series_id),
         "has_yarnscope": _has_yarnscope(series_id),
         "has_yarnscope_aty": _has_yarnscope_aty(series_id),
+        # right-click on a trial: "Open in Process Playground" (DTY machines, tool allowed; desktop same rule)
+        "playground": _playground(_user, series_id),
         "tabs": tabs,
         # Notes tab: every note of the series, where it sits (lab tab · row, else "Machine Data" / table · field)
         "notes": [dict(_note_json(n), trial_note=cell_notes.is_trial_note(n), **_where(n, seen)) for n in all_notes],
         "pending_tabs": [{"key": k, "title": t} for k, t in PENDING_TABS],
     }
+
+
+def _playground(user: Dict[str, Any], series_id: int) -> bool:
+    from .deps import can_use
+    from ui import process_playground_core as ppc
+    return can_use(user, "process_playground") and ppc.series_is_dty(series_id)
 
 
 # --------------------------------------------------------------------------- Machine Data

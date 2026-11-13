@@ -69,7 +69,7 @@ PINNED: List[Item] = [
 
 # routes that already work in the web app
 WEB_READY: set = {"/experiments", "/backlog", "/requests", "/requests/new", "/knowledge-base",
-                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
+                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/tools/process-playground", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
 
 
 def _badges(keys: set) -> Dict[str, int]:

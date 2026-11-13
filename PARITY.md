@@ -200,7 +200,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Trial header: click / Ctrl / Shift = select trials | `_GridView.mousePressEvent` | **DONE** | `seriesMenus.clickTrial` |
 | Trial header: Add note to Vn / Notes on Vn | `cell_notes_ui.add_trial_note_action` | **DONE** | |
 | Trial header: Copy trials… | `_on_trial_header_menu` / `_multiply_trial_from_col_spec_idx` | **DONE** | trial menu (selected trials preselected) |
-| Trial header: Open Vn in Process Playground… | `_process_playground_available` | **MISSING** | Process Playground not in web; stats Qt-free `ui/dty_whatif.py` |
+| Trial header: Open Vn in Process Playground… | `_process_playground_available` | **DONE** | `playground` flag in `/api/series/{id}` (DTY machine + feature, `process_playground_core.series_is_dty`) -> `/tools/process-playground?trial=` |
 | Trial header: Add reference sample… | `_add_reference_sample` | **DONE** | trial menu |
 | Trial header: Mark Vn as reference / Rename reference / Turn into normal trial | `_set_reference_flag` / `_rename_reference_sample` | **DONE** | trial menu |
 | Trial header (ref): Compare trials with this reference… | `_open_ref_compare` | **DONE** | trial header menu `tl.cmpWithRef` |
@@ -457,3 +457,4 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Label Generator (series/trial data incl. Machine Data fields, label size, designs save/load, text parts static/field/counter, logo, table, drag/resize, anchor groups, copies / per trial, sheet template + start position, PDF) | `ui/screen_label_generator.py` | **DONE** | `be/label_generator_api.py` on `ui/label_designer.py` + `db/label_sheets.py` |
 | TDMS Inspector (any .tdms file, DTY + ATY YarnScope, no DB; no save/batch/compare) | `ui/screen_tdms_inspector.py` | **DONE** | `be/tdms_inspector.py` (upload) + the YarnScope routes for negative series numbers |
 | Canvas (free board, series images + PDFs + local files, move / scale / rotate, annotation tools, undo, grid, background colour, PNG export, project files, paste, Del) | `ui/screen_canvas.py` | **DONE** | `fe/pages/Canvas.tsx` on the Image Compare routes; rotation around the centre |
+| Process Playground (yarn/jet list with search + sort, start from a trial or typed with range notes, sliders, statements per lab value, warnings, goals + Find settings, suggestions, chart with model curve + band, Reload/F5, open from Show Experiment) | `ui/screen_process_playground.py` | **DONE** | `be/process_playground_api.py` on `ui/dty_whatif.py` + `ui/process_playground_core.py`; statements / based-on / start notes English (shared module) |

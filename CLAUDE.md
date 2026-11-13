@@ -244,6 +244,12 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   image_compare ODER canvas) + `/canvas-series` und PDFs der Serie. Desktop: `screen_canvas.py` nutzt jetzt `ui/doc_render.py`
   und `db/image_compare.py` (`fetch_canvas_series_groups`, `fetch_pdfs_for_series`) statt eigener Kopien (-570 Zeilen).
   Drehung im Web um die Bildmitte (Desktop um die linke obere Ecke).
+- Process Playground `/tools/process-playground` (`?trial=` = Rechtsklick "V<n> in der Prozess-Spielwiese öffnen" in Show
+  Experiment, nur DTY-Maschinen, Flag `playground` in `/api/series/{id}`): `app/process_playground_api.py` auf `ui/dty_whatif.py` +
+  neu `ui/process_playground_core.py` (Kombinationsliste, Startpunkte, Reglerbereiche, `new_settings`, Aussagen/Grundlage,
+  Warnungen als Codes, Vorschläge, Diagrammdaten, `trial_start`, `series_is_dty`; Desktop-Screen nutzt es). Versuche einmal pro
+  Prozess geladen (Neu laden/F5), Modell-Fits pro Kombination gecacht. Seite `ProcessPlayground.tsx` (Plotly). Aussagen,
+  "Grundlage", Start-Hinweise und die Vorschlags-Meldung kommen englisch aus dem gemeinsamen Modul.
 
 **Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
