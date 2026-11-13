@@ -184,6 +184,7 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
         "trials": trials,
         "has_rd": has_rd_fields(series_id),
         "has_yarnscope": _has_yarnscope(series_id),
+        "has_yarnscope_aty": _has_yarnscope_aty(series_id),
         "tabs": tabs,
         # Notes tab: every note of the series, where it sits (lab tab · row, else "Machine Data" / table · field)
         "notes": [dict(_note_json(n), trial_note=cell_notes.is_trial_note(n), **_where(n, seen)) for n in all_notes],
@@ -396,6 +397,11 @@ def has_rd_fields(series_id: int) -> bool:
         return bool(rows)
     except Exception:
         return False
+
+
+def _has_yarnscope_aty(series_id: int) -> bool:
+    from .yarnscope_aty import has_yarnscope_aty
+    return has_yarnscope_aty(series_id)
 
 
 def _has_yarnscope(series_id: int) -> bool:

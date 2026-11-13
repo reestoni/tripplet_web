@@ -87,8 +87,21 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    Notizen an Werten + Reiter "Notizen", Anhänge (`/attachments`), **DTY-YarnScope** (`app/yarnscope.py` +
    `YarnScopeView.tsx`): Berechnung = `ui/yarnscope/dty_service.py`, Analysen im Speicher (`CACHE_SIZE`, Schlüssel
    Versuch+Datei+Zeit), Ansichten Segmentmittel/Signal (Plotly, lokal aus /report-assets) und Garnspiegel (Canvas),
-   "In DB speichern" ab Zugriffsstufe 2 über `svc.save_analysis`. Noch offen: Prozessvergleich + Trend-/Prozesswellen-
-   Karten in YarnScope, ATY-YarnScope, Athena.
+   "In DB speichern" ab Zugriffsstufe 2 über `svc.save_analysis`. Seit 2026-11-13 auch die drei Trendlinien
+   (Mitte Offenstelle–Knoten, Mitte Peak–Tal, Offenstellen-Trend; Rollung Meter/Paare) mit Kennzahlen-Karten und die
+   Prozesswelle (Raster, Prozessmittel + Sinus-Fit + Karte): `GET …/segment?open_knot=Meter:1&peak_valley=Paare:10&
+   opening=…&wave=0.05` -> `segment_view(..., with_metrics=True)`; Fenster frei 0.1–100 m. **Prozessvergleich**
+   (`YarnScopeCompare.tsx`, Knopf in der Versuchsliste): `POST …/yarnscope/compare` {trial_ids 2–6, bin = Raster der
+   Prozesswelle, Anzeige-Optionen} -> `run_process_comparison` (analysierte Versuche aus dem Cache, sonst TDMS lesen) +
+   `comparison_json`; das Ergebnis bleibt im Server (`_compare_cache`), Optionen zeichnen nur neu; 👁 blendet im Browser aus.
+   Tests ohne H: über künstliche Signale (`tests/test_yarnscope.py`). **ATY-YarnScope** (seit 2026-11-13, Reiter
+   "YarnScope ATY" wenn `aty_service.series_has_tdms`): `app/yarnscope_aty.py` (`/api/series/{id}/aty…`) auf
+   `ui/yarnscope/aty_service.py` + `thickness_classes.py` (eine frühere Sitzung hat beides Qt-frei herausgezogen,
+   Desktop-Tab und -Batch nutzen es); Frontend `YarnScopeAty.tsx`: Verteilung (Plotly), Garnspiegel/Gewebe/Gestrick
+   (Canvas, schwarz wie im Desktop; Klassen-Farben + Sichtbarkeit im Browser, localStorage `tripplet.aty.*`),
+   Vergleich (Haken in der Liste; Radar, 3 Tabellen, Signal & Kern, Histogramme), Speichern = Kern-Analyse ab Stufe 2,
+   Batch über `YarnScopeBatch kind="aty"`. Englisch bleiben: Radar-Sätze und Tabellenköpfe des Vergleichs (aus dem
+   Desktop-Modul). Tests `tests/test_yarnscope_aty.py` (künstliche ATY-Signale, DB-Schreiben ersetzt). Noch offen: Athena.
 3. ✅ Experiment Requests (2026-11-13): `app/requests_api.py` (`/api/requests…`) auf `db/experiment_requests.py` +
    `db/experiment_request_images.py`; Seiten `MyRequests.tsx` (Liste, Filter, Status für Superuser mit
    Begründung/Bestätigung über `StatusDialog`) und `RequestForm.tsx` (neu/bearbeiten aus dem Formular-Schema,
@@ -151,7 +164,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
-  (siehe "Hilfe" unten), 2. YarnScope ergänzen (Prozessvergleich, Trends, ATY), 3. Manage Jets,
+  (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. Manage Jets,
   Manage Yarn, Yarn Stock. **Kleinkram für später** (nicht vergessen): "Open in Yarn Stock" im Lagerplatz-Dialog
   von Create Experiment (sobald Yarn Stock im Web ist), "?"-Knopf auf weiteren Seiten, sobald sie ins Web
   kommen (Manage Yarn/Jets, Yarn Stock, Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.

@@ -92,6 +92,7 @@ export type SeriesData = {
   trials: { id: number; label: string; number: number; reference: string | null }[];
   has_rd: boolean;
   has_yarnscope: boolean;
+  has_yarnscope_aty: boolean;
   tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; r?: number; cells: PivotCell[] }[]; flags: Record<string, string> }[];
   pending_tabs: { key: string; title: string }[];
   notes: (CellNote & { where_tab: string | null; where_row: string; trial_note: boolean })[];

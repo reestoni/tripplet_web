@@ -734,3 +734,60 @@ tr.ce-dragging td { opacity: 0.5; }
 .hl-small { font-size: 12px; }
 .hl-actions { display: flex; gap: 6px; align-items: center; margin-top: auto; padding-top: 10px; flex-wrap: wrap; }
 @media (max-width: 800px) { .hl-split { flex-direction: column; } .hl-list { width: auto; max-height: 30vh; } }
+/* YarnScope trend lines / process wave */
+.ys-trends { display: flex; flex-wrap: wrap; gap: 6px 10px; margin: 6px 0; font-size: 12.5px; }
+.ys-trend { display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; }
+.ys-trend label { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; cursor: pointer; }
+.ys-tcards { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.ys-tcard { flex: 1 1 280px; background: #202a2d; color: #ddd; border: 1px solid; border-radius: 4px; padding: 5px 8px; font-size: 11.5px; line-height: 1.5; }
+.ys-tcard .muted { color: #aaa; }
+.ys-wcard { background: #302b20; border-color: #ffd166; }
+/* YarnScope process comparison */
+.ys-cmp { display: flex; gap: 12px; align-items: flex-start; }
+.ys-cmp-left { width: 230px; flex: none; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.ys-cmp-head { display: flex; justify-content: space-between; align-items: center; }
+.ys-cmp-list { border: 1px solid var(--border); border-radius: 6px; max-height: 260px; overflow: auto; padding: 4px 6px; display: flex; flex-direction: column; gap: 2px; }
+.ys-cmp-trial { display: flex; gap: 6px; align-items: center; }
+.ys-cmp-roll { display: inline-flex; gap: 5px; align-items: center; padding-left: 20px; }
+.ys-cmp-bin, .ys-cmp-status { font-size: 12px; margin: 0; }
+.ys-cmp-right { flex: 1; min-width: 0; }
+.ys-cmp-table td, .ys-cmp-table th { white-space: nowrap; font-size: 12px; }
+.ys-cmp-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; }
+tr.ys-cmp-off td { opacity: 0.45; }
+@media (max-width: 900px) { .ys-cmp { flex-direction: column; } .ys-cmp-left { width: auto; } }
+.ys-main > * { flex-shrink: 0; }   /* the trend cards must not squeeze the charts */
+.ys-cmp .ys-plot { height: 520px; }
+/* YarnScope ATY */
+.aty-trial { display: flex; align-items: stretch; gap: 4px; padding: 0; }
+.aty-trial input { margin: 0 2px 0 6px; align-self: center; }
+.aty-trial button { flex: 1; display: flex; justify-content: space-between; gap: 6px; background: none; border: 0; font: inherit; padding: 6px 8px 6px 2px; cursor: pointer; text-align: left; }
+.aty-trial.off button { cursor: default; }
+.aty-hint { font-size: 11.5px; margin: 2px 0 4px; }
+.aty-canvas { width: 100%; display: block; border-radius: 6px; flex-shrink: 0; }
+.aty-hist td, .aty-hist th { font-size: 12px; }
+.aty-metrics { background: #0d3333; color: #fff; border: 1px solid #0e8a8a; border-radius: 6px; padding: 8px 12px; font-family: monospace; font-size: 12px; }
+.aty-metrics div { display: flex; flex-wrap: wrap; gap: 4px 18px; }
+.aty-bins { font-size: 11.5px; margin: 0; }
+.aty-ctrl { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.aty-ctrl .ys-num { width: 76px; margin-left: 4px; }
+.aty-colours { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+.aty-cgrid { display: grid; grid-template-columns: repeat(3, max-content); gap: 4px 16px; margin-top: 4px; }
+.aty-cls { display: inline-flex; align-items: center; gap: 5px; }
+.aty-cls input[type="color"] { width: 30px; height: 20px; padding: 0; border: 1px solid #999; }
+.aty-cmp { display: flex; flex-direction: column; gap: 8px; }
+.aty-cmp > * { flex-shrink: 0; }
+.aty-cmp-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.aty-info { background: #f4f8f5; border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 12.5px; line-height: 1.5; }
+.aty-cmp h4 { margin: 6px 0 0; font-size: 14px; }
+.aty-radar { display: flex; gap: 12px; flex-wrap: wrap; }
+.aty-radar-plot { flex: 1 1 380px; }
+.aty-radar-plot .ys-plot { height: 380px; }
+.aty-radar-desc { flex: 1 1 280px; font-size: 12.5px; }
+.aty-radar-desc p { margin: 0 0 6px; }
+.aty-sentence { margin: 0; font-size: 13px; }
+.aty-cmp-table td, .aty-cmp-table th { white-space: nowrap; font-size: 12px; }
+.aty-zooms { display: flex; gap: 8px; overflow-x: auto; }
+.aty-zoom { flex: 0 0 360px; }
+.aty-zoom .ys-plot { height: 260px; }
+.aty-hists { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px; }
+.aty-hists .ys-plot { height: 300px; }

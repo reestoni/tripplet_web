@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import YarnScopeBatch from "./YarnScopeBatch";
+import YarnScopeCompare from "./YarnScopeCompare";
 
 /* DTY YarnScope (read + analyse + save). Everything is computed on the server by the
    desktop's shared module (ui/yarnscope/dty_service.py); this page only draws. */
@@ -15,8 +16,23 @@ type Trace = { x: number[]; y: number[] };
 type Segment = { total_m: number; start_m: number; window_m: number; x_range: [number, number]; line: Trace;
   open_segments: [number, number, number][]; knot_segments: [number, number, number, string][];
   counts: Record<string, number>; thresholds: { T: number; cb: number; ba: number };
-  trends: Record<string, { enabled: boolean; x: number[]; y: number[]; colour: string; title: string }>;
-  colours: { line: string; open: string; abc: Record<string, string> } };
+  trends: Record<string, { enabled: boolean; x: number[]; y: number[]; colour: string; title: string; roll_label: string;
+    metrics: TrendMetrics | null }>;
+  process_wave: ProcessWave | null;
+  colours: { line: string; open: string; abc: Record<string, string>; process_mean: string; sine_fit: string } };
+type TrendMetrics = { count: number; median: number; p5_p95: number; mad: number; slope: number | null; end_delta: number | null;
+  wavelength: number | null; wavelength_cv: number | null; peak_to_peak: number | null; peak_to_peak_p95: number | null };
+type ProcessWave = { x: number[]; binned: number[]; fitted: number[]; bin_width: number; span: number; wavelength: number;
+  amplitude: number; r_squared: number; spectral_share: number; drift: number; residual_rms: number };
+// trend lines of the segment plot (desktop: checkbox + "Rollung" Meter/Paare + width per line)
+type RollMode = "Meter" | "Paare";
+type TrendSet = { on: boolean; mode: RollMode; amount: number };
+const TREND_KEYS = ["open_knot", "peak_valley", "opening"] as const;
+type TrendKey = typeof TREND_KEYS[number];
+const TREND_COLOUR: Record<TrendKey, string> = { open_knot: "#56d7d0", peak_valley: "#ff6bb5", opening: "#8de6a0" };
+const ROLL: Record<RollMode, { min: number; max: number; step: number; def: number }> = {
+  Meter: { min: 0.1, max: 50, step: 0.1, def: 1 }, Paare: { min: 1, max: 500, step: 1, def: 10 } };
+const num = (v: number | null | undefined, d = 1, suffix = "") => (v == null || !Number.isFinite(v) ? "—" : `${v.toFixed(d)}${suffix}`);
 type Signal = { bars: Trace; step_m: number; thresholds: { T: number; ab: number; bc: number };
   ylim: [number, number]; xlim: [number, number] };
 type Mirror = { rows: { base: number; half: number[]; spans: [number, number, string][] }[];
@@ -48,7 +64,7 @@ function loadPlotly(): Promise<PlotlyLike> {
   return plotlyPromise;
 }
 
-function Plot({ data, layout }: { data: unknown[]; layout: Record<string, unknown> }) {
+export function Plot({ data, layout }: { data: unknown[]; layout: Record<string, unknown> }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let alive = true;
@@ -131,6 +147,19 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   const [mir, setMir] = useState<Mirror | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
   const [batch, setBatch] = useState(false);
+  const [cmp, setCmp] = useState(false);
+  const [trends, setTrends] = useState<Record<TrendKey, TrendSet>>({
+    open_knot: { on: false, mode: "Meter", amount: 1 }, peak_valley: { on: false, mode: "Meter", amount: 1 },
+    opening: { on: false, mode: "Meter", amount: 1 } });
+  const [wave, setWave] = useState<{ on: boolean; bin: number }>({ on: false, bin: 0.05 });
+  // trend / wave settings reach the server debounced (desktop: replot 1 s after a spin box change)
+  const [segOpts, setSegOpts] = useState("");
+  useEffect(() => {
+    const q = TREND_KEYS.filter((k) => trends[k].on).map((k) => `&${k}=${trends[k].mode}:${trends[k].amount}`).join("")
+      + (wave.on ? `&wave=${wave.bin}` : "");
+    const id = window.setTimeout(() => setSegOpts(q), 400);
+    return () => window.clearTimeout(id);
+  }, [trends, wave]);
   const base = `/api/series/${seriesId}/yarnscope`;
 
   const loadTrials = () => request<{ trials: YsTrial[] }>("GET", base).then((d) => setTrials(d.trials));
@@ -140,6 +169,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   }, [seriesId]);
 
   const analyse = (tid: number) => {
+    setCmp(false);
     setSel(tid);
     setResult(null);
     setSeg(null); setSig(null); setMir(null);
@@ -158,7 +188,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
     let alive = true;
     setLoadingView(true);
     const q = `?start=${pos.start}&window=${pos.win}`;
-    const go = view === "segment" ? request<Segment>("GET", `${base}/${sel}/segment${q}`).then((d) => alive && setSeg(d))
+    const go = view === "segment" ? request<Segment>("GET", `${base}/${sel}/segment${q}${segOpts}`).then((d) => alive && setSeg(d))
       : view === "signal" ? request<Signal>("GET", `${base}/${sel}/signal${q}`).then((d) => alive && setSig(d))
       : request<Mirror>("GET", `${base}/${sel}/garnspiegel?start=${pos.start}`).then((d) => alive && setMir(d));
     go.catch((e) => alive && setError(e.message)).finally(() => alive && setLoadingView(false));
@@ -166,7 +196,7 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sel, result, view, pos]);
+  }, [sel, result, view, pos, segOpts]);
 
   const segPlot = useMemo(() => {
     if (!seg) return null;
@@ -174,13 +204,20 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
       { type: "scattergl", mode: "lines", x: seg.line.x, y: seg.line.y, line: { color: seg.colours.line, width: 1 }, hoverinfo: "skip" },
       segmentsTrace(seg.open_segments, seg.colours.open),
       ...["A", "B", "C"].map((c) => segmentsTrace(seg.knot_segments.filter((k) => k[3] === c).map((k) => [k[0], k[1], k[2]] as [number, number, number]), seg.colours.abc[c])),
-      ...Object.values(seg.trends).filter((tr) => tr.enabled && tr.x?.length).map((tr) => ({
-        type: "scatter", mode: "lines", x: tr.x, y: tr.y, line: { color: tr.colour, width: 2 }, name: tr.title })),
+      ...(seg.process_wave ? [
+        { type: "scatter", mode: "lines", x: seg.process_wave.x, y: seg.process_wave.binned, opacity: 0.8,
+          line: { color: seg.colours.process_mean, width: 1 }, name: t("ys.wave.mean", { bin: seg.process_wave.bin_width.toFixed(2) }) },
+        { type: "scatter", mode: "lines", x: seg.process_wave.x, y: seg.process_wave.fitted,
+          line: { color: seg.colours.sine_fit, width: 2.5 }, name: t("ys.wave.fit", { wl: seg.process_wave.wavelength.toFixed(2) }) },
+      ] : []),
+      ...TREND_KEYS.map((k) => [k, seg.trends[k]] as const).filter(([, tr]) => tr?.enabled && tr.x?.length).map(([k, tr]) => ({
+        type: "scatter", mode: "lines", x: tr.x, y: tr.y, line: { color: tr.colour, width: 2 },
+        name: `${t(`ys.trend.${k}`)} (Ø ${tr.roll_label})` })),
     ];
     const th = seg.thresholds;
     return { data, layout: { xaxis: { range: seg.x_range, title: { text: `m  (${seg.x_range[0].toFixed(1)} – ${seg.x_range[1].toFixed(1)})` } },
       shapes: [hline(th.T, "#333"), hline(th.cb, seg.colours.abc.C, "dot"), hline(th.ba, seg.colours.abc.A, "dot")] } };
-  }, [seg]);
+  }, [seg, t]);
 
   const pie = useMemo(() => {
     if (!result?.pie) return null;
@@ -215,7 +252,9 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
   return (
     <div className="ys">
       <div className="ys-list">
-        <button className="btn-green ys-batch-btn" onClick={() => setBatch(true)} disabled={busy}>Batch</button>
+        <button className="btn-green ys-batch-btn" onClick={() => { setCmp(false); setBatch(true); }} disabled={busy}>Batch</button>
+        <button className="btn-plain ys-batch-btn" onClick={() => { setBatch(false); setCmp(true); }} disabled={busy}
+          title={t("ys.cmp.tip")}>{t("ys.cmp.title")}</button>
         {trials.map((tr) => (
           <button key={tr.trial_id} disabled={!tr.has_file || busy}
             className={"ys-trial" + (tr.trial_id === sel ? " on" : "")} onClick={() => analyse(tr.trial_id)}
@@ -230,7 +269,8 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
       <div className="ys-main">
         {batch && <YarnScopeBatch seriesId={seriesId} canWrite={canWrite} onClose={() => setBatch(false)}
           onDone={() => { loadTrials(); }} />}
-        {!batch && <>
+        {cmp && !batch && <YarnScopeCompare seriesId={seriesId} trials={trials} bin={wave.bin} onClose={() => setCmp(false)} />}
+        {!batch && !cmp && <>
         {sel == null && <div className="card muted">{t("ys.pick")}</div>}
         {busy && <div className="card muted">{t("ys.analysing", { label: cur?.label ?? "" })}</div>}
         {error && <div className="card error">{error}</div>}
@@ -267,14 +307,84 @@ export default function YarnScopeView({ seriesId, canWrite }: { seriesId: number
                 {view !== "mirror" && (
                   <>
                     <span className="ys-gap">{t("ys.window")}</span>
-                    <select className="search ys-num" value={win} onChange={(e) => setWin(Number(e.target.value))}>
-                      {[1, 3, 5, 10, 30].map((w) => <option key={w} value={w}>{w} m</option>)}
-                    </select>
+                    <input type="number" className="search ys-num" min={0.1} max={100} step={0.1} value={win} list="ys-win-presets"
+                      onChange={(e) => { const v = Number(e.target.value); if (v > 0) setWin(Math.min(100, v)); }} /> <span>m</span>
+                    <datalist id="ys-win-presets">{[1, 3, 5, 10, 30, 100].map((w) => <option key={w} value={w} />)}</datalist>
                   </>
                 )}
               </span>
               {loadingView && <span className="ys-updating">{t("ys.updating")}</span>}
             </div>
+            {view === "segment" && (
+              <>
+                <div className="ys-trends">
+                  {TREND_KEYS.map((k) => {
+                    const tr = trends[k];
+                    const set = (patch: Partial<TrendSet>) => setTrends((all) => ({ ...all, [k]: { ...all[k], ...patch } }));
+                    const r = ROLL[tr.mode];
+                    return (
+                      <span key={k} className="ys-trend" style={{ borderColor: tr.on ? TREND_COLOUR[k] : undefined }}>
+                        <label title={t(`ys.trendTip.${k}`)}>
+                          <input type="checkbox" checked={tr.on} onChange={(e) => set({ on: e.target.checked })} />
+                          <span style={{ color: TREND_COLOUR[k] }}>■</span> {t(`ys.trend.${k}`)}
+                        </label>
+                        <select className="search ys-num" disabled={!tr.on} value={tr.mode} title={t("ys.rollTip")}
+                          onChange={(e) => { const m = e.target.value as RollMode; set({ mode: m, amount: ROLL[m].def }); }}>
+                          <option value="Meter">{t("ys.roll.Meter")}</option>
+                          <option value="Paare">{t("ys.roll.Paare")}</option>
+                        </select>
+                        <input type="number" className="search ys-num" disabled={!tr.on} min={r.min} max={r.max} step={r.step} value={tr.amount}
+                          onChange={(e) => { const v = Number(e.target.value); if (v >= r.min && v <= r.max) set({ amount: v }); }} />
+                        {tr.mode === "Meter" && <span>m</span>}
+                      </span>
+                    );
+                  })}
+                  <span className="ys-trend" style={{ borderColor: wave.on ? "#ffd166" : undefined }}>
+                    <label title={t("ys.waveTip")}>
+                      <input type="checkbox" checked={wave.on} onChange={(e) => setWave({ ...wave, on: e.target.checked })} />
+                      <span style={{ color: "#ff9f1c" }}>■</span> {t("ys.wave.title")}
+                    </label>
+                    {t("ys.wave.raster")}
+                    <input type="number" className="search ys-num" disabled={!wave.on} min={0.02} max={1} step={0.01} value={wave.bin}
+                      title={t("ys.wave.rasterTip")}
+                      onChange={(e) => { const v = Number(e.target.value); if (v >= 0.02 && v <= 1) setWave({ ...wave, bin: v }); }} /> <span>m</span>
+                  </span>
+                </div>
+                {seg && (
+                  <div className="ys-tcards">
+                    {TREND_KEYS.filter((k) => seg.trends[k]?.enabled).map((k) => {
+                      const m = seg.trends[k].metrics;
+                      return (
+                        <div key={k} className="ys-tcard" style={{ borderColor: TREND_COLOUR[k] }}>
+                          <b style={{ color: TREND_COLOUR[k] }}>{t(`ys.trend.${k}`)}</b>{m && <span className="muted"> n={m.count}</span>}
+                          {!m ? <div>{t("ys.noTrendValues")}</div> : (
+                            <>
+                              <div>{t("ys.m.median")} <b>{num(m.median)} µm</b> · P5–P95 <b>{num(m.p5_p95)} µm</b> · MAD <b>{num(m.mad)} µm</b></div>
+                              <div>{t("ys.m.drift")} <b>{num(m.slope, 2, " µm/m")}</b> · {t("ys.m.endDelta")} <b>{num(m.end_delta)} µm</b> ·{" "}
+                                {t("ys.m.wavelength")} <b>{num(m.wavelength, 2, " m")}</b> · {t("ys.m.waveCv")} <b>{num(m.wavelength_cv == null ? null : m.wavelength_cv * 100, 0, " %")}</b></div>
+                              <div>{t("ys.m.peakValley")} <b>{num(m.peak_to_peak)} µm</b> · P95 <b>{num(m.peak_to_peak_p95)} µm</b></div>
+                            </>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {wave.on && (
+                      <div className="ys-tcard ys-wcard">
+                        <b style={{ color: "#ffd166" }}>{t("ys.wave.title")}</b>
+                        {!seg.process_wave ? <div>{t("ys.wave.noData")}</div> : (
+                          <>
+                            <span className="muted"> {t("ys.wave.grid", { bin: seg.process_wave.bin_width.toFixed(2), span: seg.process_wave.span.toFixed(1) })}</span>
+                            <div>{t("ys.wave.dominant")} <b>{num(seg.process_wave.wavelength, 2, " m")}</b> · {t("ys.wave.amplitude")} <b>{num(seg.process_wave.amplitude, 2, " µm")}</b> ·{" "}
+                              R² <b>{num(seg.process_wave.r_squared, 2)}</b> · {t("ys.wave.share")} <b>{num(seg.process_wave.spectral_share * 100, 0, " %")}</b></div>
+                            <div>{t("ys.m.drift")} <b>{num(seg.process_wave.drift, 2, " µm/m")}</b> · {t("ys.wave.rms")} <b>{num(seg.process_wave.residual_rms, 2, " µm")}</b></div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
             {view === "segment" && segPlot && <Plot data={segPlot.data} layout={segPlot.layout} />}
             {view === "segment" && seg && (
               <div className="muted ys-legend">

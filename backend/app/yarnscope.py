@@ -106,15 +106,41 @@ def analyse(series_id: int, trial_id: int, _user: Dict[str, Any] = Depends(curre
     return _json(svc.result_json(res, vals))
 
 
+ROLL_RANGES = {"Meter": (0.1, 50.0), "Paare": (1.0, 500.0)}   # desktop spin boxes per rolling mode
+
+
+def _trend(spec: Optional[str]):
+    """'Meter:1.0' / 'Paare:10' -> (mode, amount) for segment_view, None = trend line off."""
+    if not spec:
+        return None
+    mode, _, amount = spec.partition(":")
+    if mode not in ROLL_RANGES:
+        raise ValueError(f"Unknown rolling mode {mode!r}.")
+    lo, hi = ROLL_RANGES[mode]
+    value = float(amount)
+    if mode == "Paare":
+        value = float(round(value))
+    return mode, max(lo, min(value, hi))
+
+
 @router.get("/series/{series_id}/yarnscope/{trial_id}/segment")
 def segment(series_id: int, trial_id: int, start: float = 0.0, window: float = 3.0,
-            _user: Dict[str, Any] = Depends(current_user)):
+            open_knot: Optional[str] = None, peak_valley: Optional[str] = None, opening: Optional[str] = None,
+            wave: Optional[float] = None, _user: Dict[str, Any] = Depends(current_user)):
+    """Segment means (+ optional trend lines "Meter:<m>" / "Paare:<n>" with their metric cards and the
+    process wave with raster `wave` m) - desktop _ys_replot via dty_service.segment_view."""
     hit = _cached(series_id, trial_id)
     if hit is None:
         return _not_analysed()
     res, vals = hit
-    window = max(0.5, min(float(window), 200.0))
-    return _json(svc.segment_view_json(svc.segment_view(res, vals, float(start), window)))
+    window = max(0.1, min(float(window), 100.0))       # desktop: 0.1 - 100 m
+    try:
+        trends = {"open_knot": _trend(open_knot), "peak_valley": _trend(peak_valley), "opening": _trend(opening)}
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"code": "bad_trend", "detail": str(e)})
+    wave_bin = None if wave is None else max(0.02, min(float(wave), 1.0))
+    return _json(svc.segment_view_json(svc.segment_view(
+        res, vals, float(start), window, **trends, process_wave_bin=wave_bin, with_metrics=True)))
 
 
 @router.get("/series/{series_id}/yarnscope/{trial_id}/signal")
@@ -123,7 +149,7 @@ def signal(series_id: int, trial_id: int, start: float = 0.0, window: float = 3.
     hit = _cached(series_id, trial_id)
     if hit is None:
         return _not_analysed()
-    window = max(0.1, min(float(window), 50.0))
+    window = max(0.1, min(float(window), 100.0))       # desktop: same window field, 0.1 - 100 m
     return _json(svc.signal_view_json(svc.signal_view(hit[0], float(start), window)))
 
 
@@ -275,3 +301,61 @@ def batch_current(series_id: int, _user: Dict[str, Any] = Depends(current_user))
     """The newest batch of this series (to show it again after reloading the page)."""
     jobs = sorted((j for j in _jobs.values() if j["series_id"] == series_id), key=lambda j: j["started"])
     return _json(_job_json(jobs[-1])) if jobs else {"job": None}
+
+
+# ------------------------------------------------------------------ process comparison (desktop sub tab "Prozessvergleich")
+COMPARE_CACHE_SIZE = 4
+_compare_cache: "OrderedDict[Tuple, Tuple[list, str]]" = OrderedDict()
+
+
+class CompareBody(BaseModel):
+    trial_ids: list[int]
+    bin: float = 0.05                    # raster of the process wave [m]
+    normalized: bool = True
+    process_mean: bool = False
+    drift: bool = False
+    open_trend: bool = False
+    open_roll: str = "Meter:1"           # rolling of the open spot trend, like the segment trends
+
+
+@router.post("/series/{series_id}/yarnscope/compare")
+def compare(series_id: int, body: CompareBody, _user: Dict[str, Any] = Depends(current_user)):
+    """Process waves of 2-6 trials over their whole measured length (dty_service.run_process_comparison,
+    analysed trials from the analysis cache) + chart lines and table (comparison_json). The results are
+    kept, so changing only the display options does not read the TDMS files again."""
+    ids = list(dict.fromkeys(int(t) for t in body.trial_ids))
+    if not 2 <= len(ids) <= 6:
+        return JSONResponse(status_code=400, content={"code": "compare_count", "detail": "Choose two to six trials."})
+    try:
+        roll = _trend(body.open_roll) or ("Meter", 1.0)
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"code": "bad_trend", "detail": str(e)})
+    bin_m = max(0.02, min(float(body.bin), 1.0))
+    st = stb.load_trials(series_id)
+    files = {int(t["trial_id"]): t for t in svc.trial_files(series_id, st.trials, set(st.reference_names))}
+    trials = []
+    for tid in ids:
+        f = files.get(tid)
+        if f is None or f.get("tdms") is None:
+            return JSONResponse(status_code=404, content={"code": "no_file", "detail": "No TDMS file for this trial."})
+        trials.append({"trial_id": tid, "vno": f.get("vno"), "tdms": f["tdms"]})
+    key = (series_id, tuple(_key(t["trial_id"], t["tdms"]) for t in trials), bin_m)
+    with _lock:
+        hit = _compare_cache.get(key)
+        cache = {k[0]: v for k, v in _cache.items() if any(k == _key(t["trial_id"], t["tdms"]) for t in trials)}
+    if hit is None:
+        hit = svc.run_process_comparison(trials, bin_m, cache)
+        with _lock:
+            _compare_cache[key] = hit
+            while len(_compare_cache) > COMPARE_CACHE_SIZE:
+                _compare_cache.popitem(last=False)
+        log_usage_event("feature", "yarnscope_compare", f"web {len(ids)} trials")
+    else:
+        with _lock:
+            _compare_cache.move_to_end(key)
+    results, errors = hit
+    out = svc.comparison_json(results, body.normalized, body.process_mean, body.drift, body.open_trend,
+                              roll[0], float(roll[1]))
+    out["errors"] = errors
+    out["bin"] = bin_m
+    return _json(out)

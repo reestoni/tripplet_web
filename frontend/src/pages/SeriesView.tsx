@@ -8,6 +8,7 @@ import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
 import { RequestIcon } from "../components/RequestPopup";
 import YarnScopeView from "../components/YarnScopeView";
+import YarnScopeAty from "../components/YarnScopeAty";
 import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
@@ -52,7 +53,7 @@ export default function SeriesView({ accessLevel = 0 }: { accessLevel?: number }
       .then((d) => {
         if (!alive) return;
         setData(d);
-        const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []),
+        const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []), ...(d.has_yarnscope_aty ? ["yarnscope_aty"] : []),
           ...d.tabs.map((x) => x.key)];
         const want = lastTab();
         setTab((cur) => (cur && keys.includes(cur) ? cur : want && keys.includes(want) ? want : "machine"));
@@ -291,6 +292,12 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
             YarnScope
           </button>
         )}
+        {data.has_yarnscope_aty && (
+          <button role="tab" aria-selected={tab === "yarnscope_aty"} className={"se-tab" + (tab === "yarnscope_aty" ? " on" : "")}
+            onClick={() => choose("yarnscope_aty")}>
+            YarnScope ATY
+          </button>
+        )}
         <button role="tab" aria-selected={tab === "notes"} className={"se-tab" + (tab === "notes" ? " on" : "")}
           onClick={() => choose("notes")}>
           {t("nt.tab")}{data.notes.length > 0 && <span className="note-count">{data.notes.length}</span>}
@@ -304,6 +311,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
 
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
       {tab === "yarnscope" && <YarnScopeView seriesId={s.id} canWrite={accessLevel >= 2} />}
+      {tab === "yarnscope_aty" && <YarnScopeAty seriesId={s.id} canWrite={accessLevel >= 2} />}
       {data.trials.length > 0 && tab === "rd" && (
         <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} menus={menus} />
       )}
