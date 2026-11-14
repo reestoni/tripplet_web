@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { img } from "./api";
+import { FLAGS } from "./brand";
 import { TEXTS, type Lang, type TextKey } from "./texts";
 
 export const LANGS: { code: Lang; flag: string; name: string; html: string }[] = [
@@ -70,7 +71,7 @@ export function LangFlags({ className = "" }: { className?: string }) {
       {LANGS.map((l) => (
         <button key={l.code} type="button" className={l.code === lang ? "on" : ""} title={l.name}
           aria-pressed={l.code === lang} onClick={() => setLang(l.code)}>
-          <img src={img(l.flag)} alt={l.name} />
+          <img src={FLAGS[l.flag] ?? img(l.flag)} alt={l.name} />
         </button>
       ))}
     </div>

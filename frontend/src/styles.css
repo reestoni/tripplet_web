@@ -1529,3 +1529,5 @@ img.sb-avatar { object-fit: cover; background: none; }
 .cv-row.on td { background: #E6F2E6; }
 .ic-group.cv-home > .ic-ghead { color: var(--accent); font-weight: 700; }
 .btn-plain.mj-danger { color: var(--danger); }
+.login-down { background: #FFF4D6; border: 1px solid #E8C15A; color: #5a4500; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+.login-down span { font-size: 12px; opacity: .8; }

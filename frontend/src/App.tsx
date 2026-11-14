@@ -44,9 +44,7 @@ export default function App() {
       setError(null);
     } catch (e) {
       setMe(null);
-      if (!(e instanceof ApiError && e.status === 401)) {
-        setError("app.serverDown");
-      }
+      setError(e instanceof ApiError && e.status === 401 ? null : "app.serverDown");
     } finally {
       setChecked(true);
     }
@@ -55,6 +53,14 @@ export default function App() {
   useEffect(() => {
     loadMe();
   }, [loadMe]);
+  // server not reachable (e.g. backend restarting): try again every 3 s, the login page updates by itself
+  useEffect(() => {
+    if (error !== "app.serverDown") return;
+    const h = window.setInterval(() => {
+      fetch("/api/health").then((r) => { if (r.ok) loadMe(); }).catch(() => undefined);
+    }, 3000);
+    return () => window.clearInterval(h);
+  }, [error, loadMe]);
 
   if (!checked) return null;
   if (!me) return <Login onLoggedIn={loadMe} startupError={error} />;

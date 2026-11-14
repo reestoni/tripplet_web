@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from "react";
-import { api, ApiError, img, request } from "../api";
+import { useEffect, useState, type FormEvent } from "react";
+import { api, ApiError, request } from "../api";
 import { PasswordForm } from "./Settings";
 import { LangFlags, useI18n } from "../i18n";
+import { LOGO_BLACK } from "../brand";
 
 /** startupError is a text key (e.g. "app.serverDown"). */
 export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => void; startupError: string | null }) {
@@ -10,6 +11,7 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(startupError);
+  useEffect(() => setError(startupError), [startupError]);      // server back: the message goes away by itself
   const [errVars, setErrVars] = useState<Record<string, string | number>>({});
   const [initial, setInitial] = useState<string | null>(null);   // user name: password = user name -> set a new one
 
@@ -42,7 +44,7 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
       <form className="login-card" onSubmit={submit}>
         <LangFlags className="login-flags" />
         <div className="login-brand">
-          <img className="login-logo" src={img("tricolour_black.png")} alt="TrippleT" />
+          <img className="login-logo" src={LOGO_BLACK} alt="TrippleT" />
           <div>
             <div className="login-brand-title">TrippleT</div>
             <div className="login-brand-sub">HEBERLEIN</div>
@@ -69,7 +71,8 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
             autoComplete="current-password"
           />
         </label>
-        {error && <div className="login-error">{t(error, errVars)}</div>}
+        {error === "app.serverDown" ? <div className="login-down">⚠ {t("app.serverDown")}<br /><span>{t("app.serverRetry")}</span></div>
+          : error && <div className="login-error">{t(error, errVars)}</div>}
         <button className="btn-green" type="submit" disabled={busy || !username.trim() || !password}>
           {busy ? t("login.busy") : t("login.submit")}
         </button>

@@ -14,6 +14,7 @@ const en = {
   // general
   "app.loading": "Loading…",
   "app.serverDown": "The TrippleT server is not reachable. Is the backend running?",
+  "app.serverRetry": "The page tries again by itself every few seconds.",
   "app.language": "Language",
 
   // login
@@ -2288,6 +2289,7 @@ const de: Texts = {
   "set.avatarErr.store_failed": "Das Bild konnte nicht gespeichert werden.",
   "app.loading": "Wird geladen…",
   "app.serverDown": "Der TrippleT-Server ist nicht erreichbar. Läuft das Backend?",
+  "app.serverRetry": "Die Seite versucht es alle paar Sekunden von selbst erneut.",
   "app.language": "Sprache",
 
   "login.title": "Anmelden",
@@ -4550,6 +4552,7 @@ const es: Texts = {
   "set.avatarErr.store_failed": "No se pudo guardar la imagen.",
   "app.loading": "Cargando…",
   "app.serverDown": "No se puede acceder al servidor de TrippleT. ¿Está funcionando el backend?",
+  "app.serverRetry": "La página lo vuelve a intentar sola cada pocos segundos.",
   "app.language": "Idioma",
 
   "login.title": "Iniciar sesión",
@@ -6813,6 +6816,7 @@ const zh: Texts = {
   "set.avatarErr.store_failed": "无法保存图片。",
   "app.loading": "加载中…",
   "app.serverDown": "无法连接 TrippleT 服务器。后端是否在运行？",
+  "app.serverRetry": "页面每隔几秒会自动重试。",
   "app.language": "语言",
 
   "login.title": "登录",
