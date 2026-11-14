@@ -26,6 +26,9 @@ const en = {
   "login.err.insecure_password": "The password is still the user name – please set a new one.",
   "login.err.inactive": "This user is inactive. Please contact an administrator.",
   "login.err.invalid": "Wrong username or password.",
+  "login.err.locked": "Too many wrong passwords for this user. Please try again in {n} min.",
+  "login.err.invalidLeft": "Wrong username or password – {left} attempt(s) left before the login is locked for 15 minutes.",
+  "pw.err.locked": "Too many wrong passwords for this user. Please try again later (max. 15 min).",
   "login.err.db": "TrippleT could not connect to the database.",
 
   // sidebar / account
@@ -2254,6 +2257,9 @@ const de: Texts = {
   "login.err.insecure_password": "Das Passwort ist noch der Benutzername – bitte ein neues setzen.",
   "login.err.inactive": "Dieser Benutzer ist inaktiv. Bitte wende dich an einen Administrator.",
   "login.err.invalid": "Benutzername oder Passwort falsch.",
+  "login.err.locked": "Zu viele falsche Passwörter für diesen Benutzer. Bitte in {n} Min. erneut versuchen.",
+  "login.err.invalidLeft": "Benutzername oder Passwort falsch – noch {left} Versuch(e), dann ist die Anmeldung 15 Minuten gesperrt.",
+  "pw.err.locked": "Zu viele falsche Passwörter für diesen Benutzer. Bitte später erneut versuchen (max. 15 Min.).",
   "login.err.db": "TrippleT konnte keine Verbindung zur Datenbank herstellen.",
 
   "sb.logout": "Abmelden",
@@ -4471,6 +4477,9 @@ const es: Texts = {
   "login.err.insecure_password": "La contraseña sigue siendo el nombre de usuario – establece una nueva.",
   "login.err.inactive": "Este usuario está inactivo. Contacta con un administrador.",
   "login.err.invalid": "Usuario o contraseña incorrectos.",
+  "login.err.locked": "Demasiadas contraseñas incorrectas para este usuario. Inténtalo de nuevo en {n} min.",
+  "login.err.invalidLeft": "Usuario o contraseña incorrectos – quedan {left} intento(s) antes de bloquear el acceso 15 minutos.",
+  "pw.err.locked": "Demasiadas contraseñas incorrectas para este usuario. Inténtalo más tarde (máx. 15 min).",
   "login.err.db": "TrippleT no pudo conectarse a la base de datos.",
 
   "sb.logout": "Cerrar sesión",
@@ -6689,6 +6698,9 @@ const zh: Texts = {
   "login.err.insecure_password": "密码仍是用户名 – 请设置新密码。",
   "login.err.inactive": "该用户已停用。请联系管理员。",
   "login.err.invalid": "用户名或密码错误。",
+  "login.err.locked": "该用户密码错误次数过多。请在 {n} 分钟后重试。",
+  "login.err.invalidLeft": "用户名或密码错误 – 还剩 {left} 次尝试，之后登录将被锁定 15 分钟。",
+  "pw.err.locked": "该用户密码错误次数过多。请稍后重试（最多 15 分钟）。",
   "login.err.db": "TrippleT 无法连接到数据库。",
 
   "sb.logout": "退出登录",

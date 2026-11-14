@@ -48,10 +48,11 @@ _cache_lock = threading.Lock()
 
 
 class LoginError(Exception):
-    def __init__(self, code: str, message: str):
+    def __init__(self, code: str, message: str, **extra: Any):
         super().__init__(message)
         self.code = code
         self.message = message
+        self.extra = extra          # e.g. minutes (locked), left (attempts before the lock)
 
 
 def attempt_login(username: str, password: str) -> Dict[str, Any]:
@@ -63,6 +64,11 @@ def attempt_login(username: str, password: str) -> Dict[str, Any]:
         # the page then offers the change (desktop ScreenChangePw): /api/auth/initial-password
         raise LoginError("insecure_password",
                          "The password must not be the same as the username. Please set a new password.")
+    # protection against password guessing - shared with the desktop login (db/login_guard.py)
+    from db import login_guard
+    locked, minutes = login_guard.lock_status(username)
+    if locked:
+        raise LoginError("locked", f"Too many wrong passwords. Try again in {minutes} minutes.", minutes=minutes)
     if not check_credentials(username, password):
         try:
             if verify_user_password(username, password) and not is_user_active(username):
@@ -71,7 +77,11 @@ def attempt_login(username: str, password: str) -> Dict[str, Any]:
             raise
         except Exception:
             pass
-        raise LoginError("invalid", "Wrong username or password.")
+        left = login_guard.record_failure(username, "web")
+        if left == 0:
+            raise LoginError("locked", "Too many wrong passwords.", minutes=login_guard.WINDOW_MINUTES)
+        raise LoginError("invalid", "Wrong username or password.", left=left)
+    login_guard.record_success(username, "web")
     profile = load_profile(username)
     if profile.get("id") is None:
         raise LoginError("invalid", "Wrong username or password.")

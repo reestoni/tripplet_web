@@ -10,6 +10,7 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(startupError);
+  const [errVars, setErrVars] = useState<Record<string, string | number>>({});
   const [initial, setInitial] = useState<string | null>(null);   // user name: password = user name -> set a new one
 
   const submit = async (e: FormEvent) => {
@@ -22,7 +23,14 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
       onLoggedIn();
     } catch (err) {
       if (err instanceof ApiError && err.code === "insecure_password") { setInitial(username.trim()); setError(null); }
-      else setError(err instanceof ApiError && err.code ? `login.err.${err.code}` : "app.serverDown");
+      else {
+        const d = (err instanceof ApiError && err.data) || {};
+        const left = typeof d.left === "number" ? d.left : null;
+        setErrVars({ n: typeof d.minutes === "number" ? d.minutes : 15, left: left ?? 0 });
+        setError(err instanceof ApiError && err.code
+          ? (err.code === "invalid" && left !== null && left <= 2 ? "login.err.invalidLeft" : `login.err.${err.code}`)
+          : "app.serverDown");
+      }
       setPassword("");
     } finally {
       setBusy(false);
@@ -61,7 +69,7 @@ export default function Login({ onLoggedIn, startupError }: { onLoggedIn: () => 
             autoComplete="current-password"
           />
         </label>
-        {error && <div className="login-error">{t(error)}</div>}
+        {error && <div className="login-error">{t(error, errVars)}</div>}
         <button className="btn-green" type="submit" disabled={busy || !username.trim() || !password}>
           {busy ? t("login.busy") : t("login.submit")}
         </button>

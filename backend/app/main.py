@@ -81,7 +81,8 @@ def login(body: LoginBody, response: Response) -> Dict[str, Any]:
     try:
         profile = auth.attempt_login(body.username, body.password)
     except auth.LoginError as e:
-        return JSONResponse(status_code=401, content={"code": e.code, "detail": e.message})
+        return JSONResponse(status_code=429 if e.code == "locked" else 401,
+                            content={"code": e.code, "detail": e.message, **e.extra})
     except Exception:
         return JSONResponse(status_code=503, content={"code": "db",
                                                       "detail": "TrippleT could not connect to the database."})

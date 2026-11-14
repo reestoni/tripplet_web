@@ -314,6 +314,8 @@ selbst, wenn die neueste Version ungesehen ist), `app/whats_new_api.py` auf `ui/
 (EN/DE/ES, Flaggen wie die Hilfe, Chinesisch -> Englisch). "Gesehen" = `DisplaySettings.whats_new_seen` wie im Desktop. Skizzen über
 `/api/whats-new/sketch/<name>`. Kein PDF-Knopf (Browser-Druck).
 
+**Login-Sperre** (2026-11-14, beide Apps): `db/login_guard.py` - nach 5 falschen Passwörtern für einen Benutzernamen innerhalb 15 Min. ist er 15 Min. gesperrt (ab dem letzten Fehlversuch); Erfolg setzt zurück. Gezählt in `tblUsageLog` (EventType `security`, `login_failed`/`login_ok`, Username klein) mit DB-Zeit, Desktop und Web zusammen; auch das alte Passwort beim Passwortwechsel (`user_account.PW_LOCKED`). Fehler beim Log = niemand gesperrt. Web: 429 `locked` {minutes}, 401 `invalid` {left}.
+
 **Profilbild** (2026-11-14, beide Apps): freiwillig, Datei statt DB-Spalte - `db/user_avatar.py` (Desktop-Repo; Ordner
 `file_roots` `USER_AVATARS`, dev `C:\ttt\UserAvatars`, prod `H:\Technik\TrippleT\UserAvatars`, `<UserID>.png`, jeder Upload
 wird quadratisch auf 256 px PNG gebracht). Web: Abschnitt "Profilbild" in `/settings` (sofort gespeichert, `POST/DELETE
