@@ -38,5 +38,13 @@ from .user_context import install_user_proxy  # noqa: E402
 install_user_proxy(app_meta)
 
 IMAGES_DIR = CORE_PATH / "assets" / "images"
+
+# Server settings (deploy/web.env on the VM). HTTPS = the reverse proxy in front speaks HTTPS ->
+# the session cookie is sent over HTTPS only.
+HTTPS = os.environ.get("TRIPPLET_WEB_HTTPS", "").strip().lower() in ("1", "true", "yes")
+INSTANCE = os.environ.get("TRIPPLET_WEB_INSTANCE", "").strip()   # e.g. "test" - shown in the sidebar
+# release built by deploy/build_release.ps1 (both commits); empty when running from the repos
+_REL = Path(__file__).resolve().parents[2] / "RELEASE.txt"
+RELEASE = _REL.read_text(encoding="utf-8-sig").strip() if _REL.is_file() else ""
 APP_VERSION = app_meta.APP_VERSION
 DB_NAME = db.current_db_name()

@@ -27,12 +27,14 @@ PROFILE_TTL = 60                     # seconds
 
 
 def _secret_key() -> str:
-    """Per installation, outside the repo (%LOCALAPPDATA%\\TrippleT\\web_secret.key)."""
+    """Per installation, outside the repo (%LOCALAPPDATA%\\TrippleT\\web_secret.key or env
+    TRIPPLET_WEB_SECRET_PATH on a server)."""
     env = os.environ.get("TRIPPLET_WEB_SECRET")
     if env:
         return env
+    env = os.environ.get("TRIPPLET_WEB_SECRET_PATH")
     base = Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "TrippleT"
-    path = base / "web_secret.key"
+    path = Path(env) if env else base / "web_secret.key"
     if not path.is_file():
         base.mkdir(parents=True, exist_ok=True)
         path.write_text(secrets.token_urlsafe(48), encoding="utf-8")

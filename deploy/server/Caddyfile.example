@@ -1,0 +1,27 @@
+# TrippleT Web - HTTPS in front of the two instances (Caddy, https://caddyserver.com; IIS with URL Rewrite/ARR
+# works the same way). Certificate from the company CA (ask IT), names as registered in the internal DNS.
+# Run Caddy as a service too, e.g.:  nssm install Caddy C:\TrippleTWeb\tools\caddy.exe run --config C:\TrippleTWeb\Caddyfile
+
+tripplet.heberlein.local {
+	tls C:\TrippleTWeb\certs\tripplet.crt C:\TrippleTWeb\certs\tripplet.key
+	request_body {
+		max_size 1100MB          # TDMS Inspector accepts files up to 1 GB
+	}
+	reverse_proxy 127.0.0.1:8000 {
+		transport http {
+			read_timeout 15m     # long YarnScope analyses / exports
+		}
+	}
+}
+
+tripplet-test.heberlein.local {
+	tls C:\TrippleTWeb\certs\tripplet-test.crt C:\TrippleTWeb\certs\tripplet-test.key
+	request_body {
+		max_size 1100MB
+	}
+	reverse_proxy 127.0.0.1:8100 {
+		transport http {
+			read_timeout 15m
+		}
+	}
+}

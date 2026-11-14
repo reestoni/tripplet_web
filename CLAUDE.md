@@ -78,6 +78,12 @@ Umgebungsvariable + Lesen/Schreiben fürs Dienstkonto). Freischalten von dev/pro
 - Läuft `start_dev.ps1` beim Nutzer, belegt es Port 8000/5173 – für eigene Tests einen anderen Port nehmen (z. B. 8001), nicht seinen Server beenden. Der `--reload` lädt Backend-Änderungen nicht immer zuverlässig neu → nach Backend-Änderungen dem Nutzer Neustart empfehlen.
 - Frontend prüfen: im Ordner `frontend/` `npm run build` (Typecheck + Build).
 - API-Doku: http://127.0.0.1:8000/api/docs
+- **Ausliefern auf die VM:** `DEPLOY.md` + `deploy/` (`build_release.ps1` auf dem PC baut ein ZIP aus dem committeten
+  Stand beider Repos + `frontend/dist`; auf der VM `deploy/server/install.ps1` einmalig, `update.ps1` pro Release,
+  Instanzen `test` (dev-DB, :8100) und `prod` (:8000) als NSSM-Dienste hinter HTTPS, ein Worker). Server-Einstellungen
+  per Umgebungsvariable (`web.env`): `TRIPPLET_WEB_HTTPS` (Secure-Cookie), `TRIPPLET_WEB_INSTANCE` (Badge),
+  `TRIPPLET_WEB_SECRET_PATH`, `TRIPPLET_DB_POOL_SIZE`, `TRIPPLET_MASTER_KEY_PATH`, Ablageorte `TRIPPLET_DIR_*`
+  (`db/file_roots.py` im Desktop-Repo - neue Ablageorte immer dort eintragen, nie `H:` fest in Code schreiben).
 
 ## Reihenfolge (aus tblUsageLog prod, 90 Tage, Stand 2026-11-13)
 

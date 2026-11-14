@@ -97,10 +97,10 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
           <img className="sb-logo" src={img("tricolour.png")} alt="TrippleT" />
           <div>
             <div className="sb-brand-title">TrippleT</div>
-            <div className="sb-brand-sub">HEBERLEIN · WEB {me.version}</div>
+            <div className="sb-brand-sub" title={me.release || undefined}>HEBERLEIN · WEB {me.version}</div>
           </div>
         </button>
-        {me.mode !== "prod" && <div className="sb-env">{me.mode.toUpperCase()} · {me.db}</div>}
+        {(me.mode !== "prod" || me.instance) && <div className="sb-env">{me.instance ? `${me.instance.toUpperCase()} · ` : ""}{me.mode.toUpperCase()} · {me.db}</div>}
         <nav className="sb-scroll">
           {nav?.pinned.map((it) => <Item key={it.key} it={it} />)}
           {nav && (<>

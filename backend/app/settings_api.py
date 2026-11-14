@@ -135,5 +135,5 @@ def initial_password(body: InitialBody, response: Response):
     finally:
         user_context.reset(token)
     response.set_cookie(auth.COOKIE_NAME, auth.make_cookie(profile["username"]), max_age=auth.SESSION_MAX_AGE,
-                        httponly=True, samesite="lax", path="/")
+                        httponly=True, samesite="lax", path="/", secure=core.HTTPS)
     return {"user": profile}

@@ -71,7 +71,8 @@ class LoginBody(BaseModel):
 
 @app.get("/api/health")
 def health() -> Dict[str, Any]:
-    return {"ok": True, "mode": core.MODE, "db": core.DB_NAME, "version": core.APP_VERSION}
+    return {"ok": True, "mode": core.MODE, "db": core.DB_NAME, "version": core.APP_VERSION,
+            "instance": core.INSTANCE, "release": core.RELEASE}
 
 
 @app.post("/api/auth/login")
@@ -89,7 +90,7 @@ def login(body: LoginBody, response: Response) -> Dict[str, Any]:
     finally:
         user_context.reset(token)
     response.set_cookie(auth.COOKIE_NAME, auth.make_cookie(profile["username"]), max_age=auth.SESSION_MAX_AGE,
-                        httponly=True, samesite="lax", path="/")
+                        httponly=True, samesite="lax", path="/", secure=core.HTTPS)
     return {"user": profile}
 
 
@@ -106,6 +107,7 @@ def me(user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
     from .start_page import start_route
     from .settings_api import display_prefs
     return {"user": user, "mode": core.MODE, "db": core.DB_NAME, "version": core.APP_VERSION,
+            "instance": core.INSTANCE, "release": core.RELEASE,
             "start_route": start_route(user), "display": display_prefs(user.get("id"))}
 
 
