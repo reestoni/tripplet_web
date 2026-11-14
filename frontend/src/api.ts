@@ -169,7 +169,7 @@ export const api = {
     ),
   backlog: () =>
     request<{ boxes: (Status & { cards: BacklogCard[] })[]; archived: ArchivedRow[];
-      welcome: { message: string; first_name: string } }>("GET", "/api/backlog"),
+      welcome: { message: string; first_name: string }; stamp?: string }>("GET", "/api/backlog"),
   moveCard: (series_id: number, to_status: number, machine_id?: number) =>
     request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
   series: (id: number) => request<SeriesData>("GET", `/api/series/${id}`),

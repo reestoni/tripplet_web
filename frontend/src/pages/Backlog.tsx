@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { api, ApiError, type ArchivedRow, type BacklogCard, type Status } from "../api";
+import { api, ApiError, request, type ArchivedRow, type BacklogCard, type Status } from "../api";
 import { SeriesIcons } from "../components/Icons";
 import { useSeriesAdmin } from "../components/SeriesAdmin";
 import { useI18n } from "../i18n";
@@ -138,10 +138,12 @@ export default function Backlog() {
   const [expanded, setExpanded] = useState<number | null>(null);
   const [welcome, setWelcome] = useState<{ message: string; first_name: string } | null>(null);
 
+  const stamp = useRef<string | null>(null);
   const load = useCallback(() => {
     return api
       .backlog()
       .then((d) => {
+        stamp.current = d.stamp ?? null;
         setBoxes(d.boxes);
         setArchived(d.archived);
         setWelcome(d.welcome);
@@ -152,6 +154,22 @@ export default function Backlog() {
 
   useEffect(() => {
     load();
+  }, [load]);
+
+  // Live update: every 30 s (and when the tab comes back) ask for the fingerprint; reload only if someone else
+  // changed something - not while dragging or a dialog of this page is open (desktop Backlog does the same).
+  const quiet = useRef(true);
+  quiet.current = !drag && !ask && !confirmMany && !busy;
+  useEffect(() => {
+    const check = () => {
+      if (document.visibilityState !== "visible" || !quiet.current || stamp.current === null) return;
+      request<{ stamp: string }>("GET", "/api/backlog/stamp").then((r) => {
+        if (r.stamp && r.stamp !== stamp.current && quiet.current) void load();
+      }).catch(() => undefined);
+    };
+    const id = window.setInterval(check, 30000);
+    document.addEventListener("visibilitychange", check);
+    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", check); };
   }, [load]);
 
   useEffect(() => {

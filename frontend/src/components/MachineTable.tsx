@@ -276,7 +276,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                         hoverImg={cell.img != null ? `/api/housing-image/${cell.img}` : undefined}
                         className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")
                           + (hl && row.key && hl.keys.includes(row.key) && hl.cols.includes(c.c) ? " schema-hl-cell" : "")}
-                        title={[cell.tip, notesTip(cell.notes)].filter(Boolean).join("\n") || undefined}
+                        hoverTip={cell.tip || undefined}
+                        title={notesTip(cell.notes) || undefined}
                         onContextMenu={menus ? (e, a) => menus.cellMenu(e, a, cell, `${c.trial_label}${c.ply ? " · " + c.ply : ""} · ${rowTitle(row.title)}`,
                           [...(ed?.canWrite && !row.readonly ? [{ label: t("cm.fillRow"), onClick: () => menus.openFill(source, row.r, rowTitle(row.title),
                             row.options ?? null, cell.v) }] : []), ...kbItem(t, cell.kb ?? row.kb), { sep: true as const }]) : undefined} />

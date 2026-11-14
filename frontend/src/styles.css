@@ -625,8 +625,13 @@ table.pivot td.schema-hl-cell { background-color: #ffe9a3; outline: 2px solid #F
   border-radius: 8px; padding: 0 4px; line-height: 14px; min-width: 14px; text-align: center; }
 .tb-sep { width: 1px; height: 22px; background: #d5ddd7; margin: 0 4px; }
 .se-sid { cursor: copy; }
-.hover-img { position: fixed; z-index: 950; max-width: 320px; max-height: 320px; background: #fff; border: 1px solid #cdd5ce;
-  border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); pointer-events: none; }
+.hover-pop { position: fixed; z-index: 950; pointer-events: none; display: flex; flex-direction: column; gap: 4px;
+  animation: hover-pop-in 0s 0.25s both; }
+@keyframes hover-pop-in { from { visibility: hidden; } to { visibility: visible; } }
+.hover-img { max-width: 320px; max-height: 320px; background: #fff; border: 1px solid #cdd5ce;
+  border-radius: 4px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+.hover-tip { margin: 0; max-width: 420px; white-space: pre-wrap; font: 12px/1.45 Consolas, "Cascadia Mono", monospace;
+  background: #fffef6; color: #222; border: 1px solid #cdd5ce; border-radius: 4px; padding: 6px 9px; box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
 .se-tab .dirty-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #e0a800; margin-left: 6px; vertical-align: middle; }
 .tb-ref { border: 1px solid #E8C15A; background: #FFF4D6; color: #5a4500; border-radius: 4px; padding: 4px 10px; font: inherit;
   font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }

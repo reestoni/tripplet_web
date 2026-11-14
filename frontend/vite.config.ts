@@ -10,6 +10,8 @@ const CORE_IMAGES = path.join(process.env.TRIPPLET_CORE_PATH || "C:/python/tripp
 export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@core-images": CORE_IMAGES } },
+  // main bundle ~500 kB (gzip ~145 kB) is intended: the most used pages; the rest loads per page (lazyPage.tsx)
+  build: { chunkSizeWarningLimit: 700 },
   server: {
     fs: { allow: [".", CORE_IMAGES] },
     host: "127.0.0.1",

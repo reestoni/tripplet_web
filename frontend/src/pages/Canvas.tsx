@@ -4,6 +4,7 @@ import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
 import { Modal } from "../components/SeriesTools";
 import { useContextMenu } from "../components/ContextMenu";
+import { boardLink, copyText } from "../links";
 import { COLORS, drawAnno, MARKERS, SIZES, TOOLS, type Anno } from "./ImageCompare";
 
 /* Canvas (desktop ui/screen_canvas.py): a free board for several images / documents (series images and PDFs or
@@ -69,6 +70,8 @@ export default function Canvas() {
   const [locals, setLocals] = useState<{ token: string; name: string; info: Info }[]>([]);
   const [q, setQ] = useState(""), [typeFilter, setTypeFilter] = useState<"all" | "img" | "pdf">("all");
   const [msg, setMsg] = useState<string | null>(null);
+  const [linkMsg, setLinkMsg] = useState<string | null>(null);
+  useEffect(() => { if (!linkMsg) return; const h = window.setTimeout(() => setLinkMsg(null), 2500); return () => window.clearTimeout(h); }, [linkMsg]);
   const [textAt, setTextAt] = useState<[number, number] | null>(null), [textVal, setTextVal] = useState("");
   // board (database)
   const [board, setBoard] = useState<Board>({ ...NEW_BOARD, series_id: ctxSeries });
@@ -516,6 +519,8 @@ export default function Canvas() {
           <button className="btn-plain" onClick={newBoard}>＋ {t("cv.newBoard")}</button>
           {board.can_edit && <button className="btn-green" disabled={saving === "saving" || (!!board.id && !dirty)} onClick={saveNow} title="Ctrl+S">{t("cv.save")}</button>}
           {board.id && board.can_edit && <button className="btn-plain" onClick={() => { setTitleVal(`${board.title} (2)`); setTieSeries(!!board.series_id); setAskTitle("copy"); }}>{t("cv.saveCopy")}</button>}
+          {board.id && <button className="btn-plain" title={t("lk.boardTip")}
+            onClick={async () => setLinkMsg(t(await copyText(boardLink(board.id!)) ? "lk.copied" : "lk.failed"))}>🔗{linkMsg ? ` ${linkMsg}` : ""}</button>}
           {board.can_delete && <button className="btn-plain mj-danger" onClick={deleteBoard}>🗑</button>}
         </>)}
       </div>

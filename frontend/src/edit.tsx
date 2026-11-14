@@ -384,11 +384,12 @@ const addrOf = (k: string): CellAddr => {
 /** One table cell, Excel-like: click selects it, typing starts editing right away (the first key
     replaces the value), Enter/F2/double-click edits the current value, Enter/Tab/arrows take over
     and move on, Escape cancels. Dropdown rows open their list on any key. */
-export function EditCell({ addr, text, raw, editable, options, className, title, onContextMenu, hoverImg }: {
+export function EditCell({ addr, text, raw, editable, options, className, title, onContextMenu, hoverImg, hoverTip }: {
   addr: CellAddr; text: string; raw?: string | null; editable: boolean;
   options?: [number | string, string][] | null; className?: string; title?: string;
   onContextMenu?: (e: RME, addr: CellAddr) => void;
   hoverImg?: string;            // picture shown on hover (Housing row: housing picture like the desktop)
+  hoverTip?: string;            // quick tooltip box (jet details, spool label - desktop tooltips, faster than title)
 }) {
   const ed = useEdit();
   const [editing, setEditing] = useState(false);
@@ -470,9 +471,10 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
   return (
     <td ref={tdRef} className={cls} title={title} tabIndex={0} data-k={cellKey(addr)}
       onMouseDown={(e) => { if (e.button === 0 || e.button === 2) ed?.select(e.currentTarget, addr, e); }}
-      onMouseEnter={hoverImg ? (e) => window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: { src: hoverImg, x: e.clientX, y: e.clientY } })) : undefined}
-      onMouseLeave={hoverImg ? () => window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })) : undefined}
-      onDoubleClick={() => start()}
+      onMouseEnter={hoverImg || hoverTip ? (e) => window.dispatchEvent(new CustomEvent("tripplet:hover-img",
+        { detail: { src: hoverImg, text: hoverTip, x: e.clientX, y: e.clientY } })) : undefined}
+      onMouseLeave={hoverImg || hoverTip ? () => window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })) : undefined}
+      onDoubleClick={() => { if (hoverImg || hoverTip) window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })); start(); }}
       onContextMenu={onContextMenu ? (e) => onContextMenu(e, addr) : undefined}
       onKeyDown={(e) => {
         const k = e.key;
@@ -494,9 +496,9 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
 }
 
 
-/** Floating picture next to the mouse (listens to "tripplet:hover-img" events of EditCell). */
+/** Floating picture and/or tooltip box next to the mouse (listens to "tripplet:hover-img" events of EditCell). */
 export function HoverImage() {
-  const [img, setImg] = useState<{ src: string; x: number; y: number } | null>(null);
+  const [img, setImg] = useState<{ src?: string; text?: string; x: number; y: number } | null>(null);
   useEffect(() => {
     const h = (e: Event) => setImg((e as CustomEvent).detail);
     window.addEventListener("tripplet:hover-img", h);
@@ -504,6 +506,11 @@ export function HoverImage() {
   }, []);
   if (!img) return null;
   const left = Math.min(img.x + 16, window.innerWidth - 340);
-  const top = Math.min(img.y + 16, window.innerHeight - 340);
-  return <img className="hover-img" src={img.src} alt="" style={{ left, top }} />;
+  const top = Math.min(img.y + 16, window.innerHeight - (img.src ? 340 : 180));
+  return (
+    <div className="hover-pop" style={{ left, top }}>
+      {img.text && <pre className="hover-tip">{img.text}</pre>}
+      {img.src && <img className="hover-img" src={img.src} alt="" />}
+    </div>
+  );
 }

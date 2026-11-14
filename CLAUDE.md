@@ -374,8 +374,17 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
   2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, ✅ Settings, dann
-  nacheinander die Werkzeuge (✅ alle, zuletzt Process Playground und Requirement Hub, 2026-11-13). **Kleinkram für später** (nicht vergessen): "?"-Knopf auf weiteren
-  Seiten, sobald sie ins Web kommen (Dashboards, Smart Chart, Process Playground), weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
+  nacheinander die Werkzeuge (✅ alle, zuletzt Process Playground und Requirement Hub, 2026-11-13). **Kleinkram für später** (nicht vergessen): weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
+
+**Links, Live-Backlog, Tooltips** (2026-11-14, beide Apps): Linkformat `db/web_links.py` (Desktop) = `frontend/src/links.ts`
+(`/series/<id>?tab=<key>&trial=<id>`, `/series/<id>/report?report=<id>`, `/tools/canvas?board=<id>`; Reiter-Schlüssel machine/rd/notes +
+`LAB_TABS`). Web: "🔗 Link" in Show Experiment, "Link zu V… kopieren" im Versuchsmenü, "Link kopieren" im Rechtsklick von Backlog/All
+Experiments, Report, Canvas-Brett; Show Experiment liest `?tab=`/`?trial=` (Spalte leuchtet, `flashTrial`). Desktop: "🔗 Web link",
+"Copy web link to V…", Rechtsklick Backlog/All Experiments, Report-Dropdown, Brett; braucht die Web-Adresse: `TRIPPLET_WEB_URL` oder
+`web_links.DEFAULT_BASE` (dev/prod eintragen, sobald die VM steht - sonst ist der Eintrag grau). Backlog aktualisiert sich selbst:
+`series_overview.backlog_fingerprint()` (~3 ms), Web pollt `GET /api/backlog/stamp` alle 30 s + beim Zurückkommen in den Tab,
+Desktop `BacklogScreen._live_check` (QTimer 30 s); neu geladen wird nur bei Änderung, nicht beim Ziehen/offenem Dialog/Menü.
+Tooltips Düse/Spule in Machine Data/R&D jetzt als schneller Kasten (`EditCell hoverTip` -> `HoverImage`, 0,25 s) statt Browser-`title`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen
   Qt-frei teilen, Server rechnet + schickt ausgedünnte Kurven, Plotly zeichnet, Garngraf im Browser neu aus

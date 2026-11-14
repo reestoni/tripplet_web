@@ -339,6 +339,7 @@ function YarnForm(props: { data: YarnData; mode: "new" | "edit"; row: Row | null
   const sp = data.special;
   const cols = data.form_columns;
   const editable = new Set(data.editable);
+  const cm = useContextMenu();
   const initial = useMemo(() => {
     const v: Record<string, string> = {};
     for (const c of cols) { const x = row?.[c]; v[c] = x === null || x === undefined ? "" : String(x); }
@@ -388,7 +389,13 @@ function YarnForm(props: { data: YarnData; mode: "new" | "edit"; row: Row | null
       input = (
         <span className="mj-fk">
           {c === sp.colour && <Square css={vals[c] ? data.colour_css[vals[c]] : null} />}
-          <select value={vals[c]} disabled={!editable.has(c)} onChange={(e) => {
+          <select value={vals[c]} disabled={!editable.has(c)}
+            title={data.kb?.[c] ? t("kb.rightClick") : undefined}
+            onContextMenu={(e) => {        // desktop kb_links.install_combo_menu (Material / Garntyp)
+              const url = data.kb?.[c]?.[vals[c]];
+              if (url) cm.open(e, [{ label: t("kb.learnMore"), onClick: () => window.open(url, "_blank") }]);
+            }}
+            onChange={(e) => {
             if (e.target.value === "__add__") { setAddColour(true); return; }
             setVals((v) => ({ ...v, [c]: e.target.value }));
           }}>
@@ -443,6 +450,7 @@ function YarnForm(props: { data: YarnData; mode: "new" | "edit"; row: Row | null
             setAddColour(false);
           }} />
         )}
+        {cm.menu}
       </div>
     </div>
   );

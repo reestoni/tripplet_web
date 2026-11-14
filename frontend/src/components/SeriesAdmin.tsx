@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api, request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { useContextMenu, type MenuItem } from "./ContextMenu";
+import { copyText, seriesLink } from "../links";
 import { DeleteSeriesDialog } from "./SeriesDialogs";
 
 /* Right-click menu of a series in Backlog and All Experiments, like the desktop:
@@ -89,6 +90,9 @@ export function useSeriesAdmin({ onChanged, onMessage }: {
       { label: t("sa.open"), onClick: () => navigate(`/series/${s.series_id}`) },
       { label: t("sa.openTab"), onClick: () => window.open(`/series/${s.series_id}`, "_blank") },
       { label: t("sa.openWindow"), onClick: () => window.open(`/series/${s.series_id}`, `series${s.series_id}`, "popup,width=1400,height=900") },
+      { label: t("lk.copyMenu"), onClick: async () => {
+        if (await copyText(seriesLink(s.series_id))) onMessage("ok", t("lk.copied")); else onMessage("err", t("lk.failed"));
+      } },
       { sep: true },
       { label: t("sa.prio"), disabled: !info.rights.prio, onClick: () => setDialog({ kind: "prio", s, info }) },
       { label: t("sa.status"), sub: info.statuses.map((x) => ({

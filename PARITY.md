@@ -30,7 +30,7 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 | 16. Superuser pages | 1 | 0 | 0 | 2 | 3 |
 | **Total** | 318 | 6 | 4 | 8 | 336 |
 
-Most important gaps (judgement, updated 2026-11-13): jet / spool / housing tooltips (all tools, Admin and Superuser pages are in the web since 2026-11-13). Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+Most important gaps (judgement, updated 2026-11-14): none blocking - jet / spool / housing tooltips are in (quick tooltip box since 2026-11-14), all tools, Admin and Superuser pages too. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -55,6 +55,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | NT icon "Has notes" | `_set_notes_cell` | **DONE** | |
 | RE icon click → saved Smart Chart report (Ctrl = new tab) | `_set_report_cell` / `_open_report_icon_for_series` | **DONE** | `ReportIcon` (`fe/components/SeriesLinks.tsx`), Ctrl = new tab |
 | Context menu: Open in New Tab / Open in New Window | `_on_table_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context menu: Copy (web) link | `_on_table_context_menu` "Copy web link" | **DONE** | both apps 2026-11-14 |
 | Context menu: Rename Trial Series… (level ≥ 2, prefix kept) | `_rename_trialseries_at_row`, `RenameTrialSeriesDialog` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context menu: Reassign Yarn… (superuser; per ply, add/delete ply, conflicts) | `_reassign_yarn_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context menu: Change Machine… (superuser) | `_reassign_machine_at_row` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
@@ -83,6 +84,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Drop target highlight / drag feedback | `_set_drop_highlight` / `_build_drag_pixmap` | **DONE** | CSS classes |
 | Multi-select cards (Ctrl/Shift+click) + move several, one confirmation, summary of failures | `_handle_dnd_move_many` | **DONE** | Ctrl/Shift+click selects in one column; dragging moves all, one confirmation, joker machine asked per card, summary of failures (same `/api/backlog/move` per card) |
 | Context: Open in New Tab / New Window | `_open_context_menu` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
+| Context: Copy (web) link | `_open_context_menu` "Copy web link" | **DONE** | both apps 2026-11-14, format `db/web_links.py` = `fe/links.ts` |
+| Live update (reload when someone else changed the Backlog, every 30 s) | `_live_check` (QTimer) | **DONE** | both apps 2026-11-14, `series_overview.backlog_fingerprint`, `GET /api/backlog/stamp`; not while dragging / dialog open |
 | Context: Change priority… (0-999) | `_ctx_change_prio` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context: Change status… (role-filtered list) | `_ctx_change_status` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context: Rename trial series… | `_ctx_rename_trialseries` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
@@ -223,6 +226,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Jet tooltip (jet details on JetID rows) | `jets_tooltip_map` | **DONE** | `machine_data` sends `tip` from `jets_lookup.tooltip_map` |
 | Spool row tooltips (single plies) | `md.spool_tooltips` | **DONE** | via `md.cell_tooltips` (`db/machine_data`) |
 | Housing row: picture tooltip | `_HousingImageTooltipFilter` / `_RDHousingTooltipFilter` | **DONE** | `img` on housing cells → `/api/housing-image/{id}` |
+| Copy link to series + open tab / to a trial column (header button, trial right-click); link opens tab and flashes the trial | `btn_web_link`, `_copy_web_link`, `_web_tab_key` | **DONE** | both apps 2026-11-14; desktop needs the web address (`TRIPPLET_WEB_URL`, `db/web_links.DEFAULT_BASE`); also saved reports (desktop: right-click on the report drop-down) and Canvas boards (🔗) |
 | Live OF speed tooltip | `machine_tab` ("live OF speed tooltip") | **PARTIAL** | R&D OF row tooltip from `rd_tooltip` (computed on load, not live while editing) |
 | Retest flag tooltip on header | `_apply_lab_retest_flags` | **DONE** | |
 | Single-ply-trial merge cells locked with tooltip | `machine_tab` | **DONE** | non-editable cells (no tooltip text) |
@@ -379,7 +383,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | UsedInTrial ▸ → series → trials (jet, OF / Core-Effect OF, speed) | `_expand_yarn_row`, `_fetch_yarn_usage` | **DONE** | `yarn_admin.yarn_usage()` |
 | Columns… dialog + "Save layout" | `ColumnOrderDialog` | **DONE** | key `manage_yarn` like the desktop |
 | Overwriting GlobalID in the table | (desktop allows it) | **NOT IN WEB (on purpose)** | |
-| KB links in the right-click menu (Material / Garntyp) | `kb_links.install_table_menu/install_combo_menu` | **MISSING** | |
+| KB links in the right-click menu (Material / Garntyp) | `kb_links.install_table_menu/install_combo_menu` | **DONE** | table: `onCellMenu` (`admin_yarn._kb_values`); form drop-downs: right-click in `YarnForm` (2026-11-14) |
 | Context help | `_open_help` | **DONE** | `HelpButton screen="manage_yarn"` |
 
 ## 11. Yarn Stock (`ui/screen_yarn_stock.py` → `fe/pages/YarnStock.tsx`, `be/yarn_stock_api.py`, logic `db/yarn_stock.py`) – added 2026-11-13

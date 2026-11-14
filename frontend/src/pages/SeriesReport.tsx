@@ -4,6 +4,7 @@ import { request } from "../api";
 import { useI18n } from "../i18n";
 import { RequestIcon } from "../components/RequestPopup";
 import { HelpButton } from "../components/Help";
+import { copyText, reportLink } from "../links";
 
 /** The desktop's series Report page, unchanged, in an iframe (served by the backend at /report/series/:id). */
 export default function SeriesReport() {
@@ -12,6 +13,8 @@ export default function SeriesReport() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const rid = params.get("report");
+  const [copied, setCopied] = useState<string | null>(null);
+  useEffect(() => { if (!copied) return; const h = window.setTimeout(() => setCopied(null), 2500); return () => window.clearTimeout(h); }, [copied]);
   const src = `/report/series/${Number(id)}` + (rid ? `?report_id=${encodeURIComponent(rid)}` : "");
   const [erId, setErId] = useState<string | number | null>(null);
   useEffect(() => {
@@ -26,6 +29,9 @@ export default function SeriesReport() {
         <span className="muted">{t("rep.hint")}</span>
         <HelpButton screen="report" />
         <span style={{ flex: 1 }} />
+        {rid && <button className="btn-plain" title={t("lk.reportTip")}
+          onClick={async () => setCopied(await copyText(reportLink(Number(id), Number(rid))) ? t("lk.copied") : t("lk.failed"))}>
+          🔗 {copied ?? t("lk.link")}</button>}
         {/* ER icon like the desktop ReportScreen header button (Qt button, not part of the HTML page) */}
         {erId != null && <RequestIcon id={erId} big />}
       </div>

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError, kbItem, notesTip, request, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
 import { confirmLeave, EditCell, EditProvider, useEdit } from "../edit";
@@ -14,6 +14,7 @@ import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
 import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
+import { copyText, flashTrial, seriesLink } from "../links";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -29,6 +30,9 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const { t } = useI18n();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [params] = useSearchParams();
+  const linkTab = params.get("tab");              // link from "Copy link" (links.ts / desktop db/web_links.py)
+  const linkTrial = Number(params.get("trial")) || null;
   const [data, setData] = useState<SeriesData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<string | null>(null);
@@ -44,6 +48,8 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   }, [toast]);
   const lastId = useRef<string | undefined>(undefined);
   const lastRecent = useRef<number | null>(null);
+  const linked = useRef(false);                   // link parameters applied (only on the first load of the series)
+  if (lastId.current !== id) linked.current = false;
 
   useEffect(() => {
     let alive = true;
@@ -62,8 +68,12 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
         }
         const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []), ...(d.has_yarnscope_aty ? ["yarnscope_aty"] : []),
           ...d.tabs.map((x) => x.key)];
+        const first = !linked.current;
+        linked.current = true;
+        const fromLink = first && linkTab && keys.includes(linkTab) ? linkTab : null;
         const want = lastTab();
-        setTab((cur) => (cur && keys.includes(cur) ? cur : want && keys.includes(want) ? want : "machine"));
+        setTab((cur) => fromLink ?? (cur && keys.includes(cur) ? cur : want && keys.includes(want) ? want : "machine"));
+        if (first && linkTrial) flashTrial(linkTrial);
       })
       .catch((e) => alive && setError(e instanceof ApiError && e.status === 404 ? t("se.notFound") : e.message));
     api.rights(Number(id)).then((r) => alive && setRights(r)).catch(() => alive && setRights(null));
@@ -104,6 +114,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const preview = data.recycle_preview ?? null;
   const accessLevel = preview ? 1 : userLevel;
   const canWrite = accessLevel >= 2;
+  const copyLink = async (url: string) => setToast(t(await copyText(url) ? "lk.copied" : "lk.failed"));
   const reloadAll = (msg?: string) => { setTool(null); setReload((x) => x + 1); if (msg) setToast(msg); };
   // tools that add/change trials reload the page - unsaved values would be lost (desktop asks the same)
   const openTool = (x: Tool) => { if (confirmLeave()) setTool(x); };
@@ -152,6 +163,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
           {data.boards != null && (
             <button className="tb-btn" title={t("cv.seriesBoardsTip")} onClick={() => confirmLeave() && navigate(`/tools/canvas?series=${s.id}`)}>
               🖼 {t("cv.seriesBoards")}{data.boards ? ` (${data.boards})` : ""}</button>)}
+          <button className="tb-btn" title={t("lk.seriesTip")} onClick={() => copyLink(seriesLink(s.id, tab))}>🔗 {t("lk.link")}</button>
           <SavedReports seriesId={s.id} />
           <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
             <img src="/api/img/analytics.png" alt={t("rep.open")} />
@@ -164,7 +176,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       <EditProvider key={s.id} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
-        <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights}
+        <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights} copyLink={copyLink}
           onChanged={() => setReload((x) => x + 1)} onTool={openTool} tools={data.trials.length > 0 && (
             <>
               <button className="tb-icon" onClick={() => setTool({ kind: "labels" })} title={t("tl.labels")}>
@@ -258,8 +270,9 @@ type Tool =
   | { kind: "ref-mark"; trial: Trial } | { kind: "ref-rename"; trial: Trial; name: string }
   | { kind: "import"; which: "statimat" | "itemat" } | { kind: "compare"; ref: number | null };
 
-function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools }: {
+function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools, copyLink }: {
   data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;
+  copyLink: (url: string) => void;
   accessLevel: number; rights: SeriesRights | null; onChanged: () => void; onTool: (x: Tool) => void; tools?: ReactNode;
 }) {
   const { t } = useI18n();
@@ -267,7 +280,11 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
   const s = data.series;
   const current = data.tabs.find((x) => x.key === tab) ?? null;
   // trial header: Copy trials…, reference samples (desktop _on_trial_header_menu)
-  const trialExtras = (trial: Trial, selected: number[]): MenuItem[] => {
+  const trialExtras = (trial: Trial, selected: number[]): MenuItem[] => [
+    { label: t("lk.trial", { trial: trial.label }), onClick: () => copyLink(seriesLink(s.id,
+      tab && !["notes", "yarnscope", "yarnscope_aty"].includes(tab) ? tab : "machine", trial.id)) },
+    { sep: true }, ...trialItems(trial, selected)];
+  const trialItems = (trial: Trial, selected: number[]): MenuItem[] => {
     // "Open V<n> in Process Playground…" (desktop: DTY series, tool allowed, not for reference samples)
     const playground = (): MenuItem[] => (data.playground ? [{ label: t("tl.openPlayground", { trial: trial.label }),
       title: t("tl.openPlaygroundTip"), onClick: () => { if (confirmLeave()) navigate(`/tools/process-playground?trial=${trial.id}`); } }] : []);
@@ -393,7 +410,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
                       .filter(Boolean)
                       .join("\n");
                     return (
-                      <th key={tr0.id} className={(tr0.reference ? "ref" : "") + (menus.selTrials.includes(tr0.id) ? " th-sel" : "")
+                      <th key={tr0.id} data-trial={tr0.id} className={(tr0.reference ? "ref" : "") + (menus.selTrials.includes(tr0.id) ? " th-sel" : "")
                         + (trialNotes(tr0.id).length ? " has-note" : "")}
                         title={[tip, notesTip(trialNotes(tr0.id))].filter(Boolean).join("\n") || undefined}
                         onClick={(e) => menus.clickTrial(e, tr0.id)}

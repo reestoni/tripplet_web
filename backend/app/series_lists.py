@@ -122,8 +122,15 @@ def backlog(user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict[
     # welcome line above the board (desktop _refresh_welcome_message; tblUser.WelcomeMessage via db/user_account) -
     # the page joins it with the first name, the default greeting is translated there
     from db.user_account import load_welcome_message
-    return {"boxes": boxes, "archived": archived,
+    return {"boxes": boxes, "archived": archived, "stamp": so.backlog_fingerprint(),
             "welcome": {"message": load_welcome_message(user.get("id")), "first_name": user.get("first_name") or ""}}
+
+
+@router.get("/backlog/stamp")
+def backlog_stamp(_user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict[str, Any]:
+    """Fingerprint of the Backlog (db/series_overview.backlog_fingerprint) - the page polls it and reloads only
+    when someone changed something (desktop Backlog does the same)."""
+    return {"stamp": so.backlog_fingerprint()}
 
 
 # --------------------------------------------------------------------------- moving cards

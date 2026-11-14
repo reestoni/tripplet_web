@@ -127,3 +127,15 @@ def test_backlog_sends_the_welcome_line():
     c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(u["Username"]))
     w = c.get("/api/backlog").json()["welcome"]
     assert w["message"] == load_welcome_message(u["ID"]) and "first_name" in w
+
+
+def test_backlog_stamp_matches_list(client):
+    """Live update: /api/backlog/stamp = fingerprint in /api/backlog (db/series_overview.backlog_fingerprint)."""
+    stamp = client.get("/api/backlog").json()["stamp"]
+    assert stamp and client.get("/api/backlog/stamp").json()["stamp"] == stamp
+
+
+def test_text_answers_are_gzipped(client):
+    """app/speed.py: JSON compressed, Server-Timing header on every answer."""
+    r = client.get("/api/backlog", headers={"Accept-Encoding": "gzip"})
+    assert r.headers.get("content-encoding") == "gzip" and "app;dur=" in r.headers.get("server-timing", "")
