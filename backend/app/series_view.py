@@ -221,6 +221,8 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
         "has_yarnscope_aty": _has_yarnscope_aty(series_id),
         # right-click on a trial: "Open in Process Playground" (DTY machines, tool allowed; desktop same rule)
         "playground": _playground(_user, series_id),
+        # Canvas boards of this series (db/canvas_boards.py); None = no Canvas right or no table
+        "boards": _boards(_user, series_id),
         # opened from the recycle bin by this superuser: read only + banner (app/recycle_bin_api.py)
         "recycle_preview": _recycle_preview(series_id, _user),
         "tabs": tabs,
@@ -233,6 +235,14 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
 def _recycle_preview(series_id: int, user: Dict[str, Any]):
     from .recycle_bin_api import preview_for
     return preview_for(series_id, user)
+
+
+def _boards(user: Dict[str, Any], series_id: int):
+    from .deps import can_use
+    from db import canvas_boards as cb
+    if not can_use(user, "canvas") or not cb.table_ready():
+        return None
+    return cb.board_counts([series_id]).get(series_id, 0)
 
 
 def _playground(user: Dict[str, Any], series_id: int) -> bool:

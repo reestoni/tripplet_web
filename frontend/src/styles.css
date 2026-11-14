@@ -1512,3 +1512,20 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 img.sb-avatar { object-fit: cover; background: none; }
 .set-avatar { gap: 12px; align-items: center; }
 .set-avatar-img { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 50%; object-fit: cover; font-size: 22px; }
+
+/* Canvas boards (pages/Canvas.tsx) */
+.cv-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cv-title { font: inherit; font-size: 15px; font-weight: 600; padding: 4px 8px; border: 1px solid #C9D1C8; border-radius: 6px; min-width: 220px; }
+.cv-title:disabled { background: transparent; border-color: transparent; color: inherit; }
+.cv-series { font-size: 12px; background: #EEF5EC; border: 1px solid #CFE3CB; border-radius: 12px; padding: 2px 10px; }
+.cv-status { font-size: 12px; color: #6B7570; }
+.cv-status.dirty { color: #B26A00; font-weight: 600; }
+.cv-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.cv-field input { font: inherit; font-size: 14px; font-weight: 400; padding: 6px 8px; border: 1px solid #C9D1C8; border-radius: 6px; }
+.cv-check { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 6px; }
+.cv-boards { max-height: 60vh; overflow: auto; margin: 8px 0; }
+.cv-row { cursor: pointer; }
+.cv-row:hover td { background: #F0F5EF; }
+.cv-row.on td { background: #E6F2E6; }
+.ic-group.cv-home > .ic-ghead { color: var(--accent); font-weight: 700; }
+.btn-plain.mj-danger { color: var(--danger); }

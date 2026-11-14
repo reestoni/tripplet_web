@@ -149,6 +149,9 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
             </>
           )}
           <span className="tb-sep" />
+          {data.boards != null && (
+            <button className="tb-btn" title={t("cv.seriesBoardsTip")} onClick={() => confirmLeave() && navigate(`/tools/canvas?series=${s.id}`)}>
+              🖼 {t("cv.seriesBoards")}{data.boards ? ` (${data.boards})` : ""}</button>)}
           <SavedReports seriesId={s.id} />
           <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
             <img src="/api/img/analytics.png" alt={t("rep.open")} />

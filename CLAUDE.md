@@ -260,6 +260,15 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Pseudo-Versuch 0 (Analyse ohne TrialID, nur für den hochladenden Benutzer); Speichern/Batch/Vergleich verweigert (`inspector`).
   Seite `TdmsInspector.tsx` nutzt `YarnScopeView`/`YarnScopeAty` mit `inspector` (blendet Batch/Vergleich/Speichern aus).
   Desktop unverändert (der Screen war schon nur eine Hülle um die YarnScope-Reiter).
+- **Canvas-Bretter in der DB** (2026-11-14, beide Apps): `db/canvas_boards.py` + Tabelle `tblCanvasBoard` (angelegt nur über
+  `tools/canvas_board_migration.py`, dev_local erledigt; dev/prod am Montag). App-neutrales Brett-Format (Mittelpunkt/Grösse/Winkel,
+  Quellen `series_image`/`series_pdf` per ID oder `file` = Datei beim Brett unter `file_roots` `CANVAS_FILES`/<BrettID>/). Optional an eine
+  Serie gehängt, für alle mit Canvas sichtbar, Speichern ab Stufe 2, Löschen Ersteller/Superuser, Versionsprüfung (409 `conflict`).
+  Web `app/canvas_api.py` (`/api/canvas/boards…`; Uploads/Zwischenablage werden beim Speichern zu Brett-Dateien), Seite speichert
+  automatisch 4 s nach der letzten Änderung, `?board=` / `?series=`; Knopf "Brett (n)" in Show Experiment (`boards` in `/api/series/{id}`).
+  Desktop: Brett-Leiste über der Canvas-Toolbar (Titel, Boards…, Save Strg+S, Kopie, Löschen, Autosave alle 2 s), Knopf "🖼 Board" in
+  Show Experiment (`app_meta.open_canvas_board`). Alte .ttcanvas-Dateien: Web "Datei importieren", Desktop weiter Save/Load project.
+  Tests: Desktop `test_canvas_boards.py`, `test_canvas_screen_boards.py`; Web `test_canvas_boards_api.py`.
 - Canvas `/tools/canvas`: Seite `Canvas.tsx` (eine Zeichenfläche, Bilder/PDF-Seiten verschieben, Strg+Mausrad skaliert ein Bild,
   Doppelklick dreht/rastet 90°, Werkzeuge/Farben/Undo wie Bildvergleich - `drawAnno` usw. aus `ImageCompare.tsx` exportiert,
   Hintergrundfarbe, Raster, PNG-Export, `.ttcanvas`-Projekt). Backend = Routen von `image_compare_api.py` (für Features
@@ -350,6 +359,10 @@ Hilfetexte gibt es nur EN/DE/ES (Desktop-Entscheid): eigene Flaggen im Dialog, S
 Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTES` eintragen. Tests `tests/test_help.py`.
 
 ## Offene Punkte
+
+- **DB-Änderungen auf dev/prod am Montag 2026-11-16** (Nutzerentscheid: alle zusammen): `tools/smart_chart_views_migration.py apply`
+  (ConfigJSON MEDIUMTEXT), `tools/canvas_board_migration.py apply` (tblCanvasBoard); jeweils mit `--target dev` bzw. `--target prod` und
+  passendem `TRIPPLET_MODE`. Ordner auf der Freigabe legen die Apps selbst an (UserAvatars, CanvasFiles). Neue DB-Änderungen hier anhängen.
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid

@@ -95,6 +95,7 @@ export type SeriesData = {
   has_yarnscope: boolean;
   has_yarnscope_aty: boolean;
   playground?: boolean;
+  boards?: number | null;
   recycle_preview?: { deleted_at: string; deleted_by: string } | null;
   tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; r?: number; cells: PivotCell[] }[]; flags: Record<string, string>; retest?: { trial: string; note: string }[]; kb?: string | null }[];
   pending_tabs: { key: string; title: string }[];
