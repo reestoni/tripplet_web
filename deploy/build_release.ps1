@@ -16,6 +16,8 @@ param(
   [switch]$SkipTests
 )
 $ErrorActionPreference = "Stop"
+# native tools (npm, git, pytest) write warnings to stderr - only their exit code counts
+function Run-Native([scriptblock]$cmd) { $old = $ErrorActionPreference; $ErrorActionPreference = "Continue"; & $cmd 2>&1 | ForEach-Object { Write-Host "$_" }; $code = $LASTEXITCODE; $ErrorActionPreference = $old; return $code }
 $web = Split-Path -Parent $PSScriptRoot
 $py = "C:\Users\soj\AppData\Local\Programs\Python\Python312\python.exe"
 
@@ -37,16 +39,14 @@ if (-not $SkipTests) {
   Write-Host "Backend tests (dev_local) ..." -ForegroundColor Cyan
   Push-Location "$web\backend"
   $env:TRIPPLET_MODE = "dev_local"
-  & $py -m pytest -q
-  $ok = $LASTEXITCODE -eq 0
+  $ok = (Run-Native { & $py -m pytest -q }) -eq 0
   Pop-Location
   if (-not $ok) { throw "Backend tests failed - no release built." }
 }
 
 Write-Host "Frontend build ..." -ForegroundColor Cyan
 Push-Location "$web\frontend"
-npm.cmd run build
-$ok = $LASTEXITCODE -eq 0
+$ok = (Run-Native { npm.cmd run build }) -eq 0
 Pop-Location
 if (-not $ok) { throw "Frontend build failed." }
 
@@ -55,8 +55,8 @@ if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
 New-Item -ItemType Directory -Force "$tmp\core", "$tmp\web" | Out-Null
 
 Write-Host "Packing committed files ..." -ForegroundColor Cyan
-git -C $CorePath archive --format=zip -o "$tmp\core.zip" HEAD
-git -C $web archive --format=zip -o "$tmp\web.zip" HEAD
+if ((Run-Native { git -C $CorePath archive --format=zip -o "$tmp\core.zip" HEAD }) -ne 0) { throw "git archive core failed" }
+if ((Run-Native { git -C $web archive --format=zip -o "$tmp\web.zip" HEAD }) -ne 0) { throw "git archive web failed" }
 Expand-Archive "$tmp\core.zip" "$tmp\core"
 Expand-Archive "$tmp\web.zip" "$tmp\web"
 Remove-Item "$tmp\core.zip", "$tmp\web.zip"
