@@ -32,6 +32,8 @@ zuerst gegen `dev` mit 1–2 Testpersonen, dann `prod`, Desktop eine Zeit parall
 Fileserver (H: = `\\heb-fil-003\heberlein\technik\tripplet\...`; der Dienst braucht UNC-Pfade per
 Umgebungsvariable + Lesen/Schreiben fürs Dienstkonto). Freischalten von dev/prod nur auf ausdrückliche Freigabe.
 
+**Git / GitHub** (Nutzerentscheid 2026-11-14): beide Repos haben `origin` = privates GitHub (`reestoni/tripplet_project`, `reestoni/tripplet_web`). **Nach jedem Commit sofort pushen** (aktueller Zweig; Desktop arbeitet auf `ref-comparison`, Web auf `main`) - GitHub ist die Sicherung gegen Totalverlust. Fehlgeschlagenen Push melden. Zugangsdaten nie einchecken (`db_secrets.json`, `secrets.enc` sind ignoriert).
+
 ## Rahmen (Nutzerentscheide 2026-11-13)
 
 - **Ziel-Betrieb: Server im Firmennetz (Intranet), nie im Internet.** IT erst für diesen
