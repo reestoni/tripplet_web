@@ -1531,3 +1531,7 @@ img.sb-avatar { object-fit: cover; background: none; }
 .btn-plain.mj-danger { color: var(--danger); }
 .login-down { background: #FFF4D6; border: 1px solid #E8C15A; color: #5a4500; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
 .login-down span { font-size: 12px; opacity: .8; }
+
+/* lazy pages (lazyPage.tsx) */
+.page-loading { padding: 32px; color: #6B7570; font-size: 13px; }
+table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-width: none; }

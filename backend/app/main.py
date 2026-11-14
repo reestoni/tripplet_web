@@ -11,7 +11,6 @@ from typing import Any, Dict
 
 from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import canvas_api, whats_new_api, search_api, notifications_api, recycle_bin_api, admin_master, quick_scan_api, process_playground_api, tdms_inspector, label_generator_api, image_compare_api, air_supply_api, core
@@ -22,6 +21,9 @@ from db.usage_log import log_usage_event  # noqa: E402
 
 app = FastAPI(title="TrippleT Web", version=core.APP_VERSION, docs_url="/api/docs", openapi_url="/api/openapi.json")
 app.add_middleware(auth.SessionMiddleware)
+from . import speed  # noqa: E402
+app.add_middleware(speed.TimingMiddleware)
+app.add_middleware(speed.TextGZipMiddleware)      # outermost: compresses what the app sends
 app.include_router(series_lists.router)
 app.include_router(series_view.router)
 app.include_router(report.router)
@@ -131,13 +133,13 @@ def image(name: str) -> FileResponse:
     path = core.IMAGES_DIR / name
     if not path.is_file():
         raise HTTPException(status_code=404)
-    return FileResponse(path, headers={"Cache-Control": "max-age=3600"})
+    return FileResponse(path, headers={"Cache-Control": "max-age=86400"})
 
 
 # --- built frontend (npm run build) - in development Vite serves it instead ---
 _DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 if _DIST.is_dir():
-    app.mount("/assets", StaticFiles(directory=_DIST / "assets"), name="assets")
+    app.mount("/assets", speed.CachedStaticFiles(directory=_DIST / "assets"), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str) -> FileResponse:
@@ -146,4 +148,4 @@ if _DIST.is_dir():
         f = (_DIST / path).resolve()
         if path and f.is_file() and _DIST in f.parents:
             return FileResponse(f)
-        return FileResponse(_DIST / "index.html")
+        return FileResponse(_DIST / "index.html", headers={"Cache-Control": "no-cache"})   # new release on reload

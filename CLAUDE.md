@@ -86,6 +86,13 @@ Umgebungsvariable + Lesen/Schreiben fürs Dienstkonto). Freischalten von dev/pro
   per Umgebungsvariable (`web.env`): `TRIPPLET_WEB_HTTPS` (Secure-Cookie), `TRIPPLET_WEB_INSTANCE` (Badge),
   `TRIPPLET_WEB_SECRET_PATH`, `TRIPPLET_DB_POOL_SIZE`, `TRIPPLET_MASTER_KEY_PATH`, Ablageorte `TRIPPLET_DIR_*`
   (`db/file_roots.py` im Desktop-Repo - neue Ablageorte immer dort eintragen, nie `H:` fest in Code schreiben).
+- **Tempo** (2026-11-14, nur Web-Technik, keine Desktop-Entsprechung): `app/speed.py` - gzip nur für Text (JSON/JS/CSS/HTML/SVG;
+  Jets 660 KB -> 42 KB), `Server-Timing`-Header + Log `slow request` ab `TRIPPLET_WEB_SLOW_MS` (800), `/assets` ein Jahr
+  im Browser-Cache (Dateinamen mit Hash), `index.html` nie. Frontend: selten genutzte Seiten laden erst beim Öffnen
+  (`lazyPage()` in `App.tsx`, bei fehlender alter Datei nach einem Release einmal neu laden); Backlog, All Experiments,
+  Show Experiment, Create Experiment und Settings bleiben im Hauptpaket. `AdminTable` zeichnet ab 150 Zeilen nur den
+  sichtbaren Ausschnitt (Abstandszeilen oben/unten, gemessene Zeilenhöhen inkl. aufgeklappter Details) - Browser-Suche
+  (Strg+F) findet dort nur Sichtbares, dafür gibt es die Filterzeile. Neue Seiten in `App.tsx` als `lazyPage` eintragen.
 
 ## Reihenfolge (aus tblUsageLog prod, 90 Tage, Stand 2026-11-13)
 

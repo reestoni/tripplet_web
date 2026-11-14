@@ -157,6 +157,9 @@ Drei Stufen. Erst wenn eine Stufe gut ist, geht es zur nächsten:
 ## Wartung
 
 - **Logs:** `C:\TrippleTWeb\instances\<name>\logs\service.log` (wird bei 10 MB rotiert).
+- **Langsame Seiten finden:** Anfragen über 800 ms stehen im Log als `slow request <ms>: GET /api/... -> 200`
+  (Schwelle `TRIPPLET_WEB_SLOW_MS` in `web.env`). Jede Antwort trägt ausserdem den Header `Server-Timing`
+  (Browser: F12 → Netzwerk → Anfrage → Timing).
 - **Dienst:** `Restart-Service TrippleTWeb-prod`. Der Dienst startet nach einem Absturz von selbst neu
   und läuft nach einem VM-Neustart automatisch wieder.
 - **Zu sichern:**

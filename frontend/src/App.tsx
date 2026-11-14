@@ -1,37 +1,41 @@
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { api, ApiError, type Me } from "./api";
 import Login from "./pages/Login";
 import Shell from "./components/Shell";
-import KnowledgeBase from "./pages/KnowledgeBase";
 import NotYet from "./pages/NotYet";
 import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
 import SeriesView from "./pages/SeriesView";
-import SeriesReport from "./pages/SeriesReport";
-import MyRequests from "./pages/MyRequests";
-import RequestForm from "./pages/RequestForm";
-import CreateExperiment from "./pages/CreateExperiment";
-import ManageJets from "./pages/ManageJets";
-import ManageYarn from "./pages/ManageYarn";
-import YarnStock from "./pages/YarnStock";
-import StockTake from "./pages/StockTake";
-import ManageUsers from "./pages/ManageUsers";
-import Settings from "./pages/Settings";
-import SmartChart from "./pages/SmartChart";
-import Dashboards from "./pages/Dashboards";
-import RecycleBin from "./pages/RecycleBin";
-import ManageMaster from "./pages/ManageMaster";
-import QuickScan, { RequirementHub } from "./pages/QuickScan";
-import ProcessPlayground from "./pages/ProcessPlayground";
-import Canvas from "./pages/Canvas";
-import TdmsInspector from "./pages/TdmsInspector";
-import LabelGenerator from "./pages/LabelGenerator";
-import ImageCompare from "./pages/ImageCompare";
-import AirSupply from "./pages/AirSupply";
-import JetRoi from "./pages/JetRoi";
-import YarnCount from "./pages/YarnCount";
 import { DisplayProvider } from "./display";
+import { lazyPage, PageLoading } from "./lazyPage";
+import CreateExperiment from "./pages/CreateExperiment";   // also used inside Show Experiment
+import Settings from "./pages/Settings";   // also used by the login page
+
+// Most used pages load with the app; every other page is fetched when it is first opened.
+const KnowledgeBase = lazyPage(() => import("./pages/KnowledgeBase"));
+const SeriesReport = lazyPage(() => import("./pages/SeriesReport"));
+const MyRequests = lazyPage(() => import("./pages/MyRequests"));
+const RequestForm = lazyPage(() => import("./pages/RequestForm"));
+const ManageJets = lazyPage(() => import("./pages/ManageJets"));
+const ManageYarn = lazyPage(() => import("./pages/ManageYarn"));
+const YarnStock = lazyPage(() => import("./pages/YarnStock"));
+const StockTake = lazyPage(() => import("./pages/StockTake"));
+const ManageUsers = lazyPage(() => import("./pages/ManageUsers"));
+const SmartChart = lazyPage(() => import("./pages/SmartChart"));
+const Dashboards = lazyPage(() => import("./pages/Dashboards"));
+const RecycleBin = lazyPage(() => import("./pages/RecycleBin"));
+const ManageMaster = lazyPage(() => import("./pages/ManageMaster"));
+const QuickScan = lazyPage(() => import("./pages/QuickScan"));
+const RequirementHub = lazyPage(() => import("./pages/QuickScan").then((m) => ({ default: m.RequirementHub })));
+const ProcessPlayground = lazyPage(() => import("./pages/ProcessPlayground"));
+const Canvas = lazyPage(() => import("./pages/Canvas"));
+const TdmsInspector = lazyPage(() => import("./pages/TdmsInspector"));
+const LabelGenerator = lazyPage(() => import("./pages/LabelGenerator"));
+const ImageCompare = lazyPage(() => import("./pages/ImageCompare"));
+const AirSupply = lazyPage(() => import("./pages/AirSupply"));
+const JetRoi = lazyPage(() => import("./pages/JetRoi"));
+const YarnCount = lazyPage(() => import("./pages/YarnCount"));
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -76,6 +80,7 @@ export default function App() {
   return (
     <DisplayProvider initial={me.display}>
     <Shell me={me} onLogout={logout}>
+      <Suspense fallback={<PageLoading />}>
       <Routes>
         <Route path="/" element={<Navigate to={me.start_route || "/backlog"} replace />} />
         <Route path="/experiments" element={<AllExperiments />} />
@@ -117,6 +122,7 @@ export default function App() {
         <Route path="/knowledge-base/:key" element={<KnowledgeBase />} />
         <Route path="*" element={<NotYet />} />
       </Routes>
+      </Suspense>
     </Shell>
     </DisplayProvider>
   );

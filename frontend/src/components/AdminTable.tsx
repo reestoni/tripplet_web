@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n";
 
 /* Editable master-data table like the desktop admin screens (Manage Jets, later Manage Yarn):
@@ -42,6 +42,11 @@ export type AdminTableProps = {
 };
 
 const FROZEN_W = [70, 170, 40];
+/* Large tables (Manage Jets: 560 rows x 50 columns) only draw the rows in view plus a margin; above and below
+   stand two empty spacer rows of the right height. Smaller tables draw everything (browser search finds all). */
+const WINDOW_FROM = 150;
+const OVERSCAN_PX = 600;
+const ROW_EST = 25;
 
 export function displayValue(v: unknown, col: string, fk: Record<string, FkItems>, boolCols: Set<string>): string {
   if (boolCols.has(col)) return v === 1 || v === true || v === "1" ? "☑" : "☐";
@@ -86,6 +91,12 @@ export default function AdminTable(p: AdminTableProps) {
   const [active, setActive] = useState<{ id: number; col: string } | null>(null);
   const [editing, setEditing] = useState<{ id: number; col: string } | null>(null);
   const anchor = useRef<number | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLTableSectionElement>(null);
+  const heights = useRef(new Map<number, number>());   // measured height per row id (incl. its detail row)
+  const rowEst = useRef(ROW_EST);
+  const [view, setView] = useState({ top: 0, h: 800 });
+  const [measured, setMeasured] = useState(0);
 
   const value = (row: Row, col: string) => {
     const id = Number(row[p.idCol]);
@@ -119,6 +130,53 @@ export default function AdminTable(p: AdminTableProps) {
   }, [p.rows, p.changes, p.search, filters, sort, p.fk]);
 
   useEffect(() => { p.onCount?.(shown.length); }, [shown.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const windowed = shown.length > WINDOW_FROM;
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !windowed) return;
+    const update = () => setView({ top: el.scrollTop, h: el.clientHeight });   // scroll events come once per frame
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, [windowed]);
+
+  const ids = shown.map((r) => Number(r[p.idCol]));
+  let first = 0, last = shown.length;               // rows [first, last) are drawn
+  let padTop = 0, padBottom = 0;
+  if (windowed) {
+    const hOf = (id: number) => heights.current.get(id) ?? rowEst.current;
+    const offs = new Array<number>(ids.length + 1);
+    offs[0] = 0;
+    for (let i = 0; i < ids.length; i++) offs[i + 1] = offs[i] + hOf(ids[i]);
+    const head = headRef.current?.offsetHeight ?? 0;
+    const from = Math.max(0, view.top - head - OVERSCAN_PX), to = view.top - head + view.h + OVERSCAN_PX;
+    let lo = 0, hi = ids.length;                     // first row whose bottom is below "from"
+    while (lo < hi) { const m = (lo + hi) >> 1; if (offs[m + 1] <= from) lo = m + 1; else hi = m; }
+    first = lo;
+    last = first;
+    while (last < ids.length && offs[last] < to) last++;
+    const ei = editing ? ids.indexOf(editing.id) : -1;  // keep the cell being edited mounted
+    if (ei >= 0) { first = Math.min(first, ei); last = Math.max(last, ei + 1); }
+    padTop = offs[first];
+    padBottom = offs[ids.length] - offs[last];
+  }
+  // measure the drawn rows; a changed height (detail row opened, other font) redraws once
+  useLayoutEffect(() => {
+    if (!windowed || !wrapRef.current) return;
+    let changed = false;
+    wrapRef.current.querySelectorAll<HTMLTableRowElement>("tr[data-rid]").forEach((tr) => {
+      const next = tr.nextElementSibling as HTMLElement | null;
+      const h = tr.offsetHeight + (next?.classList.contains("at-detail") ? next.offsetHeight : 0);
+      const id = Number(tr.dataset.rid);
+      if (!next?.classList.contains("at-detail") && h > 0) rowEst.current = h;
+      if (h > 0 && Math.abs((heights.current.get(id) ?? -1) - h) > 0.5) { heights.current.set(id, h); changed = true; }
+    });
+    if (changed) setMeasured((m) => m + 1);
+  });
+  void measured;
 
   const clickHeader = (col: string) =>
     setSort((s) => (!s || s.col !== col ? { col, dir: 1 } : s.dir === 1 ? { col, dir: -1 } : null));
@@ -211,9 +269,9 @@ export default function AdminTable(p: AdminTableProps) {
   };
 
   return (
-    <div className="at-wrap" tabIndex={0} onKeyDown={onKey}>
+    <div className="at-wrap" tabIndex={0} onKeyDown={onKey} ref={wrapRef}>
       <table className="at">
-        <thead>
+        <thead ref={headRef}>
           <tr>
             {p.columns.map((c, i) => (
               <th key={c} style={frozenStyle(i)} className={(i === p.frozen - 1 ? "at-lastfrozen " : "") + (p.narrow?.has(c) ? "at-narrow" : "")}
@@ -237,13 +295,14 @@ export default function AdminTable(p: AdminTableProps) {
           </tr>
         </thead>
         <tbody>
-          {shown.map((row) => {
+          {padTop > 0 && <tr className="at-spacer" aria-hidden="true"><td colSpan={p.columns.length} style={{ height: padTop }} /></tr>}
+          {(windowed ? shown.slice(first, last) : shown).map((row) => {
             const id = Number(row[p.idCol]);
             const ch = p.changes[id];
             const det = p.detail?.(row);
             return (
               <Fragment key={id}>
-                <tr className={p.selected.has(id) ? "sel" : ""}>
+                <tr className={p.selected.has(id) ? "sel" : ""} data-rid={id}>
                   {p.columns.map((c, i) => {
                     const val = (x: string) => value(row, x);
                     const special = p.cell?.(c, row, val);
@@ -283,6 +342,7 @@ export default function AdminTable(p: AdminTableProps) {
               </Fragment>
             );
           })}
+          {padBottom > 0 && <tr className="at-spacer" aria-hidden="true"><td colSpan={p.columns.length} style={{ height: padBottom }} /></tr>}
         </tbody>
       </table>
       {Object.values(filters).some(Boolean) && (
