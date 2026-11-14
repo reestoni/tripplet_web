@@ -25,7 +25,7 @@ Desktop-App eingestellt. **Bis dahin muss jedes neue Feature und jede Änderung 
 in beiden Apps umgesetzt werden** (Desktop `C:\python\tripplet_project` + Web), auch wenn der Nutzer
 nur eine App nennt. Weg wie bisher: Logik Qt-frei in `tripplet_project` (beide nutzen sie), dann Desktop-
 Oberfläche und Web-Seite (4 Sprachen); `PARITY.md` nachführen. Fehlerkorrekturen ebenfalls in beiden.
-Ausnahmen nur, wenn der Nutzer es ausdrücklich sagt (z. B. bewusst nicht im Web: KI, Usage Stats).
+Ausnahmen nur, wenn der Nutzer es ausdrücklich sagt (z. B. bewusst nicht im Web: KI, Usage Stats; bewusst nur im Web: Links kopieren).
 
 **Ausrollen (Plan 2026-11-14):** Windows-VM im Firmennetz als Dienst hinter HTTPS (IIS/Caddy, Firmen-CA),
 zuerst gegen `dev` mit 1–2 Testpersonen, dann `prod`, Desktop eine Zeit parallel. Dateien bleiben auf dem
@@ -376,14 +376,13 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
   2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, ✅ Settings, dann
   nacheinander die Werkzeuge (✅ alle, zuletzt Process Playground und Requirement Hub, 2026-11-13). **Kleinkram für später** (nicht vergessen): weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
-**Links, Live-Backlog, Tooltips** (2026-11-14, beide Apps): Linkformat `db/web_links.py` (Desktop) = `frontend/src/links.ts`
-(`/series/<id>?tab=<key>&trial=<id>`, `/series/<id>/report?report=<id>`, `/tools/canvas?board=<id>`; Reiter-Schlüssel machine/rd/notes +
-`LAB_TABS`). Web: "🔗 Link" in Show Experiment, "Link zu V… kopieren" im Versuchsmenü, "Link kopieren" im Rechtsklick von Backlog/All
-Experiments, Report, Canvas-Brett; Show Experiment liest `?tab=`/`?trial=` (Spalte leuchtet, `flashTrial`). Desktop: "🔗 Web link",
-"Copy web link to V…", Rechtsklick Backlog/All Experiments, Report-Dropdown, Brett; braucht die Web-Adresse: `TRIPPLET_WEB_URL` oder
-`web_links.DEFAULT_BASE` (dev/prod eintragen, sobald die VM steht - sonst ist der Eintrag grau). Backlog aktualisiert sich selbst:
-`series_overview.backlog_fingerprint()` (~3 ms), Web pollt `GET /api/backlog/stamp` alle 30 s + beim Zurückkommen in den Tab,
-Desktop `BacklogScreen._live_check` (QTimer 30 s); neu geladen wird nur bei Änderung, nicht beim Ziehen/offenem Dialog/Menü.
+**Links, Live-Backlog, Tooltips** (2026-11-14): Links **nur im Web** (Nutzerentscheid 2026-11-14: im Desktop nicht nötig) -
+`frontend/src/links.ts` (`/series/<id>?tab=<key>&trial=<id>`, `/series/<id>/report?report=<id>`, `/tools/canvas?board=<id>`; Reiter-Schlüssel
+machine/rd/notes + `LAB_TABS`): "🔗 Link" in Show Experiment, "Link zu V… kopieren" im Versuchsmenü, "Link kopieren" im Rechtsklick von
+Backlog/All Experiments, Report, Canvas-Brett; Show Experiment liest `?tab=`/`?trial=` (Spalte leuchtet, `flashTrial`).
+Backlog aktualisiert sich selbst (beide Apps): `series_overview.backlog_fingerprint()` (~3 ms), Web pollt `GET /api/backlog/stamp` alle 30 s +
+beim Zurückkommen in den Tab, Desktop `BacklogScreen._live_check` (QTimer 30 s); neu geladen wird nur bei Änderung, nicht beim Ziehen/offenem
+Dialog/Menü.
 Tooltips Düse/Spule in Machine Data/R&D jetzt als schneller Kasten (`EditCell hoverTip` -> `HoverImage`, 0,25 s) statt Browser-`title`.
 
 - **YarnScope (DTY/ATY) muss ins Web** (Nutzerentscheid 2026-11-13, "schon ziemlich wichtig"): Berechnungen

@@ -1,4 +1,4 @@
-/* Links into this app - same format as the desktop "Copy web link" (tripplet_project db/web_links.py):
+/* Links into this app (web only, user decision 2026-11-14):
      /series/<id>[?tab=<key>][&trial=<trial id>]   /series/<id>/report?report=<id>   /tools/canvas?board=<id> */
 
 function build(path: string, params: Record<string, string | number | null | undefined>): string {
