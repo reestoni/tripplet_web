@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { IconBell } from "./SidebarIcons";
 import { useNavigate } from "react-router-dom";
 import { request } from "../api";
 import { useI18n } from "../i18n";
@@ -65,8 +66,8 @@ export default function Bell() {
 
   return (
     <div className="bell" ref={box}>
-      <button type="button" className="sb-bell" title={t("bell.title")} onClick={() => setOpen(!open)}>
-        🔔{unread > 0 && <span className="sb-badge bell-badge">{unread > 99 ? "99+" : unread}</span>}
+      <button type="button" className={"sb-tool" + (open ? " on" : "")} title={t("bell.title")} aria-label={t("bell.title")} onClick={() => setOpen(!open)}>
+        <IconBell />{unread > 0 && <span className="sb-badge bell-badge">{unread > 99 ? "99+" : unread}</span>}
       </button>
       {open && (
         <div className="bell-panel">

@@ -7,7 +7,7 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
 
 - Zusammenarbeit mit dem Nutzer auf **Deutsch**.
 - **Die Web-App ist viersprachig: EN / DE / ES / ZH** (Nutzerwunsch 2026-11-13, anders als die
-  Desktop-App). Umschalten per Flaggen auf der Login-Seite und unten in der Seitenleiste
+  Desktop-App). Umschalten per Flaggen auf der Login-Seite und im Konto-Menü unten in der Seitenleiste
   (`LangFlags` in `src/i18n.tsx`, Wahl in localStorage `tripplet.lang`, sonst Browsersprache).
   **Jeder sichtbare Text** steht in `frontend/src/texts.ts` (`en` definiert die Schlüssel, die
   anderen Sprachen sind dagegen typisiert → fehlender Schlüssel = Build-Fehler) und wird mit
@@ -296,6 +296,12 @@ Vorschauen leben im Serverprozess - nach einem Neustart bleibt die Serie einfach
 **Lab Assistant** (KI-Chat, keine KI im Web) und **Usage Stats** (Nutzerentscheid 2026-11-13: im Web nicht nötig) sind bewusst
 nicht im Web und fehlen in der Seitenleiste wie Offline Sync. Tests `tests/test_recycle_bin_api.py` (echte Testserie, wird endgültig gelöscht).
 
+**Aufbau der Seitenleiste** (Nutzerwunsch 2026-11-14, `components/Shell.tsx`, Symbole `components/SidebarIcons.tsx`):
+oben Suchleiste ("Suchen… Ctrl F") + Uhr-Knopf "Zuletzt geöffnet", darunter nur die Sektionen; unten eine Symbolzeile
+(Knowledge Base, Hilfe F1, Fresh off the Spool, Glocke = die `PINNED`-Einträge aus `nav.py` + die zwei Fenster) und die
+Konto-Karte (Initialen, voller Name, Zugriffsrecht; Klick = Menü mit Einstellungen, Sprache/Flaggen, Abmelden).
+Eingeklappt: nur Symbole, Werkzeuge 2x2. Neue Fuss-Funktionen als Symbol in die Werkzeugzeile, nicht als weitere Zeile.
+
 **Seitenleiste: Glocke, Suche, Zuletzt geöffnet, Seitenprotokoll** (2026-11-13): Glocke im Seitenleisten-Fuss
 (`components/Notifications.tsx`, `app/notifications_api.py` auf `ui/notifications.py`; nur eigene Meldungen, Zähler alle 2 min,
 bei Fokus und nach Yarn-Stock-Laden über das Ereignis `tripplet:bell`). Schnellsuche Strg+F / "Suche" (`components/QuickSearch.tsx`,
@@ -303,12 +309,12 @@ bei Fokus und nach Yarn-Stock-Laden über das Ereignis `tripplet:bell`). Schnell
 `push_recent`; Show Experiment meldet `POST /api/recent`, nicht bei Papierkorb-Vorschau). `ScreenLog` schreibt pro Seitenaufruf
 `screen_open` mit dem Desktop-Klassennamen (die Desktop-Usage-Stats zählen beide Apps zusammen; Zuordnung `SCREENS` in `QuickSearch.tsx`).
 
-**Fresh off the Spool** (2026-11-13): `components/WhatsNew.tsx` (🧵 im Seitenleisten-Fuss, öffnet sich nach dem Login einmal von
+**Fresh off the Spool** (2026-11-13): `components/WhatsNew.tsx` (Funken-Symbol im Seitenleisten-Fuss, öffnet sich nach dem Login einmal von
 selbst, wenn die neueste Version ungesehen ist), `app/whats_new_api.py` auf `ui/whats_new_data.py` + `ui/widgets/whats_new_texts.py`
 (EN/DE/ES, Flaggen wie die Hilfe, Chinesisch -> Englisch). "Gesehen" = `DisplaySettings.whats_new_seen` wie im Desktop. Skizzen über
 `/api/whats-new/sketch/<name>`. Kein PDF-Knopf (Browser-Druck).
 
-**Einstellungen** (2026-11-13): `/settings` (⚙ im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
+**Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,
 Fadenkreuz + Lesezeile (folgen dem Ereignis `tripplet:cell-focus` aus `edit.tsx`), Warnsymbole, Farbenblind-Farben,

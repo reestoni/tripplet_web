@@ -83,7 +83,7 @@ export function QuickSearchHost() {
   );
 }
 
-export function RecentMenu({ label, icon }: { label: string; icon: string }) {
+export function RecentMenu({ label, className, children }: { label: string; className: string; children: React.ReactNode }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [items, setItems] = useState<Recent[] | null>(null);
@@ -97,13 +97,13 @@ export function RecentMenu({ label, icon }: { label: string; icon: string }) {
   }, [items]);
   return (
     <div className="recent" ref={box}>
-      <button type="button" className="sb-item sb-btn" title={label} onClick={(e) => {
+      <button type="button" className={className + (items ? " on" : "")} title={label} aria-label={label} onClick={(e) => {
         if (items) { setItems(null); return; }
         const r = e.currentTarget.getBoundingClientRect();     // fixed: the sidebar scrolls and would clip it
-        setPos({ left: r.right + 6, top: Math.min(r.top, window.innerHeight - 340) });
+        setPos({ left: r.right + 8, top: Math.max(8, Math.min(r.top, window.innerHeight - 340)) });
         request<{ items: Recent[] }>("GET", "/api/recent").then((r) => setItems(r.items)).catch(() => setItems([]));
       }}>
-        <img src={icon} alt="" /><span className="sb-label">{label}</span>
+        {children}
       </button>
       {items && (
         <div className="recent-menu" style={{ left: pos.left, top: pos.top }}>
