@@ -55,8 +55,11 @@ export function neighbour(td: HTMLElement, dr: number, dc: number): HTMLElement 
 
 /** Unsaved values of the open series - buttons that navigate away call confirmLeave() first. */
 const leaveGuard = { n: 0, text: "" };
+/** Other unsaved things of the open series (e.g. the conclusion tab): text of the question, "" = nothing. */
+export const extraLeaveGuard = { text: "" };
 export function confirmLeave(): boolean {
-  return leaveGuard.n === 0 || window.confirm(leaveGuard.text);
+  if (leaveGuard.n === 0 && !extraLeaveGuard.text) return true;
+  return window.confirm(leaveGuard.n ? leaveGuard.text : extraLeaveGuard.text);
 }
 
 const EditCtx = createContext<Ctx | null>(null);

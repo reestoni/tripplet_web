@@ -368,13 +368,28 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 ## Offene Punkte
 
 - **DB-Änderungen auf dev/prod am Montag 2026-11-16** (Nutzerentscheid: alle zusammen): `tools/smart_chart_views_migration.py apply`
-  (ConfigJSON MEDIUMTEXT), `tools/canvas_board_migration.py apply` (tblCanvasBoard); jeweils mit `--target dev` bzw. `--target prod` und
+  (ConfigJSON MEDIUMTEXT), `tools/canvas_board_migration.py apply` (tblCanvasBoard), `tools/series_conclusion_migration.py apply`
+  (tblSeriesConclusion); jeweils mit `--target dev` bzw. `--target prod` und
   passendem `TRIPPLET_MODE`. Ordner auf der Freigabe legen die Apps selbst an (UserAvatars, CanvasFiles). Neue DB-Änderungen hier anhängen.
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
   2026-11-13): ✅ PARITY aufgeräumt, ✅ Lücken Backlog/All Experiments/Show Experiment, ✅ Manage User, ✅ Settings, dann
   nacheinander die Werkzeuge (✅ alle, zuletzt Process Playground und Requirement Hub, 2026-11-13). **Kleinkram für später** (nicht vergessen): weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
+
+**Fazit pro Serie** (2026-11-14, beide Apps, Nutzerwunsch): `db/series_conclusion.py` + Tabelle `tblSeriesConclusion` (eine Zeile pro
+Serie, nur über `tools/series_conclusion_migration.py`, dev_local erledigt, dev/prod am Montag). Nicht an einen Statuswechsel gebunden
+("Done" = bereit zur Auswertung). Felder: eigenes Ziel (nur ohne Experiment-Anfrage; mit Anfrage werden Titel/Versuchsgrund/Aufgabe/
+Beurteilung gezeigt), Ergebnis achieved/partly/not_achieved/open, Kurzfazit (300 Z.), beste Versuche, Erkenntnisse, Empfehlung
+follow_up/release/discard + Text. Schreiben ab Stufe 2, Änderungsprotokoll (Source `conclusion`), erstes Speichern = Glocke an den
+Request-Ersteller (Typ `series_conclusion`, Klick -> `?tab=conclusion`). Papierkorb nimmt es über `TrialSeriesID` automatisch mit.
+Web: `app/conclusion_api.py` (GET/PUT `/api/series/{id}/conclusion`), Reiter "Fazit" (`components/ConclusionTab.tsx`, bleibt nach dem
+ersten Öffnen gemountet, `extraLeaveGuard` in `edit.tsx` fragt beim Verlassen), Punkt/gestrichelter Ring (Done ohne Fazit) auf Backlog-Karten,
+Spalten Ergebnis/Fazit + Filter in All Experiments, Feld "Fazit" in der Schnellsuche (`quick_search._search(..., conclusions)`),
+Ergebnisse im Request-Popup (`for_request`), Archivieren ohne Fazit: `POST /api/backlog/move` -> 409 `no_conclusion`, erneut mit
+`ignore_conclusion`. Desktop: `ui/widgets/conclusion_tab.py` (Reiter "Conclusion" rechts von Notes), Backlog-Karte, All Experiments
+(Spalten 10/11 + Filter), Quick Search 5. Feld, Request-Popup, Hinweis beim Archivieren. Tests: Desktop `test_series_conclusion.py`,
+Web `test_conclusion_api.py`.
 
 **Links, Live-Backlog, Tooltips** (2026-11-14): Links **nur im Web** (Nutzerentscheid 2026-11-14: im Desktop nicht nötig) -
 `frontend/src/links.ts` (`/series/<id>?tab=<key>&trial=<id>`, `/series/<id>/report?report=<id>`, `/tools/canvas?board=<id>`; Reiter-Schlüssel

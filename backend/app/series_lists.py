@@ -10,6 +10,8 @@ from pydantic import BaseModel
 from . import core  # noqa: F401
 from .deps import require_feature
 
+from db import series_conclusion as sc  # noqa: E402
+
 from db import backlog_moves as bm  # noqa: E402
 from db import series_overview as so  # noqa: E402
 from db.trial_reference import format_trial_number  # noqa: E402
@@ -41,6 +43,7 @@ def all_experiments(machine: Optional[str] = Query(None),
     machine_id = so.MACHINE_FILTERS.get(machine) if machine else None
     rows = so.all_experiments_rows(machine_id, so.experiment_request_field())
     reports = so.series_report_map()
+    concl = sc.summary_map()
     statuses = {s["id"]: s["name"] for s in _statuses()}
     out = []
     for r in rows:
@@ -60,11 +63,14 @@ def all_experiments(machine: Optional[str] = Query(None),
             "experiment_request_id": _er(r.get("experiment_request_id")),
             "has_notes": bool(r.get("has_notes")),
             "reports": reports.get(sid, 0) if sid is not None else 0,
+            "conclusion": concl.get(sid),
         })
-    return {"machines": list(so.MACHINE_FILTERS.keys()), "statuses": _statuses(), "rows": out}
+    return {"machines": list(so.MACHINE_FILTERS.keys()), "statuses": _statuses(), "rows": out,
+            "conclusions": sc.table_ready()}
 
 
-def _card(r: Dict[str, Any], status_id: int, reports: Dict[int, int], flags: Dict[int, list]) -> Dict[str, Any]:
+def _card(r: Dict[str, Any], status_id: int, reports: Dict[int, int], flags: Dict[int, list],
+          concl: Optional[Dict[int, Dict[str, Any]]] = None) -> Dict[str, Any]:
     sid = _int(r.get("TrialSeriesID"))
     retest = []
     for f in (flags.get(sid, []) if sid is not None else []):
@@ -90,6 +96,7 @@ def _card(r: Dict[str, Any], status_id: int, reports: Dict[int, int], flags: Dic
         "experiment_request_id": _er(r.get("ExperimentRequestID")),
         "reports": reports.get(sid, 0) if sid is not None else 0,
         "retest": retest,
+        "conclusion": (concl or {}).get(sid) if sid is not None else None,
     }
 
 
@@ -98,11 +105,12 @@ def backlog(user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict[
     er_field = so.experiment_request_field()
     reports = so.series_report_map()
     flags = so.retest_flags_map()
+    concl = sc.summary_map()
     statuses = _statuses()
     boxes = []
     for st in statuses:
         if st["id"] in BOARD_STATUSES:
-            boxes.append({**st, "cards": [_card(r, st["id"], reports, flags)
+            boxes.append({**st, "cards": [_card(r, st["id"], reports, flags, concl)
                                           for r in so.backlog_rows(st["id"], er_field)]})
     archived = []
     for r in so.archived_rows(er_field):
@@ -122,7 +130,7 @@ def backlog(user: Dict[str, Any] = Depends(require_feature("backlog"))) -> Dict[
     # welcome line above the board (desktop _refresh_welcome_message; tblUser.WelcomeMessage via db/user_account) -
     # the page joins it with the first name, the default greeting is translated there
     from db.user_account import load_welcome_message
-    return {"boxes": boxes, "archived": archived, "stamp": so.backlog_fingerprint(),
+    return {"boxes": boxes, "archived": archived, "stamp": so.backlog_fingerprint(), "conclusions": sc.table_ready(),
             "welcome": {"message": load_welcome_message(user.get("id")), "first_name": user.get("first_name") or ""}}
 
 
@@ -138,6 +146,7 @@ class MoveBody(BaseModel):
     series_id: int
     to_status: int
     machine_id: Optional[int] = None
+    ignore_conclusion: bool = False      # "No conclusion yet - archive anyway?" answered with yes
 
 
 @router.post("/backlog/move")
@@ -157,6 +166,9 @@ def move_card(body: MoveBody, user: Dict[str, Any] = Depends(require_feature("ba
     reason = bm.check_move(old or 0, body.to_status, user_id=uid, access_level=level, owner_id=owner)
     if reason:
         return JSONResponse(status_code=403, content={"code": reason, "detail": bm.DENY_MESSAGES[reason]})
+    if body.to_status == 5 and not body.ignore_conclusion and sc.missing_for_archive(body.series_id):
+        return JSONResponse(status_code=409, content={"code": "no_conclusion",
+                                                      "detail": "This series has no conclusion yet."})
     machine_id = None
     if bm.needs_machine(old or 0, body.to_status, body.series_id):
         machines = [{"id": int(m["ID"]), "name": m["Maschine"]} for m in bm.non_joker_machines()]

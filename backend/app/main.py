@@ -51,6 +51,8 @@ app.include_router(tdms_inspector.router)
 app.include_router(label_generator_api.router)
 app.include_router(image_compare_api.router)
 app.include_router(canvas_api.router)
+from . import conclusion_api  # noqa: E402
+app.include_router(conclusion_api.router)
 app.include_router(air_supply_api.router)
 app.include_router(jet_roi_api.router)
 app.include_router(yarn_count_api.router)

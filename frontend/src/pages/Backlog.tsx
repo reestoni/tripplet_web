@@ -5,6 +5,7 @@ import { SeriesIcons } from "../components/Icons";
 import { useSeriesAdmin } from "../components/SeriesAdmin";
 import { useI18n } from "../i18n";
 import { HelpButton } from "../components/Help";
+import { OutcomeDot } from "../components/ConclusionTab";
 
 type Box = Status & { cards: BacklogCard[] };
 type Drag = { seriesId: number; from: number; name: string; ids?: number[] };
@@ -19,8 +20,8 @@ export function openSeriesFrom(e: React.MouseEvent, seriesId: number, open: (id:
 const ARCHIVED = 5;
 const MIME = "application/x-tripplet-series";
 
-function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, selected, onSelect }: {
-  c: BacklogCard; statusId: number; onOpen: (e: React.MouseEvent) => void; onDragStart: (e: DragEvent) => void;
+function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, selected, onSelect, conclusionsOn }: {
+  c: BacklogCard; statusId: number; conclusionsOn: boolean; onOpen: (e: React.MouseEvent) => void; onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void; dragging: boolean; onMenu: (e: React.MouseEvent) => void;
   selected: boolean; onSelect: (e: React.MouseEvent) => void;
 }) {
@@ -32,18 +33,23 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, s
   const retestTip = c.retest.length
     ? `${t("bl.retestTip")}\n` + c.retest.map((f) => `${f.trial} · ${f.lab}${f.note ? ` — ${f.note}` : ""}`).join("\n")
     : undefined;
+  // conclusion (db/series_conclusion.py): dot in the outcome colour, or a dashed ring on "Done" while it is missing
+  const conclTip = c.conclusion ? `${t("cc.tab")}: ${c.conclusion.outcome ? t(`cc.o.${c.conclusion.outcome}`) + " – " : ""}${c.conclusion.summary}`
+    : conclusionsOn && statusId === 3 ? t("cc.doneMissing") : undefined;
   return (
     <div className={"bl-card" + (dragging ? " dragging" : "") + (selected ? " selected" : "")} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={c.owner_colour ? { borderLeftColor: c.owner_colour } : undefined}
       onClick={onSelect} onDoubleClick={onOpen} onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e); } }}
       onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
-      onContextMenu={onMenu} title={retestTip ?? t("bl.cardTip")}>
+      onContextMenu={onMenu} title={[retestTip, conclTip].filter(Boolean).join("\n\n") || t("bl.cardTip")}>
       <div className="bl-title">
         <span>{c.series_name}</span>
         {c.retest.length > 0 && <span className="bl-retest">{t("bl.retest")}</span>}
       </div>
       <div className="bl-sub">
         <span>{sub}</span>
+        {c.conclusion ? <OutcomeDot outcome={c.conclusion.outcome} />
+          : conclusionsOn && statusId === 3 ? <span className="cc-missing" /> : null}
         <SeriesIcons attach={c.has_attach} request={c.experiment_request_id} notes={c.has_notes} reports={c.reports} seriesId={c.series_id} />
       </div>
     </div>
@@ -139,11 +145,13 @@ export default function Backlog() {
   const [welcome, setWelcome] = useState<{ message: string; first_name: string } | null>(null);
 
   const stamp = useRef<string | null>(null);
+  const [conclusionsOn, setConclusionsOn] = useState(false);
   const load = useCallback(() => {
     return api
       .backlog()
       .then((d) => {
         stamp.current = d.stamp ?? null;
+        setConclusionsOn(!!d.conclusions);
         setBoxes(d.boxes);
         setArchived(d.archived);
         setWelcome(d.welcome);
@@ -212,7 +220,7 @@ export default function Backlog() {
     let machineId: number | undefined;
     for (;;) {
       try {
-        const r = await api.moveCard(d.seriesId, to, machineId);
+        const r = await api.moveCard(d.seriesId, to, machineId, true);   // the conclusion was asked once for all
         return r.moved;
       } catch (e) {
         if (e instanceof ApiError && e.code === "need_machine" && machineId === undefined) {
@@ -235,6 +243,10 @@ export default function Backlog() {
     const all = (boxes ?? []).flatMap((b) => b.cards.map((c) => ({ id: c.series_id, name: c.series_name })))
       .concat(archived.map((r) => ({ id: r.series_id, name: r.series_name })));
     const ids = d.ids ?? [d.seriesId];
+    if (to === 5 && conclusionsOn) {
+      const missing = ids.filter((id) => !(boxes ?? []).some((b) => b.cards.some((c) => c.series_id === id && c.conclusion))).length;
+      if (missing && !window.confirm(t("cc.archiveManyQ", { n: missing }))) return;
+    }
     setBusy(true);
     const problems: string[] = [];
     let moved = 0;
@@ -252,10 +264,10 @@ export default function Backlog() {
     } else setToast({ kind: "ok", text: t("bl.many.done", { n: moved, status: t(`status.${to}`) }) });
   };
 
-  const doMove = async (d: Drag, to: number, machineId?: number) => {
+  const doMove = async (d: Drag, to: number, machineId?: number, ignoreConclusion = false) => {
     setBusy(true);
     try {
-      const r = await api.moveCard(d.seriesId, to, machineId);
+      const r = await api.moveCard(d.seriesId, to, machineId, ignoreConclusion);
       if (r.moved) {
         setToast({ kind: "ok", text: t("bl.moved", { status: t(`status.${to}`) }) });
         window.dispatchEvent(new Event("tripplet:nav-changed"));
@@ -267,6 +279,8 @@ export default function Backlog() {
         const machines = (e.data?.machines as { id: number; name: string }[]) ?? [];
         setMachine("");
         setAsk({ drag: d, to, machines });
+      } else if (e instanceof ApiError && e.code === "no_conclusion") {
+        if (window.confirm(t("cc.archiveQ"))) { setBusy(false); await doMove(d, to, machineId, true); return; }
       } else {
         const key = e instanceof ApiError && e.code ? `bl.err.${e.code}` : "bl.err.other";
         const text = t(key) === key ? t("bl.err.other") : t(key);
@@ -329,7 +343,7 @@ export default function Backlog() {
               </div>
               <div className="bl-list">
                 {b.cards.map((c) => (
-                  <Card key={c.series_id} c={c} statusId={b.id} onOpen={(e) => openFrom(e, c.series_id)}
+                  <Card key={c.series_id} c={c} statusId={b.id} conclusionsOn={conclusionsOn} onOpen={(e) => openFrom(e, c.series_id)}
                     dragging={!!drag && (drag.seriesId === c.series_id || !!drag.ids?.includes(c.series_id))} onDragEnd={endDrag}
                     selected={sel.box === b.id && sel.ids.includes(c.series_id)} onSelect={(e) => selectCard(e, b, c.series_id)}
                     onMenu={(e) => admin.open(e, { series_id: c.series_id, name: c.series_name })}

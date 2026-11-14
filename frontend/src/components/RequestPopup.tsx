@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, img, request } from "../api";
+import { OutcomeDot } from "./ConclusionTab";
 import { useI18n } from "../i18n";
 
 /* Read-only Experiment Request popup like the desktop _ExperimentRequestReadOnlyDialog
@@ -10,7 +11,10 @@ import { useI18n } from "../i18n";
 
 type Field = { name: string; label: string; text: string; multiline: boolean };
 type View = { id: number; title: string; display: Field[]; images: { id: number; name: string }[];
-  history_target_id: number; has_versions: boolean };
+  history_target_id: number; has_versions: boolean;
+  /** conclusions of the series linked to this request (db/series_conclusion.for_request) */
+  conclusions?: { series_id: number; series_name: string; experiment_id: string; outcome: string | null; summary: string;
+    recommendation: string | null; recommendation_text: string }[] };
 export type Version = { id: number; version: number; current: boolean; timestamp: string | null; user: string };
 type Compare = { title: string; rows: { field: string; left: string; right: string; changed: boolean }[]; any_changes: boolean };
 export type ImgItem = { id: number; name: string; can_rename?: boolean };
@@ -76,6 +80,21 @@ export default function RequestPopup({ id, prefix, onClose }: { id: number; pref
               </div>
             ))}
           </dl>
+        )}
+        {data && data.conclusions && data.conclusions.length > 0 && (
+          <div className="rqp-concl">
+            <h3>{t("cc.requestResults")}</h3>
+            {data.conclusions.map((c) => (
+              <div key={c.series_id} className="rqp-concl-row">
+                <a href={`/series/${c.series_id}?tab=conclusion`} onClick={(e) => { if (!(e.ctrlKey || e.metaKey)) { e.preventDefault(); onClose(); window.location.assign(`/series/${c.series_id}?tab=conclusion`); } }}>
+                  {c.experiment_id} – {c.series_name}</a>
+                <div><OutcomeDot outcome={c.outcome} />{c.outcome ? <b>{t(`cc.o.${c.outcome}`)}</b> : null}{c.summary ? ` ${c.summary}` : ""}</div>
+                {(c.recommendation || c.recommendation_text) && (
+                  <div className="muted">{t("cc.recommendation")}: {c.recommendation ? t(`cc.r.${c.recommendation}`) : ""}{c.recommendation_text ? ` – ${c.recommendation_text}` : ""}</div>
+                )}
+              </div>
+            ))}
+          </div>
         )}
       </div>
       <div className="modal-buttons"><button className="btn-plain" onClick={onClose}>{t("rqp.close")}</button></div>

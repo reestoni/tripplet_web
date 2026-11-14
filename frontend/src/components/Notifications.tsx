@@ -11,7 +11,8 @@ import { useI18n } from "../i18n";
 type Item = { id: number; type: string; unread: boolean; created: string; title: string; experiment: string;
   series_id: number | null; yarn_id: number | null; charge: string; request_id: number | null; archived_version_id: number | null };
 
-const ICON: Record<string, string> = { yarn_stock: "🧵", experiment_request: "📝", experiment_request_changed: "🔄" };
+const ICON: Record<string, string> = { yarn_stock: "🧵", experiment_request: "📝", experiment_request_changed: "🔄",
+  series_conclusion: "✅" };
 
 export default function Bell() {
   const { t } = useI18n();
@@ -54,6 +55,9 @@ export default function Bell() {
     } else if (n.type === "experiment_request" || n.type === "experiment_request_changed") {
       markRead(n);
       if (n.request_id) navigate(`/requests/${n.request_id}`);
+    } else if (n.type === "series_conclusion" && n.series_id) {
+      markRead(n);
+      navigate(`/series/${n.series_id}?tab=conclusion`);
     } else if (n.series_id) navigate(`/series/${n.series_id}`);
     setOpen(false);
   };
@@ -86,7 +90,7 @@ export default function Bell() {
                   <span className="bell-text">
                     <span className="bell-tag">{tag(n.type)}</span>
                     <span className="bell-name">{n.title}</span>
-                    {n.experiment && !(n.type in ICON) && <span className="muted">{t("bell.experiment", { e: n.experiment })}</span>}
+                    {n.experiment && (!(n.type in ICON) || n.type === "series_conclusion") && <span className="muted">{t("bell.experiment", { e: n.experiment })}</span>}
                     <span className="bell-time">{n.created}</span>
                   </span>
                   {n.unread && <button className="bell-ok" title={t("bell.markRead")} onClick={(e) => { e.stopPropagation(); markRead(n); }}>✓</button>}

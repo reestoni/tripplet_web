@@ -20,9 +20,9 @@ router = APIRouter(prefix="/api")
 
 
 @router.get("/quick-search")
-def quick_search(series: str = "", jet: str = "", yarn: str = "", machine: str = "",
+def quick_search(series: str = "", jet: str = "", yarn: str = "", machine: str = "", conclusion: str = "",
                  user: Dict[str, Any] = Depends(current_user)):
-    terms = [qs._terms(x[:200]) for x in (jet, machine, series, yarn)]
+    terms = [qs._terms(x[:200]) for x in (jet, machine, series, yarn, conclusion)]
     if not any(terms):
         return {"results": []}
     res = qs._search(*terms)

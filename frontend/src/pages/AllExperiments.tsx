@@ -6,7 +6,7 @@ import { RequestIcon } from "../components/RequestPopup";
 import { ReportIcon } from "../components/SeriesLinks";
 
 type SortKey = "experiment_id" | "series_name" | "machine" | "creation_date" | "owner" | "status_id" | "has_attach"
-  | "experiment_request_id" | "has_notes" | "reports";
+  | "experiment_request_id" | "has_notes" | "reports" | "outcome" | "summary";
 
 const COLUMNS: { key: SortKey; icon?: boolean }[] = [
   { key: "experiment_id" },
@@ -20,6 +20,8 @@ const COLUMNS: { key: SortKey; icon?: boolean }[] = [
   { key: "has_notes", icon: true },
   { key: "reports", icon: true },
 ];
+// conclusion columns (db/series_conclusion.py), only when the database has the table
+const CONCL_COLUMNS: { key: SortKey; icon?: boolean }[] = [{ key: "outcome" }, { key: "summary" }];
 
 // same sort keys as the desktop (_sort_key in screen_all_experiments.py)
 function sortValue(r: ExperimentRow, k: SortKey): string | number {
@@ -37,6 +39,13 @@ function sortValue(r: ExperimentRow, k: SortKey): string | number {
       return r.experiment_request_id == null ? 0 : 1;
     case "reports":
       return r.reports ? 1 : 0;
+    case "outcome": {
+      const o = r.conclusion?.outcome;
+      const i = o ? (OUTCOMES as readonly string[]).indexOf(o) : -1;
+      return i >= 0 ? i + 1 : r.conclusion ? 9 : 99;
+    }
+    case "summary":
+      return (r.conclusion?.summary ?? "").toLowerCase() || "￿";   // empty last
     default:
       return (r[k] ?? "").toString();
   }
@@ -47,6 +56,7 @@ function fmtDate(v: string | null) {
 }
 
 import { useSeriesAdmin } from "../components/SeriesAdmin";
+import { OUTCOMES, OutcomeDot } from "../components/ConclusionTab";
 import { HelpButton } from "../components/Help";
 import { openSeriesFrom } from "./Backlog";
 
@@ -59,6 +69,8 @@ export default function AllExperiments() {
   const [error, setError] = useState<string | null>(null);
   const [seriesFilter, setSeriesFilter] = useState("");
   const [expFilter, setExpFilter] = useState("");
+  const [conclFilter, setConclFilter] = useState("");     // "", "any", "none" or an outcome
+  const [hasConcl, setHasConcl] = useState(false);
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: "experiment_id", asc: false });
   const [reload, setReload] = useState(0);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
@@ -78,6 +90,7 @@ export default function AllExperiments() {
         if (!alive) return;
         setMachines(d.machines);
         setRows(d.rows);
+        setHasConcl(!!d.conclusions);
         setError(null);
       })
       .catch((e) => alive && setError(e.message));
@@ -90,8 +103,10 @@ export default function AllExperiments() {
     if (!rows) return [];
     const sf = seriesFilter.trim().toLowerCase();
     const ef = expFilter.trim().toLowerCase();
+    const keepC = (r: ExperimentRow) => !conclFilter || (conclFilter === "any" ? !!r.conclusion
+      : conclFilter === "none" ? !r.conclusion : r.conclusion?.outcome === conclFilter);
     const list = rows.filter(
-      (r) => (!sf || r.series_name.toLowerCase().includes(sf)) && (!ef || String(r.experiment_id).toLowerCase().includes(ef)),
+      (r) => (!sf || r.series_name.toLowerCase().includes(sf)) && (!ef || String(r.experiment_id).toLowerCase().includes(ef)) && keepC(r),
     );
     const dir = sort.asc ? 1 : -1;
     return [...list].sort((a, b) => {
@@ -99,7 +114,7 @@ export default function AllExperiments() {
       const y = sortValue(b, sort.key);
       return x < y ? -dir : x > y ? dir : 0;
     });
-  }, [rows, seriesFilter, expFilter, sort]);
+  }, [rows, seriesFilter, expFilter, conclFilter, sort]);
 
   const clickHeader = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, asc: !s.asc } : { key, asc: true }));
@@ -125,13 +140,21 @@ export default function AllExperiments() {
           onChange={(e) => setSeriesFilter(e.target.value)} />
         <input className="search narrow" placeholder={t("exp.filterExp")} value={expFilter}
           onChange={(e) => setExpFilter(e.target.value)} />
+        {hasConcl && (
+          <select className="search narrow" value={conclFilter} onChange={(e) => setConclFilter(e.target.value)}>
+            <option value="">{t("cc.filterAll")}</option>
+            <option value="any">{t("cc.filterAny")}</option>
+            <option value="none">{t("cc.filterNone")}</option>
+            {OUTCOMES.map((o) => <option key={o} value={o}>{t(`cc.o.${o}`)}</option>)}
+          </select>
+        )}
       </div>
       {error && <div className="card error">{error}</div>}
       <div className="table-wrap">
         <table className="grid">
           <thead>
             <tr>
-              {COLUMNS.map((c) => (
+              {[...COLUMNS, ...(hasConcl ? CONCL_COLUMNS : [])].map((c) => (
                 <th key={c.key} className={c.icon ? "icon-col" : ""} title={c.icon ? t(`exp.tip.${c.key}`) : undefined}
                   onClick={() => clickHeader(c.key)}>
                   {t(`exp.col.${c.key}`)}
@@ -167,6 +190,12 @@ export default function AllExperiments() {
                 <td className="icon-col">
                   <ReportIcon seriesId={r.series_id} count={r.reports} />
                 </td>
+                {hasConcl && (
+                  <>
+                    <td className="nowrap">{r.conclusion && <><OutcomeDot outcome={r.conclusion.outcome} />{r.conclusion.outcome ? t(`cc.o.${r.conclusion.outcome}`) : ""}</>}</td>
+                    <td className="cc-sumcell" title={r.conclusion?.summary || undefined}>{r.conclusion?.summary ?? ""}</td>
+                  </>
+                )}
               </tr>
             ))}
           </tbody>

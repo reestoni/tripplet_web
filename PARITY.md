@@ -483,3 +483,15 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Usage Stats: ranking + logins per day, tables Logins / Screens / Features / Help | `ui/screen_usage_stats.py` | **NOT IN WEB (on purpose)** | not needed in the web (user decision 2026-11-13); the web logs its page opens, the desktop Usage Stats shows them |
 | Recycle Bin: list, restore, delete permanently, preview in Show Experiment (read only, banner: keep / back / delete; leaving = back) | `ui/widgets/recycle_bin_dialog.py`, `ui/recycle_preview.py` | **DONE** | `be/recycle_bin_api.py` on `db/recycle_bin.py` |
 | Lab Assistant (AI chat over the database) | `ui/screen_lab_assistant.py` | **NOT IN WEB (on purpose)** | no AI in the web (user decision); left out of the sidebar like Offline Sync |
+
+## Conclusion per series (added 2026-11-14, both apps)
+
+| Feature | Desktop | Web status | Notes |
+|---|---|---|---|
+| Conclusion tab (goal from request or own goal, outcome, summary, best trials, findings, recommendation) | `ui/widgets/conclusion_tab.py` | **DONE** | `components/ConclusionTab.tsx`, `app/conclusion_api.py`, logic `db/series_conclusion.py` |
+| Marker on Backlog cards (outcome dot, dashed ring = Done without conclusion), tooltip with summary | `screen_backlog` delegate | **DONE** | `Backlog.tsx` |
+| All Experiments: Outcome + Conclusion columns, filter | `screen_all_experiments` | **DONE** | `AllExperiments.tsx` |
+| Quick search field "Conclusion" | `screen_quick_search` | **DONE** | `QuickSearch.tsx` |
+| Request popup: results of the linked series | `_ExperimentRequestReadOnlyDialog` | **DONE** | `RequestPopup.tsx` |
+| Bell for the requester on first save | `notification_panel` type `series_conclusion` | **DONE** | `Notifications.tsx` |
+| Hint when archiving without conclusion | Backlog / All Experiments | **DONE** | 409 `no_conclusion` + confirm |

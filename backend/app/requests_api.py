@@ -240,6 +240,8 @@ def view(request_id: int, user: Dict[str, Any] = Depends(current_user)):
         return _err(404, "not_found", "This request does not exist.")
     data["images"] = [{"id": i.get("ID"), "name": i.get("OriginalFilename") or i.get("StoredFilename")}
                       for i in data.get("images") or [] if i.get("ID") is not None]
+    from db import series_conclusion
+    data["conclusions"] = series_conclusion.for_request(request_id)   # results of the linked series
     return _json(data)
 
 

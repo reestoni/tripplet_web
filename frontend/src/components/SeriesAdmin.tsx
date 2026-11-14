@@ -57,9 +57,9 @@ export function useSeriesAdmin({ onChanged, onMessage }: {
     onMessage("err", t(key) === key ? t("bl.err.other") : t(key));
   }, [onMessage, t]);
 
-  const move = useCallback(async (s: SeriesRef, to: number, machineId?: number) => {
+  const move = useCallback(async (s: SeriesRef, to: number, machineId?: number, ignoreConclusion = false) => {
     try {
-      const r = await api.moveCard(s.series_id, to, machineId);
+      const r = await api.moveCard(s.series_id, to, machineId, ignoreConclusion);
       if (r.moved) {
         onMessage("ok", t("bl.moved", { status: t(`status.${to}`) }));
         window.dispatchEvent(new Event("tripplet:nav-changed"));
@@ -69,6 +69,8 @@ export function useSeriesAdmin({ onChanged, onMessage }: {
     } catch (e) {
       if (e instanceof ApiError && e.code === "need_machine") {
         setDialog({ kind: "joker", s, to, machines: (e.data?.machines as { id: number; name: string }[]) ?? [] });
+      } else if (e instanceof ApiError && e.code === "no_conclusion") {
+        if (window.confirm(t("cc.archiveQ"))) void move(s, to, machineId, true); else onChanged();   // onChanged resets the dropdown
       } else moveErr(e);
     }
   }, [onChanged, onMessage, t, moveErr]);

@@ -223,6 +223,8 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
         "playground": _playground(_user, series_id),
         # Canvas boards of this series (db/canvas_boards.py); None = no Canvas right or no table
         "boards": _boards(_user, series_id),
+        # conclusion tab (db/series_conclusion.py): None = table missing, else {"outcome"} / {} when none yet
+        "conclusion": _conclusion(series_id),
         # opened from the recycle bin by this superuser: read only + banner (app/recycle_bin_api.py)
         "recycle_preview": _recycle_preview(series_id, _user),
         "tabs": tabs,
@@ -235,6 +237,14 @@ def series(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
 def _recycle_preview(series_id: int, user: Dict[str, Any]):
     from .recycle_bin_api import preview_for
     return preview_for(series_id, user)
+
+
+def _conclusion(series_id: int):
+    from db import series_conclusion as sc
+    if not sc.table_ready():
+        return None
+    c = sc.summary_map([series_id]).get(series_id)
+    return {"exists": bool(c), "outcome": (c or {}).get("outcome")}
 
 
 def _boards(user: Dict[str, Any], series_id: int):

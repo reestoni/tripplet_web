@@ -15,6 +15,7 @@ import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefN
 import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
 import { copyText, flashTrial, seriesLink } from "../links";
+import ConclusionTab, { OutcomeDot } from "../components/ConclusionTab";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -66,7 +67,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
           lastRecent.current = d.series.id;
           request("POST", "/api/recent", { series_id: d.series.id }).catch(() => undefined);
         }
-        const keys = ["machine", "notes", ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []), ...(d.has_yarnscope_aty ? ["yarnscope_aty"] : []),
+        const keys = ["machine", "notes", ...(d.conclusion ? ["conclusion"] : []), ...(d.has_rd ? ["rd"] : []), ...(d.has_yarnscope ? ["yarnscope"] : []), ...(d.has_yarnscope_aty ? ["yarnscope_aty"] : []),
           ...d.tabs.map((x) => x.key)];
         const first = !linked.current;
         linked.current = true;
@@ -282,7 +283,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
   // trial header: Copy trials…, reference samples (desktop _on_trial_header_menu)
   const trialExtras = (trial: Trial, selected: number[]): MenuItem[] => [
     { label: t("lk.trial", { trial: trial.label }), onClick: () => copyLink(seriesLink(s.id,
-      tab && !["notes", "yarnscope", "yarnscope_aty"].includes(tab) ? tab : "machine", trial.id)) },
+      tab && !["notes", "conclusion", "yarnscope", "yarnscope_aty"].includes(tab) ? tab : "machine", trial.id)) },
     { sep: true }, ...trialItems(trial, selected)];
   const trialItems = (trial: Trial, selected: number[]): MenuItem[] => {
     // "Open V<n> in Process Playground…" (desktop: DTY series, tool allowed, not for reference samples)
@@ -317,6 +318,9 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
     return () => window.removeEventListener("tripplet:yarns", h);
   }, [onTool]);
   const trialNotes = (id: number) => data.notes.filter((n) => n.trial_note && n.trial_id === id);
+  const [conclDirty, setConclDirty] = useState(false);
+  const [conclSeen, setConclSeen] = useState(false);       // keep the tab mounted once opened (unsaved text survives tab changes)
+  useEffect(() => { if (tab === "conclusion") setConclSeen(true); }, [tab]);
   return (
     <>
       <div className="se-tabs" role="tablist">
@@ -353,6 +357,13 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
           onClick={() => choose("notes")}>
           {t("nt.tab")}{data.notes.length > 0 && <span className="note-count">{data.notes.length}</span>}
         </button>
+        {data.conclusion && (
+          <button role="tab" aria-selected={tab === "conclusion"} className={"se-tab" + (tab === "conclusion" ? " on" : "")}
+            onClick={() => choose("conclusion")} title={data.conclusion.exists ? undefined : t("cc.noneYet")}>
+            {t("cc.tab")}{data.conclusion.exists && <OutcomeDot outcome={data.conclusion.outcome} />}
+            {conclDirty && <span className="dirty-dot" title={t("ed.unsavedTab")} />}
+          </button>
+        )}
         {data.pending_tabs.map((x) => (
           <span key={x.key} className="se-tab soon" title={t("se.pending", { tab: tr("tab", x.key, x.title) })}>
             {tr("tab", x.key, x.title)}
@@ -368,6 +379,12 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
       )}
       {data.trials.length > 0 && tab === "machine" && (
         <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} tools={tools} />
+      )}
+      {data.conclusion && (conclSeen || tab === "conclusion") && (
+        <div style={tab === "conclusion" ? undefined : { display: "none" }}>
+          <ConclusionTab seriesId={s.id} trials={data.trials.map((x) => ({ id: x.id, label: x.label }))}
+            onSaved={onChanged} onDirty={setConclDirty} />
+        </div>
       )}
       {tab === "notes" && <SeriesNotes seriesId={s.id} initial={s.notes} canWrite={accessLevel >= 2} onSaved={onChanged} />}
       {tab === "notes" && (

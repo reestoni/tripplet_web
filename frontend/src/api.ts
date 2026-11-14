@@ -44,7 +44,11 @@ export type ExperimentRow = {
   experiment_request_id: string | number | null;
   has_notes: boolean;
   reports: number;
+  conclusion?: ConclusionBrief | null;
 };
+
+/** Outcome + short summary of a series conclusion (db/series_conclusion.summary_map) for lists and cards. */
+export type ConclusionBrief = { outcome: string | null; summary: string };
 
 export type BacklogCard = {
   series_id: number;
@@ -61,6 +65,7 @@ export type BacklogCard = {
   experiment_request_id: string | number | null;
   reports: number;
   retest: { trial: string; lab: string; note: string }[];
+  conclusion?: ConclusionBrief | null;
 };
 
 export type ArchivedRow = {
@@ -96,6 +101,7 @@ export type SeriesData = {
   has_yarnscope_aty: boolean;
   playground?: boolean;
   boards?: number | null;
+  conclusion?: { exists: boolean; outcome: string | null } | null;
   recycle_preview?: { deleted_at: string; deleted_by: string } | null;
   tabs: { key: string; title: string; lazy?: boolean; rows: { title: string; info?: boolean; r?: number; cells: PivotCell[] }[]; flags: Record<string, string>; retest?: { trial: string; note: string }[]; kb?: string | null }[];
   pending_tabs: { key: string; title: string }[];
@@ -163,15 +169,16 @@ export const api = {
   login: (username: string, password: string) =>
     request<{ user: User }>("POST", "/api/auth/login", { username, password }),
   experiments: (machine?: string) =>
-    request<{ machines: string[]; statuses: Status[]; rows: ExperimentRow[] }>(
+    request<{ machines: string[]; statuses: Status[]; rows: ExperimentRow[]; conclusions?: boolean }>(
       "GET",
       "/api/experiments" + (machine && machine !== "All" ? `?machine=${encodeURIComponent(machine)}` : ""),
     ),
   backlog: () =>
     request<{ boxes: (Status & { cards: BacklogCard[] })[]; archived: ArchivedRow[];
-      welcome: { message: string; first_name: string }; stamp?: string }>("GET", "/api/backlog"),
-  moveCard: (series_id: number, to_status: number, machine_id?: number) =>
-    request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id }),
+      welcome: { message: string; first_name: string }; stamp?: string; conclusions?: boolean }>("GET", "/api/backlog"),
+  /** ignore_conclusion: "No conclusion yet - archive anyway?" answered with yes (409 no_conclusion otherwise) */
+  moveCard: (series_id: number, to_status: number, machine_id?: number, ignore_conclusion = false) =>
+    request<{ ok: boolean; moved: boolean }>("POST", "/api/backlog/move", { series_id, to_status, machine_id, ignore_conclusion }),
   series: (id: number) => request<SeriesData>("GET", `/api/series/${id}`),
   machine: (id: number, mode: string, source: "machine" | "rd" = "machine", custom = false) =>
     request<MachineData>("GET", `/api/series/${id}/${source}?mode=${mode}${custom ? "&custom=1" : ""}`),

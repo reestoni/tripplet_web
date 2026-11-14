@@ -17,7 +17,7 @@ export function QuickSearchHost() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState({ series: "", jet: "", yarn: "", machine: "" });
+  const [f, setF] = useState({ series: "", jet: "", yarn: "", machine: "", conclusion: "" });
   const [hits, setHits] = useState<Hit[] | null>(null);
   const [more, setMore] = useState(0);
   const [active, setActive] = useState(0);
@@ -64,7 +64,7 @@ export function QuickSearchHost() {
         <h2>🔍 {t("qsr.title")}</h2>
         <div className="qsr-fields">
           {field("series", "e.g. Intermingling", first)}{field("jet", "e.g. P213, APh213")}
-          {field("yarn", "e.g. PES 78f36")}{field("machine", "e.g. eAFK")}
+          {field("yarn", "e.g. PES 78f36")}{field("machine", "e.g. eAFK")}{field("conclusion", t("qsr.conclusionPh"))}
         </div>
         <div className="qsr-results">
           {hits === null ? <p className="muted">{t("qsr.hint")}</p> : !hits.length ? <p className="muted">{t("qsr.none")}</p> : (<>
