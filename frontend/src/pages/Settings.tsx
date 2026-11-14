@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { useDisplay, type DisplayPrefs } from "../display";
@@ -7,6 +7,7 @@ import { useDisplay, type DisplayPrefs } from "../display";
    backend/app/settings_api.py - same stored values as the desktop. */
 
 type Data = { welcome: string; welcome_max: number; first_name: string; accent: string; default_accent: string;
+  user_id: number; avatar: number; initials: string;
   prefs: DisplayPrefs; start_options: { key: string; nav_route: string | null; web: boolean }[]; can_store: boolean };
 
 export function PasswordForm({ onDone, submit }: { onDone: () => void;
@@ -30,6 +31,45 @@ export function PasswordForm({ onDone, submit }: { onDone: () => void;
       {err && <div className="login-error set-full">{err}</div>}
       <div className="set-full"><button type="button" className="btn-green" disabled={busy || !v.old || !v.nw || !v.rep} onClick={go}>{t("pw.change")}</button></div>
     </div>
+  );
+}
+
+/* Profile picture (db/user_avatar.py, the same file as the desktop): stored right away, not with "Save". */
+function AvatarBox({ d }: { d: Data }) {
+  const { t } = useI18n();
+  const [ver, setVer] = useState(d.avatar);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const changed = (v: number) => { setVer(v); window.dispatchEvent(new CustomEvent("tripplet:avatar", { detail: v })); };
+  const upload = async (f: File) => {
+    setBusy(true); setErr(null);
+    const fd = new FormData();
+    fd.append("file", f);
+    try {
+      const r = await fetch("/api/settings/avatar", { method: "POST", body: fd, credentials: "same-origin" });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) setErr(j.code ? t(`set.avatarErr.${j.code}`) : String(j.detail ?? r.status));
+      else changed(j.avatar);
+    } catch (e) { setErr(String(e)); } finally { setBusy(false); }
+  };
+  const remove = async () => {
+    setBusy(true); setErr(null);
+    try { await request("DELETE", "/api/settings/avatar"); changed(0); } catch (e) { setErr(String(e)); } finally { setBusy(false); }
+  };
+  return (
+    <section className="set-box">
+      <h2>{t("set.avatar")}</h2>
+      <div className="set-row set-avatar">
+        {ver ? <img className="set-avatar-img" src={`/api/avatar/${d.user_id}?v=${ver}`} alt="" />
+          : <span className="set-avatar-img sb-avatar">{d.initials}</span>}
+        <button type="button" className="btn-green" disabled={busy} onClick={() => input.current?.click()}>{t("set.avatarChoose")}</button>
+        {ver > 0 && <button type="button" className="btn-plain" disabled={busy} onClick={remove}>{t("set.avatarRemove")}</button>}
+        <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) upload(f); }} />
+      </div>
+      {err && <div className="login-error">{err}</div>}
+      <p className="muted">{t("set.avatarHint")}</p>
+    </section>
   );
 }
 
@@ -64,6 +104,8 @@ export default function Settings() {
   return (
     <div className="page set-page">
       <div className="page-head"><h1>{t("set.title")}</h1></div>
+
+      <AvatarBox d={d} />
 
       <section className="set-box">
         <h2>{t("set.welcome")}</h2>

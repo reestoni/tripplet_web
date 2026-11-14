@@ -314,6 +314,12 @@ selbst, wenn die neueste Version ungesehen ist), `app/whats_new_api.py` auf `ui/
 (EN/DE/ES, Flaggen wie die Hilfe, Chinesisch -> Englisch). "Gesehen" = `DisplaySettings.whats_new_seen` wie im Desktop. Skizzen über
 `/api/whats-new/sketch/<name>`. Kein PDF-Knopf (Browser-Druck).
 
+**Profilbild** (2026-11-14, beide Apps): freiwillig, Datei statt DB-Spalte - `db/user_avatar.py` (Desktop-Repo; Ordner
+`file_roots` `USER_AVATARS`, dev `C:\ttt\UserAvatars`, prod `H:\Technik\TrippleT\UserAvatars`, `<UserID>.png`, jeder Upload
+wird quadratisch auf 256 px PNG gebracht). Web: Abschnitt "Profilbild" in `/settings` (sofort gespeichert, `POST/DELETE
+/api/settings/avatar`), Bild `GET /api/avatar/<id>?v=<version>`, `/api/me` -> `avatar` (Version, 0 = keins), Konto-Karte zeigt es
+(Ereignis `tripplet:avatar`). Desktop: Gruppe "Profile picture" im Settings-Dialog (mit Save gespeichert), rund in der Fusszeile.
+
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,

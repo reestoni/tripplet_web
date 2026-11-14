@@ -55,6 +55,12 @@ function UserMenu({ me, name, onLogout }: { me: Me; name: string; onLogout: () =
     document.addEventListener("keydown", onKey);
     return () => { document.removeEventListener("mousedown", onDown); document.removeEventListener("keydown", onKey); };
   }, [open]);
+  const [ver, setVer] = useState(me.avatar ?? 0);
+  useEffect(() => {
+    const on = (e: Event) => setVer(Number((e as CustomEvent).detail) || 0);
+    window.addEventListener("tripplet:avatar", on);
+    return () => window.removeEventListener("tripplet:avatar", on);
+  }, []);
   const initials = ([me.user.first_name?.[0], me.user.last_name?.[0]].filter(Boolean).join("") || me.user.username.slice(0, 2)).toUpperCase();
   return (
     <div className="sb-me" ref={box}>
@@ -67,7 +73,7 @@ function UserMenu({ me, name, onLogout }: { me: Me; name: string; onLogout: () =
         </div>
       )}
       <button type="button" className={"sb-me-btn" + (open ? " on" : "")} onClick={() => setOpen(!open)} title={name} aria-haspopup="menu" aria-expanded={open}>
-        <span className="sb-avatar">{initials}</span>
+        {ver ? <img className="sb-avatar" src={`/api/avatar/${me.user.id}?v=${ver}`} alt="" /> : <span className="sb-avatar">{initials}</span>}
         <span className="sb-me-text"><span className="sb-me-name">{name}</span>{me.user.access_right && <span className="sb-me-role">{me.user.access_right}</span>}</span>
         <span className="sb-me-caret"><IconChevron /></span>
       </button>

@@ -1509,3 +1509,6 @@ body.pv-cb table.pivot td.orange { background: #fff2a8 !important; color: #6b5a0
 .sidebar.narrow .sb-tools { display: grid; grid-template-columns: 26px 26px; gap: 4px; justify-content: center; }
 .sidebar.narrow .sb-tools .sb-tool { width: 26px; height: 26px; flex-basis: 26px; }
 .sidebar.narrow .sb-tools .sb-tool svg { width: 16px; height: 16px; }
+img.sb-avatar { object-fit: cover; background: none; }
+.set-avatar { gap: 12px; align-items: center; }
+.set-avatar-img { width: 72px; height: 72px; flex: 0 0 72px; border-radius: 50%; object-fit: cover; font-size: 22px; }

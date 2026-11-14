@@ -37,6 +37,7 @@ app.include_router(yarn_stock_api.router)
 app.include_router(stock_take_api.router)
 app.include_router(user_admin_api.router)
 app.include_router(settings_api.router)
+app.include_router(settings_api.avatar_router)
 app.include_router(whats_new_api.router)
 app.include_router(search_api.router)
 app.include_router(notifications_api.router)
@@ -106,8 +107,9 @@ def logout(response: Response) -> Dict[str, Any]:
 def me(user: Dict[str, Any] = Depends(current_user)) -> Dict[str, Any]:
     from .start_page import start_route
     from .settings_api import display_prefs
+    from db import user_avatar
     return {"user": user, "mode": core.MODE, "db": core.DB_NAME, "version": core.APP_VERSION,
-            "instance": core.INSTANCE, "release": core.RELEASE,
+            "instance": core.INSTANCE, "release": core.RELEASE, "avatar": user_avatar.version(user.get("id")),
             "start_route": start_route(user), "display": display_prefs(user.get("id"))}
 
 

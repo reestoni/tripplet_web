@@ -3,6 +3,14 @@
 // "Backlog" stays "Backlog" in German (user decision).
 
 const en = {
+  "set.avatar": "Profile picture",
+  "set.avatarChoose": "Choose picture…",
+  "set.avatarRemove": "Remove",
+  "set.avatarHint": "Optional. Shown next to your name, also in the desktop app. Saved right away; it is cut to a square.",
+  "set.avatarErr.too_big": "The file is too large (max. 15 MB).",
+  "set.avatarErr.not_image": "The file is not a picture.",
+  "set.avatarErr.too_small": "The picture is too small (at least 32 × 32 px).",
+  "set.avatarErr.store_failed": "The picture could not be stored.",
   // general
   "app.loading": "Loading…",
   "app.serverDown": "The TrippleT server is not reachable. Is the backend running?",
@@ -2225,6 +2233,14 @@ export type TextKey = keyof typeof en;
 type Texts = Record<TextKey, string>;
 
 const de: Texts = {
+  "set.avatar": "Profilbild",
+  "set.avatarChoose": "Bild auswählen…",
+  "set.avatarRemove": "Entfernen",
+  "set.avatarHint": "Freiwillig. Erscheint neben deinem Namen, auch in der Desktop-App. Wird sofort gespeichert und quadratisch zugeschnitten.",
+  "set.avatarErr.too_big": "Die Datei ist zu gross (max. 15 MB).",
+  "set.avatarErr.not_image": "Die Datei ist kein Bild.",
+  "set.avatarErr.too_small": "Das Bild ist zu klein (mindestens 32 × 32 px).",
+  "set.avatarErr.store_failed": "Das Bild konnte nicht gespeichert werden.",
   "app.loading": "Wird geladen…",
   "app.serverDown": "Der TrippleT-Server ist nicht erreichbar. Läuft das Backend?",
   "app.language": "Sprache",
@@ -4434,6 +4450,14 @@ const de: Texts = {
 };
 
 const es: Texts = {
+  "set.avatar": "Foto de perfil",
+  "set.avatarChoose": "Elegir imagen…",
+  "set.avatarRemove": "Quitar",
+  "set.avatarHint": "Opcional. Aparece junto a tu nombre, también en la app de escritorio. Se guarda al instante y se recorta en cuadrado.",
+  "set.avatarErr.too_big": "El archivo es demasiado grande (máx. 15 MB).",
+  "set.avatarErr.not_image": "El archivo no es una imagen.",
+  "set.avatarErr.too_small": "La imagen es demasiado pequeña (mínimo 32 × 32 px).",
+  "set.avatarErr.store_failed": "No se pudo guardar la imagen.",
   "app.loading": "Cargando…",
   "app.serverDown": "No se puede acceder al servidor de TrippleT. ¿Está funcionando el backend?",
   "app.language": "Idioma",
@@ -6644,6 +6668,14 @@ const es: Texts = {
 };
 
 const zh: Texts = {
+  "set.avatar": "头像",
+  "set.avatarChoose": "选择图片…",
+  "set.avatarRemove": "移除",
+  "set.avatarHint": "可选。显示在你的名字旁边，桌面版也会显示。立即保存并裁剪为正方形。",
+  "set.avatarErr.too_big": "文件太大（最大 15 MB）。",
+  "set.avatarErr.not_image": "该文件不是图片。",
+  "set.avatarErr.too_small": "图片太小（至少 32 × 32 像素）。",
+  "set.avatarErr.store_failed": "无法保存图片。",
   "app.loading": "加载中…",
   "app.serverDown": "无法连接 TrippleT 服务器。后端是否在运行？",
   "app.language": "语言",

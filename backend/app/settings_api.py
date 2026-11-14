@@ -49,7 +49,14 @@ def settings(user: Dict[str, Any] = Depends(current_user)):
             "first_name": user.get("first_name") or "", "accent": user.get("accent_colour") or ua.DEFAULT_ACCENT,
             "default_accent": ua.DEFAULT_ACCENT, "prefs": prefs, "start_options": starts,
             "app_scales": list(ds.APP_SCALE_CHOICES), "scale_range": [ds.SCALE_MIN, ds.SCALE_MAX, ds.SCALE_STEP],
-            "can_store": ds.has_column()}
+            "can_store": ds.has_column(), "user_id": user.get("id"), "avatar": _avatar_version(user.get("id")),
+            "initials": ((user.get("first_name") or "")[:1] + (user.get("last_name") or "")[:1]).upper()
+            or str(user.get("username") or "?")[:2].upper()}
+
+
+def _avatar_version(user_id) -> int:
+    from db import user_avatar
+    return user_avatar.version(user_id)
 
 
 class SettingsBody(BaseModel):
@@ -137,3 +144,42 @@ def initial_password(body: InitialBody, response: Response):
     response.set_cookie(auth.COOKIE_NAME, auth.make_cookie(profile["username"]), max_age=auth.SESSION_MAX_AGE,
                         httponly=True, samesite="lax", path="/", secure=core.HTTPS)
     return {"user": profile}
+
+
+# ------------------------------------------------------------------ profile picture (db/user_avatar.py, same file as desktop)
+from fastapi import File, UploadFile  # noqa: E402
+from fastapi.responses import Response as _Raw  # noqa: E402
+
+from db import user_avatar  # noqa: E402
+
+
+@router.post("/avatar")
+async def upload_avatar(file: UploadFile = File(...), user: Dict[str, Any] = Depends(current_user)):
+    data = await file.read(user_avatar.MAX_UPLOAD_BYTES + 1)
+    try:
+        user_avatar.save(user.get("id"), data)
+    except user_avatar.AvatarError as e:
+        return _err(400, e.code, str(e))
+    except OSError:
+        return _err(500, "store_failed", "The picture could not be stored.")
+    log_usage_event("feature", "user_avatar", "web set")
+    return {"avatar": user_avatar.version(user.get("id"))}
+
+
+@router.delete("/avatar")
+def delete_avatar(user: Dict[str, Any] = Depends(current_user)):
+    user_avatar.delete(user.get("id"))
+    log_usage_event("feature", "user_avatar", "web remove")
+    return {"avatar": 0}
+
+
+avatar_router = APIRouter(prefix="/api/avatar")
+
+
+@avatar_router.get("/{user_id}")
+def get_avatar(user_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Any logged-in user may see the pictures (they appear next to names). ?v=<version> makes it cacheable."""
+    data = user_avatar.load_bytes(user_id)
+    if data is None:
+        return _err(404, "not_found", "No picture.")
+    return _Raw(content=data, media_type="image/png", headers={"Cache-Control": "private, max-age=86400"})
