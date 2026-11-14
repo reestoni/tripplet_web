@@ -18,6 +18,20 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   Maschinen-, Garnnamen) werden nicht übersetzt.
 - "Backlog" heisst auch auf Deutsch (und Spanisch) "Backlog" (Nutzerentscheid); Chinesisch 待办.
 
+## Grundregel ab 2026-11-14: jedes neue Feature in BEIDEN Apps
+
+**Ziel (Nutzerentscheid 2026-11-14):** Die Web-App ersetzt den Desktop. Sind alle Tests gut, wird die
+Desktop-App eingestellt. **Bis dahin muss jedes neue Feature und jede Änderung an bestehenden Funktionen
+in beiden Apps umgesetzt werden** (Desktop `C:\python\tripplet_project` + Web), auch wenn der Nutzer
+nur eine App nennt. Weg wie bisher: Logik Qt-frei in `tripplet_project` (beide nutzen sie), dann Desktop-
+Oberfläche und Web-Seite (4 Sprachen); `PARITY.md` nachführen. Fehlerkorrekturen ebenfalls in beiden.
+Ausnahmen nur, wenn der Nutzer es ausdrücklich sagt (z. B. bewusst nicht im Web: KI, Usage Stats).
+
+**Ausrollen (Plan 2026-11-14):** Windows-VM im Firmennetz als Dienst hinter HTTPS (IIS/Caddy, Firmen-CA),
+zuerst gegen `dev` mit 1–2 Testpersonen, dann `prod`, Desktop eine Zeit parallel. Dateien bleiben auf dem
+Fileserver (H: = `\\heb-fil-003\heberlein\technik\tripplet\...`; der Dienst braucht UNC-Pfade per
+Umgebungsvariable + Lesen/Schreiben fürs Dienstkonto). Freischalten von dev/prod nur auf ausdrückliche Freigabe.
+
 ## Rahmen (Nutzerentscheide 2026-11-13)
 
 - **Ziel-Betrieb: Server im Firmennetz (Intranet), nie im Internet.** IT erst für diesen
