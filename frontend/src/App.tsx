@@ -29,6 +29,7 @@ const ManageMaster = lazyPage(() => import("./pages/ManageMaster"));
 const QuickScan = lazyPage(() => import("./pages/QuickScan"));
 const RequirementHub = lazyPage(() => import("./pages/QuickScan").then((m) => ({ default: m.RequirementHub })));
 const ProcessPlayground = lazyPage(() => import("./pages/ProcessPlayground"));
+const JetAdvisor = lazyPage(() => import("./pages/JetAdvisor"));
 const Canvas = lazyPage(() => import("./pages/Canvas"));
 const TdmsInspector = lazyPage(() => import("./pages/TdmsInspector"));
 const LabelGenerator = lazyPage(() => import("./pages/LabelGenerator"));
@@ -111,6 +112,7 @@ export default function App() {
         <Route path="/tools/requirement-hub" element={<RequirementHub />} />
         <Route path="/tools/requirement-hub/quick-scan" element={<QuickScan />} />
         <Route path="/tools/process-playground" element={<ProcessPlayground />} />
+        <Route path="/tools/jet-advisor" element={<JetAdvisor />} />
         <Route path="/tools/canvas" element={<Canvas />} />
         <Route path="/tools/tdms-inspector" element={<TdmsInspector />} />
         <Route path="/tools/label-generator" element={<LabelGenerator />} />

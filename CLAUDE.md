@@ -288,6 +288,16 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Warnungen als Codes, Vorschläge, Diagrammdaten, `trial_start`, `series_is_dty`; Desktop-Screen nutzt es). Versuche einmal pro
   Prozess geladen (Neu laden/F5), Modell-Fits pro Kombination gecacht. Seite `ProcessPlayground.tsx` (Plotly). Aussagen,
   "Grundlage", Start-Hinweise und die Vorschlags-Meldung kommen englisch aus dem gemeinsamen Modul.
+- **Jet Advisor / Düsen-Berater** `/tools/jet-advisor` (2026-11-15, beide Apps, Nutzerwunsch): Ziele (Punkte/m, CV, Stabilität
+  0.3-1.3, je min/max) + Garn (vorhandenes oder Material/Endtiter/Filamente) + Filter (Düsentyp z. B. nur Standard, Hersteller,
+  Gruppe, Titerbereich der Düse, Grenzen für Druck/OF/Speed) -> Rangliste der Düsen mit Einstellung, Fenster, Vorhersage ± Streuung,
+  Chance, Luft (Formel aus `ui/jet_roi.py`), Grundlage (Serien-Links, "In der Prozess-Spielwiese öffnen" über `?trial=`).
+  Logik `ui/jet_advisor.py` (Variante A, Nutzerentscheid: transparent, nie extrapolieren): ähnliche Garne (Log-Abstand Endtiter
+  1.3x / Filamente 1.5x = 1), pro Garn/Düse die Fits von `dty_whatif` + gemessene Einstellungen, P(alle Ziele) normal, Gleichstand
+  = Sicherheitsabstand oder wenig Luft. Feature `jet_advisor` (Stufe 0). Web `app/jet_advisor_api.py` (ein `Advisor` pro Prozess,
+  Neu laden), Seite `JetAdvisor.tsx` (Formular in localStorage `tripplet.jetAdvisor`). Desktop `ui/screen_jet_advisor.py`.
+  Dabei korrigiert (beide Apps, auch Prozess-Spielwiese): Punkte/m = 0 heisst "nicht gemessen" (`dty_whatif.clean_rows`).
+  Tests: Desktop `test_jet_advisor.py`, `test_screen_jet_advisor.py`; Web `test_jet_advisor_api.py`.
 - Requirement Hub `/tools/requirement-hub` (Karte) + Quick Scan `/tools/requirement-hub/quick-scan` (`QuickScan.tsx`, beide
   Seiten in einer Datei): `app/quick_scan_api.py` (`/api/quick-scan/…`, Feature requirement_hub) auf neu `db/quick_scan.py`
   (aus `ui/screen_quick_scan.py` gezogen: Felder, Lookup-Optionen, Ad-hoc-Felder, `QuickScanEvaluator`, Score, Regelsätze;

@@ -495,3 +495,10 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Request popup: results of the linked series | `_ExperimentRequestReadOnlyDialog` | **DONE** | `RequestPopup.tsx` |
 | Bell for the requester on first save | `notification_panel` type `series_conclusion` | **DONE** | `Notifications.tsx` |
 | Hint when archiving without conclusion | Backlog / All Experiments | **DONE** | 409 `no_conclusion` + confirm |
+
+## Jet Advisor (added 2026-11-15, both apps)
+
+| Feature | Desktop | Web status | Notes |
+|---|---|---|---|
+| Targets + yarn + jet filters -> ranked jets with settings | `ui/screen_jet_advisor.py` | **DONE** | `pages/JetAdvisor.tsx`, `app/jet_advisor_api.py`, logic `ui/jet_advisor.py` |
+| Open series / Process Playground from a result | double-click series, button | **DONE** | links (new tab) |

@@ -1569,3 +1569,62 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .rqp-concl h3 { margin: 0 0 8px; font-size: 14px; }
 .rqp-concl-row { margin-bottom: 8px; font-size: 13px; line-height: 1.5; }
 @media (max-width: 700px) { .cc-grid { grid-template-columns: 1fr; } .cc-lab { padding-top: 0; } }
+
+/* Jet Advisor (pages/JetAdvisor.tsx) */
+.ja-grid { display: grid; grid-template-columns: minmax(280px, 330px) 1fr; gap: 16px; align-items: start; }
+.ja-inputs { display: flex; flex-direction: column; gap: 12px; }
+.ja-head-btn { margin-left: auto; }
+.ja-how { background: #f4f6f4; border: 1px solid #dde3dd; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; font-size: 13px; line-height: 1.5; max-width: 1100px; }
+.ja-seg { display: inline-flex; border: 1px solid #C9D1C8; border-radius: 6px; overflow: hidden; margin: 2px 0 6px; }
+.ja-seg button { font: inherit; font-size: 13px; padding: 4px 12px; border: none; background: #fff; cursor: pointer; }
+.ja-seg button + button { border-left: 1px solid #C9D1C8; }
+.ja-seg button.on { background: var(--accent); color: #fff; }
+.ja-search { width: 100%; box-sizing: border-box; }
+.ja-check { display: flex !important; grid-template-columns: none !important; align-items: center; gap: 6px; font-size: 13px; color: #3b4541; margin-top: 4px; }
+.ja-tt { border-collapse: collapse; width: 100%; font-size: 13px; }
+.ja-tt th { font-weight: 600; font-size: 12px; color: #5A6460; text-align: left; padding: 2px 4px; }
+.ja-tt td { padding: 2px 4px; }
+.ja-tt input { width: 70px; border: 1px solid #C9D1C8; border-radius: 5px; padding: 4px 6px; font-size: 13px; }
+.ja-lab { font-weight: 600; font-size: 13px; margin: 8px 0 4px; }
+.ja-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.ja-chip { font: inherit; font-size: 12px; padding: 3px 10px; border-radius: 12px; border: 1px solid #C9D1C8; background: #fff; cursor: pointer; }
+.ja-chip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.ja-more summary { cursor: pointer; font-size: 13px; color: #5A6460; margin-top: 8px; }
+.ja-actions { display: flex; gap: 10px; }
+.ja-results { min-width: 0; }
+.ja-empty { padding: 30px 10px; text-align: center; }
+.ja-summary { margin-bottom: 10px; font-size: 14px; }
+.ja-yarns { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; margin-top: 6px; }
+.ja-ychip { font-size: 12px; background: #eef2ee; border-radius: 10px; padding: 2px 8px; }
+.ja-tablewrap { overflow-x: auto; }
+.ja-res { border-collapse: collapse; width: 100%; font-size: 13px; background: #fff; }
+.ja-res th { text-align: left; font-size: 12px; font-weight: 600; padding: 6px 8px; border-bottom: 2px solid #DADFD8; white-space: nowrap; vertical-align: bottom; }
+.ja-res td { padding: 5px 7px; border-bottom: 1px solid #ECEFEB; vertical-align: top; }
+.ja-row { cursor: pointer; }
+.ja-row:hover, .ja-row.open { background: #f6f8f6; }
+.ja-num { text-align: right; white-space: nowrap; }
+.ja-num.met { color: #1F7A3A; }
+.ja-num.miss { color: #B03A2E; }
+.ja-prob { width: 70px; height: 8px; background: #ECEFEB; border-radius: 4px; overflow: hidden; }
+.ja-prob span { display: block; height: 100%; }
+.ja-prob.good span { background: #2e9e4f; }
+.ja-prob.ok span { background: #8DBF3F; }
+.ja-prob.weak span { background: #E0A800; }
+.ja-prob.bad span { background: #C0392B; }
+.ja-type { display: inline-block; font-size: 11px; border-radius: 8px; padding: 0 6px; margin-right: 4px; background: #eef2ee; color: #4a5550; }
+.ja-type.t1 { background: #DFF0E3; color: #1F7A3A; }
+.ja-type.t2 { background: #E3EEF8; color: #2367A0; }
+.ja-type.t4 { background: #F6E7E5; color: #9A3A2E; }
+.ja-warn { color: #B26A00; font-size: 11px; }
+.ja-src { display: inline-block; font-size: 11px; border-radius: 8px; padding: 0 6px; }
+.ja-src.measured { background: #DFF0E3; color: #1F7A3A; }
+.ja-src.model { background: #E3EEF8; color: #2367A0; }
+.ja-detail td { background: #f6f8f6; }
+.ja-det { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; align-items: start; }
+.ja-det .ja-lab { margin-top: 0; }
+.ja-links { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; }
+@media (max-width: 900px) { .ja-grid { grid-template-columns: 1fr; } }
+.ja-basis { max-width: 190px; }
+.ja-basis .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ja-inputs .jr-form label { grid-template-columns: 105px minmax(0, 1fr); }
+.ja-inputs .jr-form select { min-width: 0; max-width: 100%; }

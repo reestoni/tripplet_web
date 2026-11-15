@@ -131,6 +131,7 @@ const SCREENS: [RegExp, string][] = [
   [/^\/tools\/yarn-count/, "YarnCountScreen"], [/^\/tools\/jet-roi/, "NozzleCalculatorScreen"], [/^\/tools\/air-supply/, "AirSupplyScreen"],
   [/^\/tools\/image-compare/, "ImageCompareScreen"], [/^\/tools\/label-generator/, "LabelGeneratorScreen"],
   [/^\/tools\/tdms-inspector/, "TdmsInspectorScreen"], [/^\/tools\/canvas/, "CanvasScreen"], [/^\/tools\/process-playground/, "ProcessPlaygroundScreen"],
+  [/^\/tools\/jet-advisor/, "JetAdvisorScreen"],
   [/^\/tools\/requirement-hub\/quick-scan/, "QuickScanScreen"], [/^\/tools\/requirement-hub/, "RequirementHubScreen"],
   [/^\/knowledge-base/, "OnboardingScreen"],
 ];
