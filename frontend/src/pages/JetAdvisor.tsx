@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
 import { seriesLink } from "../links";
+import { HelpButton } from "../components/Help";
 
 /* Jet Advisor (desktop ui/screen_jet_advisor.py) - computing on the server (ui/jet_advisor.py, on the fits of the
    Process Playground). Targets + yarn + filters -> jets with recommended pressure / overfeed / speed.
@@ -79,7 +80,6 @@ export default function JetAdvisor() {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [yarnSearch, setYarnSearch] = useState("");
-  const [showHow, setShowHow] = useState(false);
 
   const load = (reload = false) => {
     setErr(null);
@@ -154,10 +154,9 @@ export default function JetAdvisor() {
       <div className="page-head">
         <h1>{t("ja.title")}</h1>
         <span className="muted small">{t("ja.basis", { trials: opts.n_trials, combos: opts.n_combos })}</span>
-        <button className="btn-plain ja-head-btn" onClick={() => setShowHow((v) => !v)}>{t("ja.how")}</button>
-        <button className="btn-plain" onClick={() => load(true)} title={t("ja.reloadTip")}>{t("ja.reload")}</button>
+        <button className="btn-plain ja-head-btn" onClick={() => load(true)} title={t("ja.reloadTip")}>{t("ja.reload")}</button>
+        <HelpButton screen="jet_advisor" />
       </div>
-      {showHow && <div className="ja-how">{t("ja.howText")}</div>}
       {err && <div className="mj-msg err">{err}</div>}
       <div className="ja-grid">
         <div className="ja-inputs">

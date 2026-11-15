@@ -33,7 +33,7 @@ WEB_ROUTES: Dict[str, str] = {
     "all_experiments": "/experiments", "backlog": "/backlog", "show_experiment": "/experiments",
     "report": "/experiments", "create_experiment": "/experiments/new", "dashboards": "/tools/dashboards",
     "smart_chart": "/tools/smart-chart", "manage_yarn": "/admin/yarn", "manage_jets": "/admin/jets",
-    "process_playground": "/tools/process-playground", "yarn_stock": "/tools/yarn-stock",
+    "process_playground": "/tools/process-playground", "jet_advisor": "/tools/jet-advisor", "yarn_stock": "/tools/yarn-stock",
 }
 
 # help windows without a search entry (own format on the desktop)

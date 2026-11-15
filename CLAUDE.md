@@ -297,6 +297,8 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   = Sicherheitsabstand oder wenig Luft. Feature `jet_advisor` (Stufe 0). Web `app/jet_advisor_api.py` (ein `Advisor` pro Prozess,
   Neu laden), Seite `JetAdvisor.tsx` (Formular in localStorage `tripplet.jetAdvisor`). Desktop `ui/screen_jet_advisor.py`.
   Dabei korrigiert (beide Apps, auch Prozess-Spielwiese): Punkte/m = 0 heisst "nicht gemessen" (`dty_whatif.clean_rows`).
+  Hilfe (beide Apps, EN/DE/ES, Reiter "Wie mache ich…?", "Wie entschieden wird", "Bildschirm"): `ui/widgets/help_texts_jet_advisor.py`
+  + Skizze `assets/images/help_jet_advisor.svg`, in `help_index.SOURCES` und `help.WEB_ROUTES`; Web `HelpButton screen="jet_advisor"`.
   Tests: Desktop `test_jet_advisor.py`, `test_screen_jet_advisor.py`; Web `test_jet_advisor_api.py`.
 - Requirement Hub `/tools/requirement-hub` (Karte) + Quick Scan `/tools/requirement-hub/quick-scan` (`QuickScan.tsx`, beide
   Seiten in einer Datei): `app/quick_scan_api.py` (`/api/quick-scan/…`, Feature requirement_hub) auf neu `db/quick_scan.py`
