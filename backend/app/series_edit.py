@@ -32,6 +32,7 @@ class Edit(BaseModel):
     r: int              # data row of the tab (no header/info rows)
     c: int              # data column (machine/rd: column of col_specs; labs: trial column)
     value: Any = None   # typed text, or the ID for housing/jet/dropdown rows (None/"" = clear)
+    orig: Optional[str] = None   # the value as the page loaded it (stored ID on dropdown rows) - conflict check
 
 
 class SaveBody(BaseModel):
@@ -39,6 +40,7 @@ class SaveBody(BaseModel):
     mode: str = "single"            # Machine Data view the row/col indexes refer to
     unit: str = "Nm3h"              # Jet Air unit the values were typed in
     confirmed: bool = False         # plausibility warnings accepted
+    overwrite: bool = False         # save conflicts accepted (the user's values win)
 
 
 class _Tab:
@@ -108,6 +110,7 @@ def save(series_id: int, body: SaveBody, user: Dict[str, Any] = Depends(current_
     by_model: Dict[str, List[Tuple[Any, str]]] = {}
     items: List[Dict[str, Any]] = []
     errors: List[Dict[str, Any]] = []
+    checks: Dict[str, List[Dict[str, Any]]] = {}     # per tab: cells for the conflict check
     for e in body.edits:
         tab = tabs.get(e.tab)
         if tab is None or not (0 <= e.r < len(tab.cells)) or not (0 <= e.c < len(tab.cells[e.r])):
@@ -134,9 +137,26 @@ def save(series_id: int, body: SaveBody, user: Dict[str, Any] = Depends(current_
         if e.r in tab.wide_rows:
             labels = labels[:1]
         items.append({"binding": binding, "value": text, "labels": [x for x in labels if x], "title": tab.titles[e.r]})
+        if e.orig is not None:
+            checks.setdefault(e.tab, []).append({"binding": binding, "loaded": e.orig, "new": text, "tab": e.tab,
+                                                 "r": e.r, "c": e.c, "title": tab.titles[e.r],
+                                                 "labels": [x for x in labels if x], "mine": text})
     if errors:
         return JSONResponse(status_code=400, content={"code": "invalid_cells", "detail": "Some values are not valid.",
                                                       "cells": errors})
+
+    # someone else changed a cell since the page loaded it (desktop or another browser) -> ask first
+    if not body.overwrite and checks:
+        conflicts: List[Dict[str, Any]] = []
+        for tab_key, lst in checks.items():
+            scale, field = (extra.get("unit_scales") or {}).get(tab_key, (1.0, None))
+            try:
+                conflicts += ss.find_conflicts(lst, unit_scale=scale, unit_field=field)
+            except Exception:
+                pass
+        if conflicts:
+            return {"kind": "conflict", "cells": [{k: x[k] for k in ("tab", "r", "c", "title", "labels", "mine",
+                                                                     "current", "by", "at")} for x in conflicts]}
 
     if not body.confirmed and md is not None:
         try:

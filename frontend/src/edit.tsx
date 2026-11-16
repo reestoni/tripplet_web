@@ -9,7 +9,8 @@ import { useI18n } from "./i18n";
    tab-separated text (Excel), Ctrl+V pastes from the top-left selected cell, Delete clears them. */
 
 export type CellAddr = { tab: string; r: number; c: number };
-type Pending = CellAddr & { value: string | number | null; display: string };
+type Pending = CellAddr & { value: string | number | null; display: string; orig?: string };
+type Conflict = CellAddr & { title: string; labels: string[]; mine: string; current: string; by: string; at: string };
 export type Change = CellAddr & { value: string | number | null; display: string; original?: string };
 export const cellKey = (a: CellAddr) => `${a.tab}|${a.r}|${a.c}`;
 const key = cellKey;
@@ -99,6 +100,8 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
   const [reloadKey, setReloadKey] = useState(0);
   const [busy, setBusy] = useState(false);
   const [warn, setWarn] = useState<string[] | null>(null);
+  const [conflicts, setConflicts] = useState<Conflict[] | null>(null);
+  const overwriteRef = useRef(false);     // conflicts accepted - kept for the plausibility round that may follow
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const anchor = useRef<HTMLElement | null>(null);
@@ -137,7 +140,8 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
         const info = registry.current.get(k);
         const orig = ch.original ?? (info ? (info.options ? (info.raw ?? "") : info.text) : undefined);
         if (orig !== undefined && String(ch.value ?? "") === orig) next.delete(k);
-        else next.set(k, { tab: ch.tab, r: ch.r, c: ch.c, value: ch.value, display: ch.display });
+        // orig = the value as loaded, kept from the first edit of the cell (save conflict check on the server)
+        else next.set(k, { tab: ch.tab, r: ch.r, c: ch.c, value: ch.value, display: ch.display, orig: prev?.orig ?? orig });
         group.push({ k, prev, next: next.get(k) });
       }
       setUndo((u) => [...u, group]);
@@ -188,15 +192,20 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
     });
   }, []);
 
-  const save = useCallback(async (confirmed = false) => {
-    const edits = [...dirtyRef.current.values()].map(({ tab, r, c, value }) => ({ tab, r, c, value }));
+  const save = useCallback(async (confirmed = false, overwrite?: boolean) => {
+    if (overwrite !== undefined) overwriteRef.current = overwrite;
+    else if (!confirmed) overwriteRef.current = false;          // a new save starts without accepted conflicts
+    const edits = [...dirtyRef.current.values()].map(({ tab, r, c, value, orig }) => ({ tab, r, c, value, orig: orig ?? null }));
     if (!edits.length || busy) return;
     setBusy(true); setMsg(null);
     try {
-      const res = await request<{ kind: string; saved?: number; warnings?: string[]; failed?: string[] }>(
-        "POST", `/api/series/${seriesId}/save`, { edits, mode: machineMode(), unit: jetUnit(), confirmed });
-      if (res.kind === "confirm") { setWarn(res.warnings ?? []); return; }
-      setWarn(null); setDirty(new Map()); setUndo([]); setRedo([]); setBad(new Set());
+      const res = await request<{ kind: string; saved?: number; warnings?: string[]; failed?: string[]; cells?: Conflict[] }>(
+        "POST", `/api/series/${seriesId}/save`,
+        { edits, mode: machineMode(), unit: jetUnit(), confirmed, overwrite: overwriteRef.current });
+      if (res.kind === "conflict") { setWarn(null); setConflicts(res.cells ?? []); return; }
+      if (res.kind === "confirm") { setConflicts(null); setWarn(res.warnings ?? []); return; }
+      setWarn(null); setConflicts(null); overwriteRef.current = false;
+      setDirty(new Map()); setUndo([]); setRedo([]); setBad(new Set());
       setMsg(res.failed?.length ? { kind: "err", text: t("ed.partly", { tabs: res.failed.join(", ") }) } : { kind: "ok", text: t("ed.saved") });
       setReloadKey((k) => k + 1);
       onSaved?.();
@@ -383,6 +392,39 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
         {!msg && <span className="muted">{canWrite ? t("ed.hint") : t("ed.hintRo")}</span>}
       </div>
       {children}
+      {conflicts && (
+        <div className="modal-back" onClick={() => setConflicts(null)}>
+          <div className="modal ed-conflict" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h2>{t("ed.conflictTitle")}</h2>
+            <p className="muted">{t("ed.conflictText")}</p>
+            <table className="ed-conflict-tbl">
+              <thead><tr><th>{t("ed.conflictCell")}</th><th>{t("ed.conflictTheirs")}</th><th>{t("ed.conflictMine")}</th></tr></thead>
+              <tbody>
+                {conflicts.slice(0, 30).map((x, i) => (
+                  <tr key={i}>
+                    <td>{[...x.labels, x.title].join(" · ")}</td>
+                    <td><b>{x.current || "–"}</b>{(x.by || x.at) && <div className="muted small">{[x.by, x.at].filter(Boolean).join(", ")}</div>}</td>
+                    <td><b>{x.mine || "–"}</b></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {conflicts.length > 30 && <p className="muted small">+{conflicts.length - 30}</p>}
+            <div className="modal-buttons">
+              <button className="btn-plain" onClick={() => setConflicts(null)}>{t("ed.conflictCancel")}</button>
+              <button className="btn-plain" onClick={() => {
+                // keep the other values: drop my edits of these cells, reload the tables
+                const drop = new Set(conflicts.map((x) => key(x)));
+                setDirty((d) => { const n = new Map(d); drop.forEach((k) => n.delete(k)); return n; });
+                setConflicts(null);
+                setReloadKey((k) => k + 1);
+                onSaved?.();
+              }}>{t("ed.conflictTakeTheirs")}</button>
+              <button className="btn-green" onClick={() => { setConflicts(null); save(false, true); }}>{t("ed.conflictOverwrite")}</button>
+            </div>
+          </div>
+        </div>
+      )}
       {warn && (
         <div className="modal-back" onClick={() => setWarn(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">

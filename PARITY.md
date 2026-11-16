@@ -187,6 +187,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Change log, DY ratio, tension timestamps, multi-ply tracking on save | `_save_all` / `_stamp_trial_timestamp` / `_track_multi_ply` | **DONE** | `db/series_save.save_series_edits` |
 | Zoom Ctrl+wheel / Ctrl+± / Ctrl+0 | `FrozenFirstColumnTable` shortcuts | **PARTIAL** | browser zoom only |
 | Display prefs: text size, contrast stripes, crosshair | `display_prefs` / `_pass_display_to_model` | **DONE** | `fe/display.tsx` (contrast, crosshair, reading bar, warning symbols, colour-blind colours, Ctrl+wheel table zoom) from `tblUser.DisplaySettings` via `be/settings_api.py`; text size = browser zoom |
+| Save conflicts (cell changed by someone else since loading) | `_confirm_no_conflicts` + `series_save.find_conflicts` | **DONE** | `edit.tsx` dialog, `orig` per edit, `overwrite` (2026-11-16) |
 | Read bar (parameter + value of current cell, warning) | `read_bar_text` | **DONE** | `display.tsx` ReadBar (desktop style, ! Warning / ! Check), Settings "Lesezeile" |
 | Frozen first column / header while scrolling | `FrozenFirstColumnTable` | **DONE** | sticky CSS (assumed in styles.css) |
 

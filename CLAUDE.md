@@ -180,7 +180,12 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
 und Wert; der Server baut den Reiter neu und nimmt die Bindung selbst (nie Tabelle/Feld vom Client),
 `series_save.normalize_input` (Housing/Jet = ID), `plausibility.check` -> `{kind:"confirm", warnings}` bis
 `confirmed`, dann `series_save.save_series_edits` (Änderungsprotokoll, DY-Ratio, Zeitstempel, Itemat).
-Ab Zugriffsstufe 2. Frontend `src/edit.tsx` (`EditProvider` pro Serie mit `key={id}`, `EditCell`; gelb =
+Ab Zugriffsstufe 2. **Speicher-Konflikte** (2026-11-16, beide Apps): jede Änderung schickt `orig` (Wert wie geladen, bei
+Auswahlzeilen die ID); der Server prüft vor der Plausibilität mit `series_save.find_conflicts` (aktueller DB-Wert vs. geladen,
+gleiche Eingabe des anderen = kein Konflikt, wer/wann aus tblChangeLog) -> `{kind:"conflict", cells}`; Dialog "Inzwischen geändert":
+abbrechen / ihre behalten (meine Änderungen dieser Zellen verwerfen, neu laden) / meine trotzdem speichern (`overwrite`).
+Desktop: `PivotEditModel._loaded` (set_cell) + `conflict_items()`, `ShowExperimentScreen._confirm_no_conflicts` vor der Plausibilität.
+Frontend `src/edit.tsx` (`EditProvider` pro Serie mit `key={id}`, `EditCell`; gelb =
 ungespeichert, Strg+S, Strg+Z, Warnung beim Verlassen); Ansicht/Einheit sind gesperrt, solange in Machine
 Data/Jet Air Ungespeichertes liegt (Zeilen-/Spaltennummern gelten pro Ansicht).
 

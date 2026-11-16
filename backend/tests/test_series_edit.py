@@ -67,3 +67,40 @@ def test_unusual_value_asks_first_then_saves_with_change_log(monkeypatch):
         execute("UPDATE tblTrial SET AirPressure = ? WHERE ID = ?", [old, tid])
         execute("DELETE FROM tblChangeLog WHERE ID > ?", [before_log])
     assert fetch_all("SELECT AirPressure FROM tblTrial WHERE ID = ?", [tid])[0]["AirPressure"] == old
+
+
+def test_save_conflict_when_someone_else_changed_the_cell(monkeypatch):
+    """Two editors: the page sends the value it loaded (orig); changed in the DB since -> kind "conflict"
+    (db/series_save.find_conflicts, same rule as the desktop), overwrite=True saves anyway."""
+    c = _client()
+    sid, tid, old = _series_trial()
+    monkeypatch.setattr(series_edit, "log_usage_event", lambda *a: None)
+    base = float(old)
+    before_log = fetch_all("SELECT COALESCE(MAX(ID), 0) AS m FROM tblChangeLog")[0]["m"]
+    mine, theirs = f"{base + 0.5:g}", base + 1.0
+    edits = [{"tab": "machine", "r": 3, "c": 0, "value": mine, "orig": f"{base:g}"}]
+    try:
+        execute("UPDATE tblTrial SET AirPressure = ? WHERE ID = ?", [theirs, tid])        # the other person
+        r = c.post(f"/api/series/{sid}/save", json={"edits": edits, "confirmed": True}).json()
+        assert r["kind"] == "conflict" and len(r["cells"]) == 1
+        x = r["cells"][0]
+        assert (x["tab"], x["r"], x["c"]) == ("machine", 3, 0) and float(x["current"]) == theirs and x["mine"] == mine
+        assert float(fetch_all("SELECT AirPressure FROM tblTrial WHERE ID = ?", [tid])[0]["AirPressure"]) == theirs
+
+        # same value as the other person -> no conflict
+        same = [{"tab": "machine", "r": 3, "c": 0, "value": f"{theirs:g}", "orig": f"{base:g}"}]
+        assert c.post(f"/api/series/{sid}/save", json={"edits": same, "confirmed": True}).json()["kind"] == "saved"
+
+        # overwrite anyway
+        execute("UPDATE tblTrial SET AirPressure = ? WHERE ID = ?", [theirs, tid])
+        r = c.post(f"/api/series/{sid}/save", json={"edits": edits, "confirmed": True, "overwrite": True}).json()
+        assert r["kind"] == "saved"
+        assert float(fetch_all("SELECT AirPressure FROM tblTrial WHERE ID = ?", [tid])[0]["AirPressure"]) == base + 0.5
+
+        # unchanged since loading -> saves without asking
+        ok = [{"tab": "machine", "r": 3, "c": 0, "value": f"{base:g}", "orig": mine}]
+        assert c.post(f"/api/series/{sid}/save", json={"edits": ok, "confirmed": True}).json()["kind"] == "saved"
+    finally:
+        execute("UPDATE tblTrial SET AirPressure = ? WHERE ID = ?", [old, tid])
+        execute("DELETE FROM tblChangeLog WHERE ID > ?", [before_log])
+    assert fetch_all("SELECT AirPressure FROM tblTrial WHERE ID = ?", [tid])[0]["AirPressure"] == old

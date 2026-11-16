@@ -1646,3 +1646,9 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 
 /* Show Experiment: refresh (desktop btn_refresh) */
 .se-refresh { font-size: 20px; font-weight: 600; line-height: 1; color: var(--accent); }
+
+/* save conflict dialog (edit.tsx) */
+.ed-conflict { max-width: 760px; }
+.ed-conflict-tbl { border-collapse: collapse; width: 100%; font-size: 13px; margin: 6px 0 4px; }
+.ed-conflict-tbl th { text-align: left; font-size: 12px; color: #5A6460; border-bottom: 1px solid #DADFD8; padding: 4px 6px; }
+.ed-conflict-tbl td { border-bottom: 1px solid #ECEFEB; padding: 4px 6px; vertical-align: top; }
