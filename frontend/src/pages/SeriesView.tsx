@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { api, ApiError, kbItem, notesTip, request, type SeriesData, type SeriesRights } from "../api";
 import { useI18n } from "../i18n";
 import { confirmLeave, EditCell, EditProvider, useEdit } from "../edit";
+import { usePageTitle } from "../pageTitle";
 import MachineTable from "../components/MachineTable";
 import JetAirView from "../components/JetAirView";
 import Attachments from "../components/Attachments";
@@ -51,6 +52,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const lastId = useRef<string | undefined>(undefined);
   const lastRecent = useRef<number | null>(null);
   const linked = useRef(false);                   // link parameters applied (only on the first load of the series)
+  usePageTitle(data ? `${data.series.experiment_id} – ${data.series.name}` : null);
   if (lastId.current !== id) linked.current = false;
 
   useEffect(() => {

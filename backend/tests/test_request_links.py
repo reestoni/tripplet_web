@@ -77,3 +77,18 @@ def test_reports_and_experiment_series():
     if rep:
         lst = c.get(f"/api/series/{rep[0]['SeriesPK']}/reports").json()["reports"]
         assert lst and "id" in lst[0]
+
+
+def test_request_preview_ids():
+    """Badge on "New Experiment": IDs of the approved requests (db/experiment_requests.requests_by_status)."""
+    from db import experiment_requests as er
+    rows = fetch_all("SELECT u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                     "WHERE ar.AccessLevel >= 4 AND COALESCE(u.Active, 1) <> 0 ORDER BY u.ID")
+    if not rows:
+        pytest.skip("no superuser")
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(rows[0]["Username"]))
+    d = c.get("/api/requests/preview?status=3").json()
+    assert d["ids"] == [int(r["ID"]) for r in er.requests_by_status(3)]
+    assert all(r.get("PriorVersionOfID") in (None, "") for r in er.requests_by_status(3))
+    assert c.get("/api/requests/preview?status=5").status_code == 400

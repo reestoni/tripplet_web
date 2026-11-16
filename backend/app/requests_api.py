@@ -57,6 +57,16 @@ def list_requests(search: str = "", status: Optional[int] = None, project: Optio
     return _json(data)
 
 
+@router.get("/preview")
+def preview(status: int = 3, user: Dict[str, Any] = Depends(require_feature("new_experiment"))):
+    """Badge on "New Experiment" (desktop MainWindow._show_request_preview_dialog): the approved requests
+    (status 3) to page through, newest first - only the IDs, the page loads each with /{id}/view."""
+    if status not in (1, 3):
+        return _err(400, "bad_status", "Only open (1) or approved (3) requests.")
+    rows = er.requests_by_status(status)
+    return {"ids": [int(r["ID"]) for r in rows if er.can_open(user, r)]}
+
+
 @router.get("/form")
 def form(_user: Dict[str, Any] = Depends(require_feature("create_request"))):
     return _json({"fields": er.form_schema(), "required": list(er.REQUIRED_FIELDS)})

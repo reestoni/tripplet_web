@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { ApiError, img, request } from "../api";
 import { OutcomeDot } from "./ConclusionTab";
 import { useI18n } from "../i18n";
@@ -42,7 +43,9 @@ function useFieldLabel() {
   return (name: string, fallback: string) => { const k = `rqf.${name}`; const v = t(k); return v === k ? fallback : v; };
 }
 
-export default function RequestPopup({ id, prefix, onClose }: { id: number; prefix?: string; onClose: () => void }) {
+export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
+  id: number; prefix?: string; onClose: () => void; nav?: ReactNode; actions?: ReactNode;
+}) {
   const { t } = useI18n();
   const label = useFieldLabel();
   const [data, setData] = useState<View | null>(null);
@@ -57,6 +60,7 @@ export default function RequestPopup({ id, prefix, onClose }: { id: number; pref
   }, [id, t]);
   return (
     <Overlay onClose={onClose} wide="rqp-wide">
+      {nav}
       <div className="rqp-head">
         <h2>{prefix ?? ""}{data?.title ?? t("rqp.title")}</h2>
         {data && data.images.length > 0 && (
@@ -97,7 +101,7 @@ export default function RequestPopup({ id, prefix, onClose }: { id: number; pref
           </div>
         )}
       </div>
-      <div className="modal-buttons"><button className="btn-plain" onClick={onClose}>{t("rqp.close")}</button></div>
+      <div className="modal-buttons">{actions}<button className="btn-plain" onClick={onClose}>{t("rqp.close")}</button></div>
       {showImages && data && <ImageViewer requestId={data.id} images={data.images} onClose={() => setShowImages(false)} />}
       {showHistory && data && <VersionHistory requestId={data.history_target_id} onClose={() => setShowHistory(false)} />}
     </Overlay>
@@ -261,5 +265,55 @@ export function RequestIcon({ id, big }: { id: string | number | null | undefine
         onKeyDown={(e) => { if (e.key === "Enter") setOpen(true); }} />
       {open && <RequestPopup id={Number(id)} onClose={() => setOpen(false)} />}
     </>
+  );
+}
+
+/** Badge on "New Experiment" in the sidebar (desktop MainWindow._show_request_preview_dialog): page through the
+ *  approved experiment requests, "Create experiment" opens Create Experiment with the request filled in.
+ *  Opened from anywhere with openRequestPreview(); the host sits in the Shell. */
+export function openRequestPreview() {
+  window.dispatchEvent(new CustomEvent("tripplet:request-preview"));
+}
+
+export function RequestPreviewHost() {
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const [ids, setIds] = useState<number[] | null>(null);
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const open = () => {
+      request<{ ids: number[] }>("GET", "/api/requests/preview?status=3")
+        .then((d) => {
+          if (!d.ids.length) { navigate("/experiments/new"); return; }   // desktop: nothing approved -> the form
+          setI(0); setIds(d.ids);
+        })
+        .catch(() => navigate("/experiments/new"));
+    };
+    window.addEventListener("tripplet:request-preview", open);
+    return () => window.removeEventListener("tripplet:request-preview", open);
+  }, [navigate]);
+  useEffect(() => {
+    if (!ids) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.closest?.("input, textarea, select")) return;
+      if (e.key === "ArrowLeft") setI((x) => Math.max(0, x - 1));
+      if (e.key === "ArrowRight") setI((x) => Math.min(ids.length - 1, x + 1));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ids]);
+  if (!ids) return null;
+  const id = ids[i];
+  const close = () => setIds(null);
+  return (
+    <RequestPopup key={id} id={id} onClose={close}
+      nav={
+        <div className="rqp-nav">
+          <button className="btn-plain" disabled={i === 0} onClick={() => setI(i - 1)} title="←">‹</button>
+          <span><b>{t("rqp.previewTitle")}</b> · {t("rqp.counter", { i: i + 1, n: ids.length })}</span>
+          <button className="btn-plain" disabled={i >= ids.length - 1} onClick={() => setI(i + 1)} title="→">›</button>
+        </div>
+      }
+      actions={<button className="btn-green" onClick={() => { close(); navigate(`/experiments/new?request=${id}`); }}>{t("rqp.createExp")}</button>} />
   );
 }

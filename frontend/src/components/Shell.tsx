@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api, img, type Me, type Nav, type NavItem } from "../api";
 import { LangFlags, useI18n } from "../i18n";
 import { LOGO } from "../brand";
@@ -7,6 +7,8 @@ import { HelpHost, openHelp } from "./Help";
 import Bell from "./Notifications";
 import { openQuickSearch, QuickSearchHost, RecentMenu, ScreenLog } from "./QuickSearch";
 import { openWhatsNew, WhatsNewHost } from "./WhatsNew";
+import { openRequestPreview, RequestPreviewHost } from "./RequestPopup";
+import { PAGE_TITLE_EVENT, pageTitleOverride } from "../pageTitle";
 import { IconBook, IconChevron, IconClock, IconGear, IconHelp, IconLogout, IconSearch, IconSpark } from "./SidebarIcons";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
@@ -37,7 +39,11 @@ function Item({ it }: { it: NavItem }) {
       title={it.web ? label : `${label} – ${t("sb.notYet")}`}>
       {it.icon ? <img src={img(it.icon)} alt="" /> : <span className="sb-dot" />}
       <span className="sb-label">{label}</span>
-      {it.badge > 0 && <span className="sb-badge">{it.badge > 9 ? "9+" : it.badge}</span>}
+      {it.badge > 0 && (it.route === "/experiments/new"
+        // desktop: click on the red dot = preview of the approved experiment requests
+        ? <span className="sb-badge sb-badge-btn" role="button" title={t("rqp.previewTip")}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); openRequestPreview(); }}>{it.badge > 9 ? "9+" : it.badge}</span>
+        : <span className="sb-badge">{it.badge > 9 ? "9+" : it.badge}</span>)}
     </NavLink>
   );
 }
@@ -113,6 +119,34 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
     if (me.user.accent_colour) document.documentElement.style.setProperty("--accent", me.user.accent_colour);
   }, [me.user.accent_colour]);
 
+  // browser tab: "<page> – TrippleT" (nav label of the route, or what the page set with usePageTitle)
+  const location = useLocation();
+  const [titleTick, setTitleTick] = useState(0);
+  useEffect(() => {
+    const bump = () => setTitleTick((x) => x + 1);
+    window.addEventListener(PAGE_TITLE_EVENT, bump);
+    return () => window.removeEventListener(PAGE_TITLE_EVENT, bump);
+  }, []);
+  useEffect(() => {
+    const path = location.pathname;
+    let label = pageTitleOverride();
+    if (!label) {
+      const extra: [RegExp, string][] = [[/^\/settings/, "set.title"], [/^\/superuser\/recycle-bin/, "rb.title"],
+        [/^\/series\/[^/]+\/report/, "rep.open"], [/^\/series\/[^/]+\/add-trials/, "ce.title.addtrials"],
+        [/^\/experiments\/legacy/, "ce.title.legacy"]];
+      const hit = extra.find(([re]) => re.test(path));
+      if (hit) label = t(hit[1]);
+    }
+    if (!label && nav) {
+      let best: NavItem | null = null;
+      for (const it of [...nav.pinned, ...nav.sections.flatMap((s) => s.items)]) {
+        if ((path === it.route || path.startsWith(it.route + "/")) && (!best || it.route.length > best.route.length)) best = it;
+      }
+      if (best) label = t(`nav.${best.route}`) === `nav.${best.route}` ? best.label : t(`nav.${best.route}`);
+    }
+    document.title = label ? `${label} – TrippleT` : "TrippleT";
+  }, [location.pathname, nav, t, titleTick]);
+
   // badges change when cards move - pages announce it with this event
   useEffect(() => {
     const reload = () => api.nav().then(setNav).catch(() => undefined);
@@ -187,6 +221,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
       <QuickSearchHost />
       <ScreenLog />
       <WhatsNewHost />
+      <RequestPreviewHost />
     </div>
   );
 }

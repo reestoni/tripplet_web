@@ -1652,3 +1652,10 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .ed-conflict-tbl { border-collapse: collapse; width: 100%; font-size: 13px; margin: 6px 0 4px; }
 .ed-conflict-tbl th { text-align: left; font-size: 12px; color: #5A6460; border-bottom: 1px solid #DADFD8; padding: 4px 6px; }
 .ed-conflict-tbl td { border-bottom: 1px solid #ECEFEB; padding: 4px 6px; vertical-align: top; }
+
+/* badge on "New Experiment": opens the request preview (RequestPreviewHost) */
+.sb-badge-btn { cursor: pointer; }
+.sb-badge-btn:hover { transform: scale(1.15); box-shadow: 0 0 0 2px rgba(255,255,255,.6); }
+.rqp-nav { display: flex; align-items: center; gap: 10px; justify-content: space-between; padding: 0 0 8px; margin-bottom: 8px;
+  border-bottom: 1px solid #e3e7e3; font-size: 13px; }
+.rqp-nav .btn-plain { font-size: 18px; line-height: 1; padding: 4px 12px; }
