@@ -816,7 +816,7 @@ table.at thead th { position: sticky; top: 0; z-index: 3; background: var(--acce
 table.at thead tr.at-filters th { top: 25px; cursor: default; padding: 2px 3px; }
 table.at thead th[style] { z-index: 4; }
 table.at .at-filters input { width: 100%; min-width: 50px; box-sizing: border-box; font: inherit; font-size: 12px; padding: 1px 4px; border: 1px solid #d5dbd5; border-radius: 3px; }
-table.at td { max-width: 260px; overflow: hidden; text-overflow: ellipsis; cursor: cell; }
+table.at td { max-width: 380px; overflow: hidden; text-overflow: ellipsis; cursor: cell; }
 table.at td.num { text-align: right; }
 table.at td.ro { color: #555; }
 table.at td.at-lastfrozen, table.at th.at-lastfrozen { border-right: 2px solid #b9c2b9; }

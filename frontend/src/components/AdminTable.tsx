@@ -233,7 +233,24 @@ export default function AdminTable(p: AdminTableProps) {
     }
   };
 
-  const W = p.frozenWidths ?? FROZEN_W;
+  // frozen columns: at least the given width, wider when the content needs it (up to 420 px) - the desktop sizes
+  // its columns to the content too; before, long names were cut although the page had room
+  const W = useMemo(() => {
+    const base = p.frozenWidths ?? FROZEN_W;
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (!ctx) return base;
+    const fam = getComputedStyle(document.body).fontFamily || "sans-serif";
+    return base.map((w, i) => {
+      const col = p.columns[i];
+      if (i >= p.frozen || col == null) return w;
+      ctx.font = `600 13px ${fam}`;
+      let max = ctx.measureText(String(col)).width + 22;            // header + sort arrow
+      ctx.font = `13px ${fam}`;
+      for (const r of p.rows) max = Math.max(max, ctx.measureText(text(r, col)).width + 16);
+      return Math.round(Math.max(w, Math.min(420, max)));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [p.frozenWidths, p.frozen, p.columns, p.rows, p.fk]);
   const left = (i: number) => W.slice(0, i).reduce((a, b) => a + b, 0);
   const frozenStyle = (i: number) =>
     i < p.frozen ? { position: "sticky" as const, left: left(i), width: W[i], minWidth: W[i], maxWidth: W[i], zIndex: 2 } : undefined;
