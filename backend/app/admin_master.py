@@ -1,4 +1,5 @@
-"""admin_master.py - the small Admin master tables in the browser: Order Type, Product Groups, Material, Top Plates
+"""admin_master.py - the small Admin master tables in the browser: Order Type, Product Groups, Material, Top Plates,
+Projects (2026-11-16)
 (desktop ui/screen_manage_order_types.py, ui/screen_manage_product_groups.py, ui/screen_manage_material.py,
 ui/screen_manage_top_plates.py + ui/screen_new_top_plate.py) on db/master_tables.py (shared with the desktop).
 
@@ -140,6 +141,8 @@ def save(kind: str, body: SaveBody, user: Dict[str, Any] = Depends(current_user)
                             vars={"name": r["Name"] or ""})
     try:
         n = mt.save_changes(k, rows)
+    except mt.NumberTaken as e:
+        return _err(409, "number_taken", str(e), vars={"number": e.number})
     except Exception as e:
         return _err(400, "save_failed", f"Save failed: {e}")
     log_usage_event("feature", f"web_manage_{k.key}_save", str(len(rows)))
@@ -185,6 +188,8 @@ def delete(kind: str, body: DeleteBody, user: Dict[str, Any] = Depends(current_u
         return bad
     try:
         n = mt.delete(k, body.ids)
+    except mt.InUse as e:           # projects: still used by experiments / requests
+        return _err(409, "in_use", str(e), vars={"experiments": e.experiments, "requests": e.requests})
     except Exception as e:          # a FK still points to the row
         return _err(409, "delete_failed", f"Could not delete: {e}")
     log_usage_event("feature", f"web_manage_{k.key}_delete", str(n))

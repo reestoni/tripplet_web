@@ -478,6 +478,7 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 |---|---|---|---|
 | Order Type: table edit, New, Delete, Save, search, filter row, column order | `ui/screen_manage_order_types.py` | **DONE** | New without AUTO_INCREMENT gets MAX+1 (both apps) |
 | Product Groups: same | `ui/screen_manage_product_groups.py` | **DONE** | |
+| Projects (2026-11-16, new in both apps): table edit, New, Delete (refused while used), unique project number, "Used by" | `ui/screen_manage_projects.py` | **DONE** | `master_tables.KINDS["projects"]` |
 | Material: same + "Used in yarn" with the yarns inline | `ui/screen_manage_material.py` | **DONE** | |
 | Top Plates: table, New / Copy (unique name), Delete, files (upload, open, preview, remove) | `ui/screen_manage_top_plates.py`, `ui/screen_new_top_plate.py` | **DONE** | New/Copy ask only for the name (the table has only Name); files dialog per row (double-click) |
 

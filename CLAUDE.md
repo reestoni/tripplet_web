@@ -328,6 +328,11 @@ Top-Plate-Funktionen in `main.py`/`screen_new_top_plate.py` gezogen, Desktop nut
 Admin-Karte. Material: "In Garn verwendet" klappt die Garne auf; Top Plates: Neu/Kopieren mit eindeutigem Namen, Dateien (die
 Dateiliste `JetFiles` aus `ManageJets.tsx` mit `base`). Korrigiert in beiden Apps: "New" ohne AUTO_INCREMENT auf der ID
 (dev_local `tblBestellungstyp`) vergibt MAX+1 statt abzubrechen. Tests `tests/test_admin_master.py`.
+**Projekte** (2026-11-16, beide Apps, Nutzerwunsch: vorher nirgends bearbeitbar): `/admin/projects`, `KINDS["projects"]` = `tblProject`
+(Nummer, Name, Process, ProcessDescription), Feature `projects` (Admin, Stufe 1). Spalte `UsedBy` (Experimente + Anfragen, nur Anzeige);
+Projektnummer eindeutig (`NumberTaken` -> 409 `number_taken`); benutzte Projekte nicht löschbar (`InUse` -> 409 `in_use`).
+Desktop `ui/screen_manage_projects.py` (Unterklasse des Order-Type-Screens, der jetzt `_KIND` als Klassenattribut hat), Eintrag "Projects"
+in der Admin-Sektion. Tests: Desktop `test_manage_projects.py`, Web `test_admin_master.py::test_projects_rules`.
 
 **Superuser: Papierkorb** (2026-11-13): Papierkorb
 `/superuser/recycle-bin` (`RecycleBin.tsx`) über `app/recycle_bin_api.py` auf `db/recycle_bin.py` (neu `preview_start`/`preview_back`/

@@ -109,6 +109,7 @@ export default function App() {
         <Route path="/admin/order-types" element={<ManageMaster key="order_types" kind="order_types" />} />
         <Route path="/admin/product-groups" element={<ManageMaster key="product_groups" kind="product_groups" />} />
         <Route path="/admin/material" element={<ManageMaster key="material" kind="material" />} />
+        <Route path="/admin/projects" element={<ManageMaster key="projects" kind="projects" />} />
         <Route path="/tools/requirement-hub" element={<RequirementHub />} />
         <Route path="/tools/requirement-hub/quick-scan" element={<QuickScan />} />
         <Route path="/tools/process-playground" element={<ProcessPlayground />} />

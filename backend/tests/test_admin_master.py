@@ -15,7 +15,7 @@ def _client():
     return c
 
 
-@pytest.mark.parametrize("kind", ["order_types", "product_groups", "material", "top_plates"])
+@pytest.mark.parametrize("kind", ["order_types", "product_groups", "material", "top_plates", "projects"])
 def test_roundtrip(kind):
     c = _client()
     d = c.get(f"/api/admin/master/{kind}").json()
@@ -49,3 +49,28 @@ def test_unknown_and_usage():
     used = [r for r in rows if r.get("UsedInYarn")]
     if used:
         assert c.get(f"/api/admin/master/material/{used[0]['ID']}/usage").json()["yarns"]
+
+
+def test_projects_rules():
+    """Projects (2026-11-16): UsedBy is shown only, a project number exists once, a used project cannot be deleted."""
+    c = _client()
+    d = c.get("/api/admin/master/projects").json()
+    assert "UsedBy" in d["columns"] and "UsedBy" not in d["editable"] and d["name_column"] == "ProjectName"
+    used = [r for r in d["rows"] if r.get("UsedBy")]
+    if used:
+        r = c.post("/api/admin/master/projects/delete", json={"ids": [used[0]["ID"]]}).json()
+        assert r["code"] == "in_use" and r["vars"]["experiments"] + r["vars"]["requests"] == used[0]["UsedBy"]
+    other = next((r for r in d["rows"] if r.get("ProjectNumber") is not None), None)
+    new_id = c.post("/api/admin/master/projects/new", json={}).json()["id"]
+    try:
+        if other:
+            r = c.post("/api/admin/master/projects/save",
+                       json={"rows": [{"id": new_id, "values": {"ProjectNumber": other["ProjectNumber"]}}]}).json()
+            assert r["code"] == "number_taken"
+        r = c.post("/api/admin/master/projects/save",
+                   json={"rows": [{"id": new_id, "values": {"ProjectNumber": 999991, "ProjectName": "zz web project"}}]}).json()
+        assert r["saved"] == 1
+    finally:
+        assert c.post("/api/admin/master/projects/delete", json={"ids": [new_id]}).json()["deleted"] == 1
+    nav = c.get("/api/nav").json()
+    assert any(it["route"] == "/admin/projects" and it["web"] for s in nav["sections"] for it in s["items"])

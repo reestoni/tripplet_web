@@ -51,6 +51,7 @@ SECTIONS: List[Tuple[str, str, List[Item]]] = [
         ("order_type", "Order Type", "", "/admin/order-types", None),
         ("product_groups", "Product Groups", "", "/admin/product-groups", None),
         ("material", "Material", "", "/admin/material", None),
+        ("projects", "Projects", "", "/admin/projects", None),
     ]),
 ]
 
@@ -68,7 +69,7 @@ PINNED: List[Item] = [
 
 # routes that already work in the web app
 WEB_READY: set = {"/experiments", "/backlog", "/requests", "/requests/new", "/knowledge-base",
-                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/admin/top-plates", "/admin/order-types", "/admin/product-groups", "/admin/material", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/superuser/recycle-bin", "/tools/requirement-hub", "/tools/process-playground", "/tools/jet-advisor", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
+                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/admin/top-plates", "/admin/order-types", "/admin/product-groups", "/admin/material", "/admin/projects", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/superuser/recycle-bin", "/tools/requirement-hub", "/tools/process-playground", "/tools/jet-advisor", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
 
 
 def _badges(keys: set) -> Dict[str, int]:
@@ -87,7 +88,7 @@ def _badges(keys: set) -> Dict[str, int]:
 WEB_ICONS: Dict[str, str] = {
     "/admin/jets": "sb_jets.png", "/admin/top-plates": "sb_top_plates.png", "/admin/yarn": "sb_yarn.png",
     "/admin/order-types": "sb_order_type.png", "/admin/product-groups": "sb_product_groups.png",
-    "/admin/material": "sb_material.png", "/superuser/users": "sb_users.png", "/superuser/recycle-bin": "sb_recycle_bin.png",
+    "/admin/material": "sb_material.png", "/admin/projects": "sb_projects.png", "/superuser/users": "sb_users.png", "/superuser/recycle-bin": "sb_recycle_bin.png",
 }
 
 

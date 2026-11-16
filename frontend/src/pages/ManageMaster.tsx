@@ -11,13 +11,14 @@ import { errText, JetFiles } from "./ManageJets";
    edit in the table, New, Delete, Save (Ctrl+S), column order; Material: "Used in yarn" opens the yarns;
    Top Plates: New / Copy with a unique name, files per top plate. Writing = Admin card right. */
 
-export type MasterKind = "order_types" | "product_groups" | "material" | "top_plates";
+export type MasterKind = "order_types" | "product_groups" | "material" | "top_plates" | "projects";
 type Data = { columns: string[]; editable: string[]; numeric_columns: string[]; int_columns: string[]; bool_columns: string[];
   name_column: string | null; rows: Row[]; can_edit: boolean; column_order: string[] };
 
 const ID = "ID";
 const FILES = "__files__";
 const USED = "UsedInYarn";
+const USED_BY = "UsedBy";             // projects: experiments + requests that use it (shown only)
 const BASE = "/api/admin/master";
 
 export default function ManageMaster({ kind }: { kind: MasterKind }) {
@@ -178,7 +179,7 @@ export default function ManageMaster({ kind }: { kind: MasterKind }) {
         onOpen={plates ? (id) => setFilesFor(data.rows.find((r) => Number(r[ID]) === id) ?? null) : undefined}
         search={search} searchCols={data.name_column ? [data.name_column] : [ID]} onCount={setShownCount}
         narrow={new Set([FILES])}
-        header={(c) => (c === FILES ? "📎" : c === USED ? t("mm.used_in_yarn") : c)}
+        header={(c) => (c === FILES ? "📎" : c === USED ? t("mm.used_in_yarn") : c === USED_BY ? t("mm.used_by") : c)}
         cell={(c, row) => {
           const id = Number(row[ID]);
           if (c === FILES) return row.has_files ? <span title={t("mj.has_files")}>📎</span> : "";
@@ -200,14 +201,14 @@ export default function ManageMaster({ kind }: { kind: MasterKind }) {
 
       {colsOpen && (
         <ColumnOrderDialog columns={order} onChange={setOrder}
-          label={(c) => (c === FILES ? `📎 ${t("mj.files")}` : c === USED ? t("mm.used_in_yarn") : c)}
+          label={(c) => (c === FILES ? `📎 ${t("mj.files")}` : c === USED ? t("mm.used_in_yarn") : c === USED_BY ? t("mm.used_by") : c)}
           onSave={() => request("POST", `${BASE}/${kind}/column-order`, { columns: order }).catch((e) => setMsg({ kind: "err", text: errText(t, e) }))}
           onClose={() => setColsOpen(false)} />
       )}
 
       {confirmDel && (
         <Modal title={t("mj.delete")} onClose={() => setConfirmDel(false)}>
-          <p>{t("mj.confirm_delete", { n: selected.size })}</p>
+          <p>{t("mm.confirm_delete", { n: selected.size })}</p>
           <p className="muted">{data.rows.filter((r) => selected.has(Number(r[ID]))).map(nameOf).join(", ")}</p>
           <div className="modal-buttons">
             <button className="btn-plain" onClick={() => setConfirmDel(false)}>{t("mj.cancel")}</button>
