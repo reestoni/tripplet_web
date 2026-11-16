@@ -1,0 +1,134 @@
+/* Night look - hand-written part (copied to the end of src/theme-night.css by tools/gen_night_css.py).
+   Selectors start with html[data-night][data-theme] so they win over the generated twins and the modern look. */
+
+/* ---------- tokens ---------- */
+html[data-night][data-theme] {
+  color-scheme: dark;                                /* native inputs, selects, scrollbars, date pickers */
+  --page-bg: #0b0f16;
+  --card-bg: #121821;
+  --text: #e3e8ef;
+  --muted: #8d97a8;
+  --border: #222b37;
+  --dark: #2a3442;
+  --sidebar-bg: #0e131b;
+  --danger: #ff6b61;
+  --m-border-strong: #313c4b;
+  --m-hover: #1a222d;
+  --m-sidebar: #0e131b;
+  --m-accent-ink: color-mix(in srgb, var(--accent) 62%, white);
+  --m-accent-wash: color-mix(in srgb, var(--accent) 17%, #121821);
+  --m-glow: 0 0 18px color-mix(in srgb, var(--accent) 38%, transparent);
+  --m-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent), 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent);
+  --m-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --m-shadow-md: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --m-shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.6);
+  /* table colours follow the accent, mixed into the dark surface */
+  --accent-tint: color-mix(in srgb, var(--accent) 24%, #121821);
+  --accent-sel: color-mix(in srgb, var(--accent) 32%, #121821);
+  --accent-grid: color-mix(in srgb, var(--accent) 10%, #121821);
+  --accent-line: color-mix(in srgb, var(--accent) 20%, #2a3340);
+  --accent-soft: color-mix(in srgb, var(--accent) 7%, #121821);
+  --xh-colour: rgba(255, 214, 80, 0.20);
+  --m-glass: rgba(20, 27, 38, 0.80);
+  --m-mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+}
+html[data-night][data-theme] body {
+  background:
+    radial-gradient(1100px 620px at 12% -10%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 62%),
+    radial-gradient(900px 600px at 105% 110%, rgba(80, 110, 200, 0.07), transparent 60%),
+    var(--page-bg);
+  background-attachment: fixed;
+  color: var(--text);
+}
+html[data-night][data-theme] ::selection { background: color-mix(in srgb, var(--accent) 45%, transparent); color: #fff; }
+html[data-night][data-theme] ::-webkit-scrollbar-thumb { background: #2b3442; background-clip: content-box; }
+html[data-night][data-theme] ::-webkit-scrollbar-thumb:hover { background: #3c4859; background-clip: content-box; }
+html[data-night][data-theme] :is(input, select, textarea) { background-color: #0e141c; color: var(--text); }
+html[data-night][data-theme] :is(input, select, textarea)::placeholder { color: #66707f; }
+html[data-night][data-theme] a { color: var(--m-accent-ink); }
+
+/* ---------- sidebar: dark glass with a glowing active entry ---------- */
+html[data-night][data-theme] .sidebar { background: rgba(14, 19, 27, 0.92); border-right: 1px solid var(--border); }
+html[data-night][data-theme] .sb-logo-light { display: block; }
+html[data-night][data-theme] .sb-logo-dark { display: none; }
+html[data-night][data-theme] :is(.sb-search, .sb-recent) { background: #141b25; border-color: var(--border); }
+html[data-night][data-theme] .sb-search kbd { background: #0e141c; }
+html[data-night][data-theme] .sb-section-head { color: #6b7688; }
+html[data-night][data-theme] .sb-section-head img { filter: invert(0.7); }
+html[data-night][data-theme] .sb-item { color: #b9c2cf; }
+html[data-night][data-theme] .sb-item.active {
+  background: var(--m-accent-wash); color: var(--m-accent-ink);
+  box-shadow: inset 3px 0 0 var(--accent), var(--m-glow);
+}
+html[data-night][data-theme] .sb-badge { box-shadow: 0 0 0 2px #0e131b, 0 0 10px rgba(229, 72, 77, 0.6); }
+
+/* ---------- buttons and focus: the accent glows ---------- */
+html[data-night][data-theme] .btn-green { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 70%, white 0%), var(--m-glow); }
+html[data-night][data-theme] .btn-green:hover:not(:disabled) { filter: brightness(1.12); }
+html[data-night][data-theme] :is(.btn-plain, .tb-btn) { background: #161e29; color: #d3dae4; border-color: var(--m-border-strong); }
+html[data-night][data-theme] :is(.btn-plain, .tb-btn):hover:not(:disabled) { background: #1d2733; border-color: #4a5668; }
+html[data-night][data-theme] .se-tab.on { text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent); }
+html[data-night][data-theme] .chip.on { box-shadow: var(--m-glow); border-color: color-mix(in srgb, var(--accent) 60%, black); }
+
+/* ---------- glass: dialogs, menus, pop-ups ---------- */
+html[data-night][data-theme] .modal-back { background: rgba(3, 6, 10, 0.62); backdrop-filter: blur(4px); }
+html[data-night][data-theme] :is(.modal, .sb-me-menu, .bell-panel, .recent-menu, .cm) {
+  background: var(--m-glass); backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: var(--m-shadow-lg);
+}
+html[data-night][data-theme] .toast { box-shadow: var(--m-shadow-md), var(--m-glow); }
+
+/* ---------- cards and lists ---------- */
+html[data-night][data-theme] :is(.card, .table-wrap, .set-box, .ed-bar) { background: var(--card-bg); border-color: var(--border); }
+html[data-night][data-theme] table.grid th, html[data-night][data-theme] table.at thead th { background: #161d27; color: #9aa5b6; }
+html[data-night][data-theme] table.grid td { border-bottom-color: #1c2430; }
+html[data-night][data-theme] table.grid tbody tr:hover td { background: var(--accent-grid); }
+html[data-night][data-theme] .bl-box { background: #10161f; border-color: var(--border); }
+html[data-night][data-theme] .bl-card { background: #151c26; border-color: #252f3c; }
+html[data-night][data-theme] .bl-card:hover { box-shadow: var(--m-shadow-md), 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+html[data-night][data-theme] .bl-count { background: #1b2430; color: #c8d0db; border-color: var(--border); }
+
+/* ---------- pivot tables: numbers in a calm mono font, accent glow on the focused cell ---------- */
+html[data-night][data-theme] table.pivot td { font-family: var(--m-mono); font-size: 12.5px; }
+html[data-night][data-theme] table.pivot th, html[data-night][data-theme] table.pivot td {
+  border-right-color: var(--accent-line); border-bottom-color: var(--accent-line);
+}
+html[data-night][data-theme] table.pivot thead th { color: #d6dde7; }
+html[data-night][data-theme] table.pivot tbody th { color: #c3ccd8; }
+html[data-night][data-theme] table.pivot tr.info td, html[data-night][data-theme] table.pivot tr.info th { background: #121923; color: #8792a3; }
+html[data-night][data-theme] table.pivot td.red { background: rgba(240, 68, 56, 0.22) !important; color: #ff9b93; }
+html[data-night][data-theme] table.pivot td.orange { background: rgba(247, 144, 9, 0.20) !important; color: #fdb75e; }
+html[data-night][data-theme] table.pivot td.dirty { background: rgba(250, 204, 21, 0.22) !important; color: #fde68a; }
+html[data-night][data-theme] table.pivot td.editable:focus { outline: 2px solid var(--accent); box-shadow: var(--m-glow); }
+html[data-night][data-theme] table[data-xh] .xh-label { color: #1a1a1a; }
+html[data-night][data-theme] .tb-ref { background: rgba(242, 201, 76, 0.14); border-color: rgba(242, 201, 76, 0.5); color: #f5d77a; }
+html[data-night][data-theme] .tb-ref.outline { background: transparent; }
+html[data-night][data-theme] .tb-count { box-shadow: 0 0 0 2px #121821; }
+
+/* ---------- segment switches ---------- */
+html[data-night][data-theme] :is(.jr-seg, .ja-seg) { background: #0e141c; }
+html[data-night][data-theme] :is(.jr-seg, .ja-seg) button { color: #9aa5b6; }
+html[data-night][data-theme] :is(.jr-seg, .ja-seg) button.on { background: #1f2834; color: var(--text); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+
+/* ---------- plots, images: keep pictures as they are, frame them dark ---------- */
+html[data-night][data-theme] .ys-plot { background: #0f151e; }
+
+/* ---------- login ---------- */
+html[data-night][data-theme] .login-page {
+  background: radial-gradient(900px 500px at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%), var(--page-bg);
+}
+html[data-night][data-theme] .login-card { background: var(--m-glass); backdrop-filter: blur(16px); border-color: rgba(255, 255, 255, 0.08); }
+
+/* ---------- the preview of this look in Settings ---------- */
+.set-theme-swatch.night i { background: #0e131b; border-right: 1px solid #222b37; }
+.set-theme-swatch.night b { background: radial-gradient(40px 30px at 30% 20%, rgba(57, 166, 80, 0.35), transparent 70%), #121821; }
+
+/* ---------- process schema in Show Experiment (SVG with fixed fill attributes - CSS fill wins over them) ---------- */
+html[data-night][data-theme] .schema-svg rect[fill="#F4F6F3"] { fill: #0f151e; }
+html[data-night][data-theme] .schema-svg text[fill="#2B2B2B"] { fill: #dbe2ea; }
+html[data-night][data-theme] .schema-svg text[fill="#7A847A"] { fill: #8d97a8; }
+html[data-night][data-theme] .schema-svg :is(circle, rect)[fill="#FFFFFF"] { fill: #1a222d; }
+html[data-night][data-theme] .schema-svg [fill="#E8F5E9"] { fill: #173322; }
+html[data-night][data-theme] .schema-svg [fill="#E3F1FB"] { fill: #15283a; }
+html[data-night][data-theme] .schema-svg [fill="#FBE3CC"] { fill: #3a2a18; }
+html[data-night][data-theme] .schema-svg [fill="#E0E0E0"] { fill: #3a4250; }

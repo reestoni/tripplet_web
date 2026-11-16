@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
+import { useDisplay } from "../display";
 import YarnScopeBatch from "./YarnScopeBatch";
 import YarnScopeCompare from "./YarnScopeCompare";
 
@@ -64,20 +65,31 @@ function loadPlotly(): Promise<PlotlyLike> {
   return plotlyPromise;
 }
 
+/** night look: dark paper, light text and grid - merged under the plot's own layout */
+function nightLayout(layout: Record<string, unknown>): Record<string, unknown> {
+  const axis = (a: unknown) => ({ gridcolor: "#243040", zerolinecolor: "#3a4658", linecolor: "#3a4658",
+    ...(a as Record<string, unknown> | undefined) });
+  const out: Record<string, unknown> = { paper_bgcolor: "#0f151e", plot_bgcolor: "#0f151e",
+    font: { color: "#c9d1dc", ...(layout.font as Record<string, unknown> | undefined) }, ...layout };
+  for (const k of Object.keys(layout).filter((k) => /^[xy]axis\d*$/.test(k)).concat(["xaxis", "yaxis"])) out[k] = axis(layout[k]);
+  return out;
+}
+
 export function Plot({ data, layout }: { data: unknown[]; layout: Record<string, unknown> }) {
   const ref = useRef<HTMLDivElement>(null);
+  const night = useDisplay()?.prefs.theme === "night";
   useEffect(() => {
     let alive = true;
     loadPlotly().then((P) => {
       if (alive && ref.current) {
-        P.react(ref.current, data, { margin: { l: 55, r: 15, t: 10, b: 40 }, showlegend: false, ...layout },
-          { displaylogo: false, responsive: true });
+        const base = { margin: { l: 55, r: 15, t: 10, b: 40 }, showlegend: false, ...layout };
+        P.react(ref.current, data, night ? nightLayout(base) : base, { displaylogo: false, responsive: true });
       }
     });
     return () => {
       alive = false;
     };
-  }, [data, layout]);
+  }, [data, layout, night]);
   useEffect(() => () => {
     const el = ref.current;
     const w = window as unknown as { Plotly?: PlotlyLike };
