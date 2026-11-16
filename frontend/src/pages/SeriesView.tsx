@@ -167,10 +167,8 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
           {data.trials.length > 0 && (
             <>
               <span className="tb-sep" />
-              <button className="tb-btn" disabled={!canWrite} title={canWrite ? undefined : t("tl.writeNeeded")}
-                onClick={() => openTool({ kind: "import", which: "statimat" })}>{t("tl.statImport")}</button>
-              <button className="tb-btn" disabled={!canWrite} title={canWrite ? undefined : t("tl.writeNeeded")}
-                onClick={() => openTool({ kind: "import", which: "itemat" })}>{t("tl.itemImport")}</button>
+              <button className="tb-btn" disabled={!canWrite} title={canWrite ? t("tl.pdfTip") : t("tl.writeNeeded")}
+                onClick={() => openTool({ kind: "import" })}>{t("tl.pdfImport")}</button>
             </>
           )}
           <span className="tb-sep" />
@@ -227,7 +225,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       {tool?.kind === "copy" && <CopyTrialsDialog seriesId={s.id} preselected={tool.ids} onClose={() => setTool(null)}
         onDone={(n) => reloadAll(t("tl.copied", { n }))} />}
       {tool?.kind === "yarns" && <YarnsDialog seriesId={s.id} onClose={() => setTool(null)} onDone={() => reloadAll(t("tl.yarnsSaved"))} />}
-      {tool?.kind === "import" && <PdfImportDialog seriesId={s.id} kind={tool.which} onClose={() => setTool(null)}
+      {tool?.kind === "import" && <PdfImportDialog seriesId={s.id} onClose={() => setTool(null)}
         onDone={() => setReload((x) => x + 1)} />}
       {tool?.kind === "ref-add" && <RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
         onOk={(name) => refAction(`/api/series/${s.id}/references`, { name }, t("tl.refAdded"))} />}
@@ -301,7 +299,7 @@ function SeriesNotes({ seriesId, initial, canWrite, onSaved }: {
 type Tool =
   | { kind: "labels" } | { kind: "yarns" } | { kind: "copy"; ids: number[] } | { kind: "ref-add" }
   | { kind: "ref-mark"; trial: Trial } | { kind: "ref-rename"; trial: Trial; name: string }
-  | { kind: "import"; which: "statimat" | "itemat" } | { kind: "compare"; ref: number | null };
+  | { kind: "import" } | { kind: "compare"; ref: number | null };
 
 function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools, copyLink }: {
   data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;

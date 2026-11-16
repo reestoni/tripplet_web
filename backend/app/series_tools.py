@@ -315,7 +315,7 @@ from db import series_attachments as sat  # noqa: E402
 
 
 class PdfImport(BaseModel):
-    kind: str                 # "statimat" | "itemat"
+    kind: str = "auto"        # "auto" (kind recognised per PDF) | "statimat" | "itemat"
     ids: List[int]            # attachment ids of PDFs attached to this series
 
 
@@ -326,14 +326,21 @@ def pdf_import(series_id: int, body: PdfImport, user: Dict[str, Any] = Depends(c
     (db/lab_pdf_import.can_import) - uploading attachments is open to everybody, importing is not."""
     if not lpi.can_import(user):
         return _err(403, "read_only", "Write access required.")
-    if body.kind not in ("statimat", "itemat") or not body.ids:
-        return _err(400, "bad_request", "Choose Statimat or Itemat and at least one PDF.")
+    if body.kind not in ("auto", "statimat", "itemat") or not body.ids:
+        return _err(400, "bad_request", "Choose at least one PDF.")
     paths = []
     for aid in body.ids:
         p = sat.file_for_download("pdf", series_id, aid)
         if not p:
             return _err(404, "not_found", "A chosen PDF is not attached to this series.")
         paths.append(p)
+    if body.kind == "auto":
+        names = {str(x.get("ID")): str(x.get("OriginalFilename") or "") for x in sat.list_pdfs(series_id)}
+        kinds = {p: lpi.detect_kind(p, name=names.get(str(aid), "")) for aid, p in zip(body.ids, paths)}
+        res = lpi.import_auto(series_id, paths, user, kinds=kinds)
+        imported = sum((r or {}).get("imported", 0) for r in (res["statimat"], res["itemat"]))
+        return {"imported": imported, "skipped": [], "errors": [], "message": res["message"],
+                "statimat": res["statimat"] is not None, "itemat": res["itemat"] is not None, "unknown": res["unknown"]}
     if body.kind == "statimat":
         res = lpi.import_statimat(series_id, paths, user)
         msg = lpi.import_message("Import finished.", "Imported spools", res["imported"], res["skipped"], res["errors"])
@@ -347,6 +354,17 @@ def pdf_import(series_id: int, body: PdfImport, user: Dict[str, Any] = Depends(c
             return _err(500, "failed", f"The Itemat import failed: {e}")
         msg = lpi.import_message("Itemat import finished.", "Imported trials", res["imported"], res["skipped"], res["errors"])
     return {"imported": res["imported"], "skipped": res["skipped"], "errors": res["errors"], "message": msg}
+
+
+@router.get("/{series_id}/pdf-import/kinds")
+def pdf_import_kinds(series_id: int, user: Dict[str, Any] = Depends(current_user)):
+    """Recognised kind of every attached PDF (db/lab_pdf_import.detect_kind): {attachment id: kind | null}."""
+    out: Dict[str, Any] = {}
+    for p in sat.list_pdfs(series_id):
+        aid = p.get("ID")
+        path = sat.file_for_download("pdf", series_id, aid) if aid is not None else None
+        out[str(aid)] = lpi.detect_kind(path, name=str(p.get("OriginalFilename") or "")) if path else None
+    return {"kinds": out}
 
 
 # ------------------------------------------------------------------ vs Ref / Target (Compare with reference)

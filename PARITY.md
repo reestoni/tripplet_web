@@ -130,6 +130,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Upload PDFs | `_upload_series_pdfs` / `_insert_trialseries_pdf_row` | **DONE** | `be/uploads.py` (2026-11-13) |
 | Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **DONE** | `fe/components/SeriesTools.tsx` PdfImportDialog, `be/series_tools.pdf_import` (write access like the desktop buttons) |
 | Itemat import | `_itemat_import` | **DONE** | same as Statimat |
+| One "PDF import" for both: kind recognised per PDF (text "STATIMAT" / scan without text, file name as hint) | `_pdf_import` / `pdf_import_impl` | **DONE** | `lab_pdf_import.detect_kind` + `import_auto` (2026-11-16, both apps), `GET …/pdf-import/kinds` |
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
 | Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **DONE** | `SavedReports` in the header (only with saved reports; Ctrl+click = new tab) |
 | Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **DONE** | LabelsDialog (range, start cell, template, save template) → PDF in new tab |

@@ -386,12 +386,13 @@ export function RefNameDialog({ title, initial, onClose, onOk }: {
   );
 }
 
-/* ------------------------------------------------------------------ Statimat / Itemat import */
-export function PdfImportDialog({ seriesId, kind, onClose, onDone }: {
-  seriesId: number; kind: "statimat" | "itemat"; onClose: () => void; onDone: () => void;
-}) {
+/* ------------------------------------------------------------------ PDF import (Statimat + Itemat in one) */
+/** One import for Statimat and Itemat PDFs (Nutzerwunsch 2026-11-16, both apps): the kind of every attached PDF
+ *  is recognised by the server (db/lab_pdf_import.detect_kind), the chosen ones are imported by their kind. */
+export function PdfImportDialog({ seriesId, onClose, onDone }: { seriesId: number; onClose: () => void; onDone: () => void }) {
   const { t } = useI18n();
   const [pdfs, setPdfs] = useState<{ id: number; name: string }[] | null>(null);
+  const [kinds, setKinds] = useState<Record<string, string | null> | null>(null);
   const [sel, setSel] = useState<number[]>([]);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -399,25 +400,37 @@ export function PdfImportDialog({ seriesId, kind, onClose, onDone }: {
   useEffect(() => {
     request<{ pdfs: { id: number; name: string }[] }>("GET", `/api/series/${seriesId}/attachments`).then((r) => setPdfs(r.pdfs))
       .catch((e) => setErr(errText(e)));
+    request<{ kinds: Record<string, string | null> }>("GET", `/api/series/${seriesId}/pdf-import/kinds`).then((r) => setKinds(r.kinds))
+      .catch(() => setKinds({}));
   }, [seriesId]);
   const go = async () => {
     setBusy(true); setErr(null);
     try {
-      const r = await request<{ message: string }>("POST", `/api/series/${seriesId}/pdf-import`, { kind, ids: sel });
+      const r = await request<{ message: string }>("POST", `/api/series/${seriesId}/pdf-import`, { kind: "auto", ids: sel });
       setResult(r.message); onDone();
     } catch (e) { setErr(errText(e)); } finally { setBusy(false); }
   };
+  const kindOf = (id: number) => (kinds ? kinds[String(id)] ?? null : undefined);
+  const badge = (k: string | null | undefined) =>
+    k === undefined ? <span className="pi-kind muted">…</span>
+      : <span className={"pi-kind " + (k ?? "unknown")}>{k === "statimat" ? "Statimat" : k === "itemat" ? "Itemat" : t("tl.pdfUnknown")}</span>;
+  const chosen = sel.map(kindOf);
   return (
-    <Modal title={kind === "statimat" ? t("tl.statTitle") : t("tl.itemTitle")} onClose={onClose}>
-      {!result && <p className="muted">{kind === "statimat" ? t("tl.statText") : t("tl.itemText")}</p>}
+    <Modal title={t("tl.pdfTitle")} onClose={onClose}>
+      {!result && <p className="muted">{t("tl.pdfText")}</p>}
       {pdfs?.length === 0 && <p>{t("tl.noPdfs")}</p>}
       {!result && pdfs && pdfs.length > 0 && (
-        <div className="tl-trials">
+        <div className="tl-trials pi-list">
           {pdfs.map((p) => (
             <label key={p.id} className="tl-trial"><input type="checkbox" checked={sel.includes(p.id)}
-              onChange={() => setSel((s) => (s.includes(p.id) ? s.filter((x) => x !== p.id) : [...s, p.id]))} /> {p.name}</label>
+              onChange={() => setSel((s) => (s.includes(p.id) ? s.filter((x) => x !== p.id) : [...s, p.id]))} />
+              {badge(kindOf(p.id))} {p.name}</label>
           ))}
         </div>
+      )}
+      {!result && sel.length > 0 && (
+        <p className="muted small">{t("tl.pdfChosen", { s: chosen.filter((k) => k === "statimat").length,
+          i: chosen.filter((k) => k === "itemat").length, u: chosen.filter((k) => k === null).length })}</p>
       )}
       {busy && <p className="muted">{t("tl.importing")}</p>}
       {result && <pre className="tl-result-text">{result}</pre>}

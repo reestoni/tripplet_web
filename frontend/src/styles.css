@@ -1688,3 +1688,10 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .rqp-img-nav .btn-plain { padding: 2px 12px; font-size: 16px; }
 .rqp-img-name { font-size: 11px; color: #777; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 760px) { .rqp-main.with-img { grid-template-columns: 1fr; } .rqp-row { grid-template-columns: 1fr; } .rqp-k { padding-bottom: 0; } }
+
+/* PDF import: recognised kind per PDF */
+.pi-kind { display: inline-block; min-width: 62px; text-align: center; font-size: 11px; font-weight: 600; border-radius: 8px;
+  padding: 1px 6px; margin-right: 6px; background: #eef1ee; color: #5A6460; }
+.pi-kind.statimat { background: #E3EEF8; color: #2367A0; }
+.pi-kind.itemat { background: #F3E8FB; color: #7A3FA8; }
+.pi-kind.unknown { background: #f3f3f3; color: #999; }
