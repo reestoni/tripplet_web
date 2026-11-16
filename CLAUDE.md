@@ -148,7 +148,8 @@ Label Generator, Jet ROI, Air Supply, Lab Assistant (< 50).
    Versionsverlauf + Vergleich (`/versions`, `/versions/{alt}/compare`); Experiment zuordnen (Superuser);
    `links_router`: `/api/series/{id}/request`, `/api/series/{id}/reports` (RE-Symbol, `SeriesLinks.tsx`),
    `/api/experiment-series` (Experiment ID -> Serie, Auswahl bei mehreren); Hilfe "Wie funktionieren Requests"
-   (`RequestHelp.tsx`). Tests `tests/test_request_links.py`.
+   (`RequestHelp.tsx`). In Create Experiment öffnet das ER-Symbol die Anfrage als schwebendes, verschiebbares Fenster
+   (`FloatingWindow`, `RequestIcon floating`; nicht modal, Formular bleibt bedienbar, Grösse unten rechts ziehbar, wie im Desktop). Tests `tests/test_request_links.py`.
 4. 🟡 Show Experiment bearbeiten (Undo, Bulk Edit = "Fill row", Notizen, Plausibilität – erledigt, siehe unten);
    ✅ Create Experiment, Add Trial Series, Add Lab Machines (2026-11-13): eine Seite `CreateExperiment.tsx` mit
    `mode` create | addseries | addlab (Routen `/experiments/new`, `/series/new`, `/lab-machines/new`; Reiter wie im

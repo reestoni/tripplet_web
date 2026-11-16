@@ -261,7 +261,7 @@ export default function CreateExperiment({ mode }: { mode: CreateMode }) {
           <div className="se-facts"><span>{t(`ce.sub.${mode}`)}</span></div>
         </div>
         <span style={{ flex: 1 }} />
-        {mode === "create" && requestId != null && <span className="tb-icon big rqp-er"><RequestIcon id={requestId} big /></span>}
+        {mode === "create" && requestId != null && <span className="tb-icon big rqp-er"><RequestIcon id={requestId} big floating /></span>}
         <HelpButton screen="create_experiment" />
         <button className="btn-green" disabled={!canSave} onClick={save} title={canSave ? undefined : t("ce.fillAll")}>
           {busy ? t("ce.saving") : t("ce.save")}

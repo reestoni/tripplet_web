@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { ApiError, img, request } from "../api";
@@ -39,13 +39,58 @@ export function Overlay({ children, onClose, wide }: { children: ReactNode; onCl
   );
 }
 
+/** Non-modal window that floats above the page and can be moved by its title bar (and resized at the lower right
+ *  corner) - the page behind stays usable, like the desktop request dialog next to Create Experiment.
+ *  Escape closes it only while the focus is inside it. */
+export function FloatingWindow({ children, title, onClose }: { children: ReactNode; title: string; onClose: () => void }) {
+  const { t } = useI18n();
+  const box = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState(() => {
+    const w = Math.min(720, window.innerWidth - 32);
+    return { x: Math.max(16, window.innerWidth - w - 24), y: 112 };   // below the page head (Save button stays free)
+  });
+  const drag = useRef<{ dx: number; dy: number } | null>(null);
+  const clamp = (x: number, y: number) => {
+    const w = box.current?.offsetWidth ?? 400;
+    return { x: Math.min(Math.max(x, 80 - w), window.innerWidth - 80), y: Math.min(Math.max(y, 0), window.innerHeight - 40) };
+  };
+  useEffect(() => {
+    const fit = () => setPos((p) => clamp(p.x, p.y));
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, []);
+  return createPortal(
+    <div ref={box} className="modal rqp rqp-float" role="dialog" aria-modal="false" style={{ left: pos.x, top: pos.y }}
+      onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Escape") onClose(); }}
+      onClick={stop} onDoubleClick={stop} onContextMenu={stop} onDragStart={stop}>
+      <div className="rqp-float-bar" title={t("rqp.dragTip")}
+        onPointerDown={(e) => {
+          if ((e.target as HTMLElement).closest("button")) return;
+          drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+          e.preventDefault();
+        }}
+        onPointerMove={(e) => { if (drag.current) setPos(clamp(e.clientX - drag.current.dx, e.clientY - drag.current.dy)); }}
+        onPointerUp={() => { drag.current = null; }}>
+        <span className="rqp-float-grip" aria-hidden="true">⠿</span>
+        <span className="rqp-float-title">{title}</span>
+        <button className="rqp-float-x" onClick={onClose} aria-label={t("rqp.close")} title={t("rqp.close")}>×</button>
+      </div>
+      <div className="rqp-float-body">{children}</div>
+    </div>,
+    document.body,
+  );
+}
+
 function useFieldLabel() {
   const { t } = useI18n();
   return (name: string, fallback: string) => { const k = `rqf.${name}`; const v = t(k); return v === k ? fallback : v; };
 }
 
-export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
+export default function RequestPopup({ id, prefix, onClose, nav, actions, floating }: {
   id: number; prefix?: string; onClose: () => void; nav?: ReactNode; actions?: ReactNode;
+  /** non-modal, movable window instead of the dimmed dialog (Create Experiment: keep filling the form) */
+  floating?: boolean;
 }) {
   const { t } = useI18n();
   const label = useFieldLabel();
@@ -59,8 +104,8 @@ export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
       .catch((e) => setErr(e instanceof ApiError && e.status === 404 ? t("rq.notFound")
         : e instanceof ApiError && e.status === 403 ? t("rqp.forbidden") : String(e.message || e)));
   }, [id, t]);
-  return (
-    <Overlay onClose={onClose} wide="rqp-wide">
+  const body = (
+    <>
       {nav}
       <div className="rqp-head">
         <div className="rqp-titlebox">
@@ -109,8 +154,11 @@ export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
       <div className="modal-buttons">{actions}<button className="btn-plain" onClick={onClose}>{t("rqp.close")}</button></div>
       {showImages && data && <ImageViewer requestId={data.id} images={data.images} onClose={() => setShowImages(false)} />}
       {showHistory && data && <VersionHistory requestId={data.history_target_id} onClose={() => setShowHistory(false)} />}
-    </Overlay>
+    </>
   );
+  return floating
+    ? <FloatingWindow title={`ER ${id}`} onClose={onClose}>{body}</FloatingWindow>
+    : <Overlay onClose={onClose} wide="rqp-wide">{body}</Overlay>;
 }
 
 /** fields shown in the header line instead of the field list */
@@ -320,7 +368,7 @@ export function ImageViewer({ requestId, images, start = 0, onClose, onRenamed }
 }
 
 /** Clickable ER icon (All Experiments, Backlog cards, Show Experiment, Report). */
-export function RequestIcon({ id, big }: { id: string | number | null | undefined; big?: boolean }) {
+export function RequestIcon({ id, big, floating }: { id: string | number | null | undefined; big?: boolean; floating?: boolean }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   if (id == null || id === "" || id === 0 || id === "0") return null;
@@ -330,7 +378,7 @@ export function RequestIcon({ id, big }: { id: string | number | null | undefine
         title={t("rqp.openTip", { id })} role="button" tabIndex={0}
         onClick={(e) => { e.stopPropagation(); setOpen(true); }} onDoubleClick={stop} onMouseDown={stop}
         onKeyDown={(e) => { if (e.key === "Enter") setOpen(true); }} />
-      {open && <RequestPopup id={Number(id)} onClose={() => setOpen(false)} />}
+      {open && <RequestPopup id={Number(id)} floating={floating} onClose={() => setOpen(false)} />}
     </>
   );
 }
