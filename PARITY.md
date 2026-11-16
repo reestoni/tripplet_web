@@ -314,7 +314,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Feature access (hide items) | `feature_access` / `_allowed` | **DONE** | `be/nav.py`, `require_feature` |
 | Badges (Backlog, approved requests) | `nav_counts` | **DONE** | |
 | Click on the "New Experiment" badge = preview of the approved requests + Create experiment | `_show_request_preview_dialog` | **DONE** | `RequestPreviewHost` (RequestPopup.tsx), `GET /api/requests/preview`, shared `experiment_requests.requests_by_status` (2026-11-16) |
-| Browser tab title "<page> – TrippleT" | (window title) | **DONE** | Shell + `pageTitle.ts` (Show Experiment: experiment ID – series) |
+| Browser tab title "<page> – TrippleT" | (window title) | **DONE** | Shell + `pageTitle.ts` (Show Experiment: experiment ID.series number, e.g. 2026-73-053.01) |
 | Ctrl+click sidebar = new tab | `_wire_tab_capable_click` | **DONE** | browser (NavLink) |
 | Notifications bell + panel (mark read, click opens series) | `notification_panel.py`, `ui/notifications.py` | **DONE** | `fe/components/Notifications.tsx`, `be/notifications_api.py` on `ui/notifications.py` (own notifications only), 2026-11-13 |
 | Search (Ctrl+F quick search) | `main.py` `_sc_search` | **DONE** | `fe/components/QuickSearch.tsx`, `be/search_api.py` on `db/quick_search.py`, 2026-11-13 |

@@ -52,7 +52,9 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const lastId = useRef<string | undefined>(undefined);
   const lastRecent = useRef<number | null>(null);
   const linked = useRef(false);                   // link parameters applied (only on the first load of the series)
-  usePageTitle(data ? `${data.series.experiment_id} – ${data.series.name}` : null);
+  // tab title: experiment ID + series number only, e.g. "2026-73-053.01" (series names start with their number)
+  const seriesNo = data ? (data.series.name.trim().match(/^\d+/)?.[0] ?? "") : "";
+  usePageTitle(data ? (seriesNo ? `${data.series.experiment_id}.${seriesNo}` : data.series.experiment_id) : null);
   if (lastId.current !== id) linked.current = false;
 
   useEffect(() => {
