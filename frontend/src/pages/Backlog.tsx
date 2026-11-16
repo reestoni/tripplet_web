@@ -20,6 +20,15 @@ export function openSeriesFrom(e: React.MouseEvent, seriesId: number, open: (id:
 const ARCHIVED = 5;
 const MIME = "application/x-tripplet-series";
 
+/** Search field of a Backlog column (desktop: series_overview.card_matches): every word must appear in
+ *  experiment ID, series name, machine or owner. */
+function cardMatches(q: string | undefined, c: BacklogCard): boolean {
+  const words = (q ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+  if (!words.length) return true;
+  const hay = [c.experiment_id, c.series_name, c.machine, c.owner].join(" ").toLowerCase();
+  return words.every((w) => hay.includes(w));
+}
+
 function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, selected, onSelect, conclusionsOn }: {
   c: BacklogCard; statusId: number; conclusionsOn: boolean; onOpen: (e: React.MouseEvent) => void; onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void; dragging: boolean; onMenu: (e: React.MouseEvent) => void;
@@ -142,6 +151,7 @@ export default function Backlog() {
   const [confirmMany, setConfirmMany] = useState<{ drag: Drag; to: number } | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [colQ, setColQ] = useState<Record<number, string>>({});   // search field per column
   const [welcome, setWelcome] = useState<{ message: string; first_name: string } | null>(null);
 
   const stamp = useRef<string | null>(null);
@@ -335,14 +345,17 @@ export default function Backlog() {
                 <span>{t(`status.${b.id}`)}</span>
                 <span>
                   {sel.box === b.id && sel.ids.length > 1 && <span className="bl-selcount">{t("bl.selected", { n: sel.ids.length })}</span>}
-                  <span className="bl-count">{b.cards.length}</span>
+                  <span className="bl-count">{colQ[b.id]?.trim()
+                    ? `${b.cards.filter((c) => cardMatches(colQ[b.id], c)).length} / ${b.cards.length}` : b.cards.length}</span>
                   {expanded === b.id
                     ? <button className="bl-expand" title={t("bl.collapse")} onClick={() => setExpanded(null)}>✕</button>
                     : <button className="bl-expand" title={t("bl.expand")} onClick={() => setExpanded(b.id)}>⤢</button>}
                 </span>
               </div>
+              <input className="search bl-search" placeholder={t("bl.searchColumn", { col: t(`status.${b.id}`) })}
+                value={colQ[b.id] ?? ""} onChange={(e) => setColQ((q) => ({ ...q, [b.id]: e.target.value }))} />
               <div className="bl-list">
-                {b.cards.map((c) => (
+                {b.cards.filter((c) => cardMatches(colQ[b.id], c)).map((c) => (
                   <Card key={c.series_id} c={c} statusId={b.id} conclusionsOn={conclusionsOn} onOpen={(e) => openFrom(e, c.series_id)}
                     dragging={!!drag && (drag.seriesId === c.series_id || !!drag.ids?.includes(c.series_id))} onDragEnd={endDrag}
                     selected={sel.box === b.id && sel.ids.includes(c.series_id)} onSelect={(e) => selectCard(e, b, c.series_id)}
@@ -351,6 +364,7 @@ export default function Backlog() {
                       ids: sel.box === b.id && sel.ids.includes(c.series_id) && sel.ids.length > 1 ? sel.ids : undefined })} />
                 ))}
                 {b.cards.length === 0 && <div className="muted bl-empty">{t("bl.empty")}</div>}
+                {b.cards.length > 0 && !b.cards.some((c) => cardMatches(colQ[b.id], c)) && <div className="muted bl-empty">{t("bl.noHit")}</div>}
               </div>
             </div>
           ))}

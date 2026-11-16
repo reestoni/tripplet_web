@@ -93,6 +93,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Context: Change machine… (superuser) | `_ctx_reassign_machine` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Context: Delete trial series… | `_ctx_delete_trialseries` | **DONE** | `fe/components/SeriesAdmin.tsx`, `be/series_manage.py` (2026-11-13) |
 | Archived: search | `ArchivedPanel._on_search` | **DONE** | |
+| Search field in every status column (ID, name, machine, owner; count "hits / total") | `BacklogScreen._apply_card_search` | **DONE** | `Backlog.tsx` `cardMatches`, shared rule `series_overview.card_matches` (2026-11-16) |
 | Archived: Year › XX accordion with counts (open while searching) | `_YearGroup` / `_XxGroup` | **DONE** | |
 | Archived: double-click open | `_ArchivedSeriesRow.mouseDoubleClickEvent` | **DONE** | |
 | Archived: drag back (superuser rules) / drop onto Archived | `_ArchivedSeriesRow.mouseMoveEvent` / `ArchivedPanel.dropEvent` | **DONE** | server checks rules |

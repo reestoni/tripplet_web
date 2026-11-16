@@ -1709,3 +1709,6 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .set-theme-swatch b { flex: 1; display: block; }
 .set-theme-swatch.classic i { background: #777; } .set-theme-swatch.classic b { background: #f6f8f6; }
 .set-theme-swatch.modern i { background: #fff; border-right: 1px solid #e4e7ec; } .set-theme-swatch.modern b { background: #f5f6f8; }
+
+/* search field per Backlog column */
+.bl-box .bl-search { min-width: 0; width: 100%; margin-bottom: 6px; }
