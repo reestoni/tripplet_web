@@ -192,3 +192,57 @@ html[data-theme="modern"] .search { font-size: 13px; }
 html[data-theme="modern"] .bl-title { font-size: 12.5px; }
 html[data-theme="modern"] .bl-sub { font-size: 11px; }
 html[data-theme="modern"] .sb-item { font-size: 13.5px; }
+
+/* ======================= step 3: admin pages and tools ======================= */
+
+/* panels and cards of the tools (Yarn Count, Jet ROI, Air Supply, Image Compare, Label Generator, Settings, ...) */
+html[data-theme="modern"] :is(.set-box, .yc-card, .jr-card, .as-panel, .as-opt, .as-table, .ic-list, .lg-props, .dsb-list,
+  .ys-card, .ce-tree, .sc-list, .st-table, .rb-wrap, .at-wrap, .wn-card) {
+  border-color: var(--border); border-radius: 12px; box-shadow: var(--m-shadow-sm);
+}
+html[data-theme="modern"] .wn-card { border-left-width: 5px; }
+html[data-theme="modern"] .ys-plot { border-color: var(--border); border-radius: 12px; }
+html[data-theme="modern"] :is(.set-box, .yc-card, .jr-card) h2 { font-weight: 650; letter-spacing: -0.01em; }
+html[data-theme="modern"] .set-box { padding: 14px 18px; }
+html[data-theme="modern"] .yc-head { color: #98a2b3; font-weight: 600; letter-spacing: 0.06em; }
+
+/* segment switches (Jet ROI single/multi, Jet Advisor yarn mode, ...) */
+html[data-theme="modern"] :is(.jr-seg, .ja-seg) {
+  border: 1px solid var(--border); background: #f2f4f7; border-radius: 9px; padding: 2px; gap: 2px;
+}
+html[data-theme="modern"] :is(.jr-seg, .ja-seg) button {
+  background: transparent; border: none; border-radius: 7px; color: #475467; font-weight: 500; padding: 4px 12px;
+}
+html[data-theme="modern"] .ja-seg button + button { border-left: none; }
+html[data-theme="modern"] :is(.jr-seg, .ja-seg) button.on {
+  background: #fff; color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
+}
+
+/* inner tab bars (Air Supply networks) */
+html[data-theme="modern"] .as-tabs { border-bottom-color: var(--border); }
+html[data-theme="modern"] .as-tab { background: transparent; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; color: #475467; }
+html[data-theme="modern"] .as-tab:hover { background: var(--m-hover); }
+html[data-theme="modern"] .as-tab.on { background: transparent; color: var(--m-accent-ink); border-bottom-color: var(--accent); }
+html[data-theme="modern"] .as-tab-add { border-radius: 8px; }
+
+/* table heads of the tools (Process Playground, Jet Advisor, Yarn Stock, admin tables) */
+html[data-theme="modern"] :is(.pp-table, .ja-res, .ja-tt) th { color: #475467; font-weight: 600; }
+html[data-theme="modern"] .pp-table th { background: #f8f9fb; }
+html[data-theme="modern"] table.at td { border-right-color: #f0f1f3; border-bottom-color: #f0f1f3; }
+html[data-theme="modern"] table.at tbody tr:hover td { background: var(--accent-grid); }
+html[data-theme="modern"] table.at thead tr.at-filters th { background: #fff; }
+
+/* small chips and toggles inside tools */
+html[data-theme="modern"] :is(.ja-chip, .cc-trial, .qs-set) { border-color: var(--m-border-strong); border-radius: 999px; }
+html[data-theme="modern"] .yc-copy, html[data-theme="modern"] .qs-lookup { border-color: var(--m-border-strong); border-radius: 8px; }
+html[data-theme="modern"] .st-in { border-radius: 6px; }
+
+/* messages */
+html[data-theme="modern"] :is(.st-msg, .st-warn, .mj-msg) { border-radius: 8px; }
+html[data-theme="modern"] .login-error { color: #b42318; }
+
+/* pop-ups of the sidebar (bell, recently opened) */
+html[data-theme="modern"] :is(.bell-panel, .recent-menu) { border-color: var(--border); border-radius: 12px; box-shadow: var(--m-shadow-lg); }
+
+/* login page */
+html[data-theme="modern"] .login-card { border-radius: 16px; box-shadow: var(--m-shadow-lg); border: 1px solid var(--border); }
