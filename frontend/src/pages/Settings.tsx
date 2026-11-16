@@ -124,6 +124,20 @@ export default function Settings() {
       </section>
 
       <section className="set-box">
+        <h2>{t("set.theme")}</h2>
+        <div className="set-themes">
+          {(["classic", "modern"] as const).map((k) => (
+            <label key={k} className={"set-theme" + ((p.theme ?? "classic") === k ? " on" : "")}>
+              <input type="radio" name="theme" checked={(p.theme ?? "classic") === k} onChange={() => disp.set({ theme: k })} />
+              <span className={"set-theme-swatch " + k} aria-hidden="true"><i /><b /></span>
+              <span><b>{t(`set.theme.${k}`)}</b><br /><span className="muted small">{t(`set.theme.${k}Hint`)}</span></span>
+            </label>
+          ))}
+        </div>
+        <p className="muted">{t("set.themeHint")}</p>
+      </section>
+
+      <section className="set-box">
         <h2>{t("set.accent")}</h2>
         <span className="set-row">
           <input type="color" value={accent} onChange={(e) => { setAccent(e.target.value); document.documentElement.style.setProperty("--accent", e.target.value); }} />

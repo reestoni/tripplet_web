@@ -9,7 +9,7 @@ import { useI18n } from "./i18n";
    (event "tripplet:cell-focus" from edit.tsx). */
 
 export type DisplayPrefs = { contrast: boolean; crosshair: boolean; readbar: boolean; alert_marks: boolean;
-  cb_colours: boolean; app_scale: number; scale: number; start?: string };
+  cb_colours: boolean; app_scale: number; scale: number; start?: string; theme?: "classic" | "modern" };
 
 type Read = { where: string; value: string; warn: "red" | "orange" | null };
 type Ctx = { prefs: DisplayPrefs; set: (p: Partial<DisplayPrefs>, persist?: boolean) => void; read: Read | null };
@@ -74,6 +74,8 @@ export function DisplayProvider({ initial, children }: { initial: DisplayPrefs; 
     b.toggle("pv-contrast", prefs.contrast);
     b.toggle("pv-marks", prefs.alert_marks);
     b.toggle("pv-cb", prefs.cb_colours);
+    // look of the app: styles.css = classic (always loaded), theme-modern.css only acts under html[data-theme="modern"]
+    document.documentElement.dataset.theme = prefs.theme === "modern" ? "modern" : "classic";
     document.documentElement.style.setProperty("--tscale", String((prefs.scale || 100) / 100));
   }, [prefs]);
 

@@ -1,0 +1,117 @@
+/* TrippleT web - "Modern" look (2026-11-16, Settings -> Look). styles.css stays the classic look untouched;
+   every rule here is scoped to html[data-theme="modern"], so switching back restores the original exactly.
+   Only appearance - no layout that functions depend on (sizes of tables/editors stay as they are). */
+
+/* ---------- tokens ---------- */
+html[data-theme="modern"] {
+  --page-bg: #f5f6f8;
+  --card-bg: #ffffff;
+  --text: #1d2430;
+  --muted: #667085;
+  --border: #e4e7ec;
+  --m-border-strong: #d0d5dd;
+  --m-hover: #f2f4f7;
+  --m-sidebar: #ffffff;
+  --m-accent-ink: color-mix(in srgb, var(--accent) 72%, black);
+  --m-accent-wash: color-mix(in srgb, var(--accent) 13%, white);
+  --m-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+  --m-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --m-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --m-shadow-lg: 0 20px 48px rgba(16, 24, 40, 0.18);
+  font-family: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+html[data-theme="modern"] body { background: var(--page-bg); }
+html[data-theme="modern"] table { font-variant-numeric: tabular-nums; }
+
+/* thin scrollbars */
+html[data-theme="modern"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-theme="modern"] ::-webkit-scrollbar-thumb { background: #d0d5dd; border-radius: 10px; border: 2px solid transparent; background-clip: content-box; }
+html[data-theme="modern"] ::-webkit-scrollbar-thumb:hover { background: #98a2b3; background-clip: content-box; }
+html[data-theme="modern"] ::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- sidebar ---------- */
+html[data-theme="modern"] .sidebar { background: var(--m-sidebar); color: var(--text); border-right: 1px solid var(--border); }
+html[data-theme="modern"] .sb-brand { color: var(--text); }
+html[data-theme="modern"] .sb-logo-light { display: none; }
+html[data-theme="modern"] .sb-logo-dark { display: block; }
+html[data-theme="modern"] .sb-brand-title { font-weight: 700; letter-spacing: -0.01em; }
+html[data-theme="modern"] .sb-brand-sub { color: var(--muted); }
+html[data-theme="modern"] .sb-env { border-radius: 999px; font-size: 10.5px; }
+html[data-theme="modern"] .sb-search { background: #f4f5f7; border-color: var(--border); color: var(--muted); }
+html[data-theme="modern"] .sb-search:hover { background: var(--m-hover); color: var(--text); }
+html[data-theme="modern"] .sb-search kbd { border-color: var(--m-border-strong); color: var(--muted); background: #fff; }
+html[data-theme="modern"] .sb-recent { background: #f4f5f7; border-color: var(--border); }
+html[data-theme="modern"] .sb-section-head { color: #98a2b3; font-weight: 600; letter-spacing: 0.06em; }
+html[data-theme="modern"] .sb-section-head img { filter: invert(0.55); opacity: 1; }
+html[data-theme="modern"] .sb-item { color: #344054; font-weight: 500; border-color: transparent; transition: background .12s, color .12s; }
+html[data-theme="modern"] .sb-item:hover { background: var(--m-hover); border-color: transparent; }
+html[data-theme="modern"] .sb-item.active { background: var(--m-accent-wash); color: var(--m-accent-ink); border-color: transparent; font-weight: 600; }
+html[data-theme="modern"] .sb-badge { background: #e5484d; box-shadow: 0 0 0 2px #fff; }
+html[data-theme="modern"] .sb-tool { color: #667085; }
+html[data-theme="modern"] .sb-tool:hover, html[data-theme="modern"] .sb-tool.on { background: var(--m-hover); border-color: transparent; color: var(--text); }
+html[data-theme="modern"] .sb-tools { border-bottom-color: var(--border); }
+html[data-theme="modern"] .sidebar .sb-account { border-top: 1px solid var(--border); }
+html[data-theme="modern"] .sb-me-btn { color: var(--text); }
+html[data-theme="modern"] .sb-me-btn:hover, html[data-theme="modern"] .sb-me-btn.on { background: var(--m-hover); border-color: transparent; }
+html[data-theme="modern"] .sb-me-role, html[data-theme="modern"] .sb-me-caret { color: var(--muted); }
+html[data-theme="modern"] .sb-me-menu { border-color: var(--border); box-shadow: var(--m-shadow-md); border-radius: 12px; }
+html[data-theme="modern"] .sb-me-menu > button:hover { background: var(--m-hover); }
+
+/* ---------- pages ---------- */
+html[data-theme="modern"] .page h1, html[data-theme="modern"] .page-head h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.015em; }
+html[data-theme="modern"] .card { border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--m-shadow-sm); }
+html[data-theme="modern"] .muted { color: var(--muted); }
+
+/* ---------- buttons ---------- */
+html[data-theme="modern"] .btn-green {
+  font-weight: 600; border-radius: 8px; box-shadow: var(--m-shadow-sm); transition: filter .12s, box-shadow .12s;
+}
+html[data-theme="modern"] .btn-green:hover:not(:disabled) { filter: brightness(0.94); }
+html[data-theme="modern"] .btn-plain, html[data-theme="modern"] .tb-btn {
+  background: #fff; border: 1px solid var(--m-border-strong); color: #344054; border-radius: 8px; box-shadow: var(--m-shadow-sm);
+  transition: background .12s, border-color .12s;
+}
+html[data-theme="modern"] .btn-plain:hover:not(:disabled), html[data-theme="modern"] .tb-btn:hover:not(:disabled) {
+  background: #f9fafb; border-color: #98a2b3;
+}
+html[data-theme="modern"] .tb-icon { border-radius: 8px; }
+html[data-theme="modern"] .tb-icon:hover:not(:disabled) { background: var(--m-hover); }
+html[data-theme="modern"] :is(button, a, input, select, textarea):focus-visible { outline: none; box-shadow: var(--m-ring); }
+
+/* ---------- fields ---------- */
+html[data-theme="modern"] :is(input[type="text"], input[type="search"], input[type="number"], input[type="password"], input:not([type]), select, textarea) {
+  border-color: var(--m-border-strong); border-radius: 8px;
+}
+html[data-theme="modern"] .search { border-color: var(--m-border-strong); border-radius: 8px; box-shadow: var(--m-shadow-sm); }
+html[data-theme="modern"] .search:focus,
+html[data-theme="modern"] :is(input, select, textarea):focus { outline: none; border-color: var(--accent); box-shadow: var(--m-ring); }
+html[data-theme="modern"] table.pivot td input:focus { box-shadow: none; }
+
+/* ---------- dialogs, toasts ---------- */
+html[data-theme="modern"] .modal-back { background: rgba(16, 24, 40, 0.38); backdrop-filter: blur(2px); }
+html[data-theme="modern"] .modal { border-radius: 14px; box-shadow: var(--m-shadow-lg); border: 1px solid var(--border); }
+html[data-theme="modern"] .modal h2 { font-weight: 650; letter-spacing: -0.01em; }
+html[data-theme="modern"] .toast { border-radius: 10px; box-shadow: var(--m-shadow-md); font-weight: 500; }
+
+/* ---------- lists / tables ---------- */
+html[data-theme="modern"] .table-wrap { border-color: var(--border); border-radius: 12px; box-shadow: var(--m-shadow-sm); }
+html[data-theme="modern"] table.grid th {
+  background: #f8f9fb; color: #475467; font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border);
+}
+html[data-theme="modern"] table.grid td { border-bottom-color: #f0f1f3; }
+html[data-theme="modern"] table.at thead th { background: #f8f9fb; color: #475467; }
+html[data-theme="modern"] table.pivot thead th { font-weight: 600; }
+
+/* ---------- backlog ---------- */
+html[data-theme="modern"] .bl-box { background: #eef0f3; border: 1px solid transparent; border-radius: 14px; }
+html[data-theme="modern"] .bl-head { font-weight: 650; }
+html[data-theme="modern"] .bl-count { background: #fff; color: #344054; border: 1px solid var(--border); font-weight: 600; }
+html[data-theme="modern"] .bl-card {
+  border: 1px solid var(--border); border-left-width: 4px; border-radius: 10px; box-shadow: var(--m-shadow-sm);
+  transition: box-shadow .12s, border-color .12s, transform .12s;
+}
+html[data-theme="modern"] .bl-card:hover { box-shadow: var(--m-shadow-md); transform: translateY(-1px); }
+html[data-theme="modern"] .bl-title { font-weight: 600; }

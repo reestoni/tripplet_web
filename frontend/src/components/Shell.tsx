@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api, img, type Me, type Nav, type NavItem } from "../api";
 import { LangFlags, useI18n } from "../i18n";
-import { LOGO } from "../brand";
+import { LOGO, LOGO_BLACK } from "../brand";
 import { HelpHost, openHelp } from "./Help";
 import Bell from "./Notifications";
 import { openQuickSearch, QuickSearchHost, RecentMenu, ScreenLog } from "./QuickSearch";
@@ -170,7 +170,8 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
     <div className="shell">
       <aside className={"sidebar" + (narrow ? " narrow" : "")}>
         <button type="button" className="sb-brand" onClick={toggleNarrow} title={narrow ? t("sb.expand") : t("sb.collapse")}>
-          <img className="sb-logo" src={LOGO} alt="TrippleT" />
+          <img className="sb-logo sb-logo-light" src={LOGO} alt="TrippleT" />
+          <img className="sb-logo sb-logo-dark" src={LOGO_BLACK} alt="" aria-hidden="true" />
           <div>
             <div className="sb-brand-title">TrippleT</div>
             <div className="sb-brand-sub" title={me.release || undefined}>HEBERLEIN · WEB {me.version}</div>

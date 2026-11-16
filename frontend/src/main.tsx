@@ -4,6 +4,8 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { I18nProvider } from "./i18n";
 import "./styles.css";
+import "@fontsource-variable/inter/index.css";     // built into the app (intranet, no internet) - used by the modern look
+import "./theme-modern.css";             // only active under html[data-theme="modern"] (Settings -> Look)
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

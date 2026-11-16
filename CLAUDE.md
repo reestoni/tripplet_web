@@ -363,6 +363,14 @@ wird quadratisch auf 256 px PNG gebracht). Web: Abschnitt "Profilbild" in `/sett
 /api/settings/avatar`), Bild `GET /api/avatar/<id>?v=<version>`, `/api/me` -> `avatar` (Version, 0 = keins), Konto-Karte zeigt es
 (Ereignis `tripplet:avatar`). Desktop: Gruppe "Profile picture" im Settings-Dialog (mit Save gespeichert), rund in der Fusszeile.
 
+**Darstellung Klassisch / Modern** (2026-11-16, nur Web, Nutzerwunsch: Facelift umschaltbar, Original bleibt): `styles.css` = Klassisch,
+bleibt unverändert; `src/theme-modern.css` wirkt nur unter `html[data-theme="modern"]` (gesetzt in `display.tsx` aus
+`DisplaySettings.theme`, Wahl in `/settings` -> Darstellung, sofort gespeichert über `/api/settings/prefs`, pro Benutzer; Desktop ignoriert
+den Wert). Schrift Inter lokal mitgeliefert (`@fontsource-variable/inter`, kein Internet nötig). Neue Gestaltung immer ins Modern-Thema
+(Selektor mit `html[data-theme="modern"]` beginnen), nie Klassisch verändern; Funktionen/Masse, auf die Code baut, nicht ändern.
+Stand Schritt 1: Grundgerüst (Farben, Schrift, Fokusrahmen, Scrollbalken), Seitenleiste hell (dunkles Logo `LOGO_BLACK`), Knöpfe,
+Felder, Karten, Dialoge, Tabellenköpfe, Backlog. Weitere Seiten folgen schrittweise.
+
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
 `tblUser.DisplaySettings`). Tabellen-Optionen in `src/display.tsx` (`DisplayProvider` aus `/api/me` -> `display`): Kontrast,

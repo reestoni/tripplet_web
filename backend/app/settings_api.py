@@ -25,7 +25,7 @@ from db import user_account as ua  # noqa: E402
 from db.usage_log import log_usage_event  # noqa: E402
 
 router = APIRouter(prefix="/api/settings")
-PREF_KEYS = ("contrast", "crosshair", "readbar", "alert_marks", "cb_colours", "app_scale", "scale")
+PREF_KEYS = ("contrast", "crosshair", "readbar", "alert_marks", "cb_colours", "app_scale", "scale", "theme")
 
 
 def _err(status: int, code: str, detail: str) -> JSONResponse:
