@@ -82,9 +82,9 @@ def _badges(keys: set) -> Dict[str, int]:
     return out
 
 
-# icons of the entries that have none (Admin, Superuser) - shown only in the modern look, the classic look keeps
-# its dots (Nutzerwunsch 2026-11-16: "offen lassen, ob ich es will"); drawn in the style of the other green icons
-MODERN_ICONS: Dict[str, str] = {
+# icons of the entries the desktop sidebar shows without one (Admin, Superuser) - web only, both looks
+# (Nutzerwunsch 2026-11-16); drawn in the style of the other green icons
+WEB_ICONS: Dict[str, str] = {
     "/admin/jets": "sb_jets.png", "/admin/top-plates": "sb_top_plates.png", "/admin/yarn": "sb_yarn.png",
     "/admin/order-types": "sb_order_type.png", "/admin/product-groups": "sb_product_groups.png",
     "/admin/material": "sb_material.png", "/superuser/users": "sb_users.png", "/superuser/recycle-bin": "sb_recycle_bin.png",
@@ -93,9 +93,8 @@ MODERN_ICONS: Dict[str, str] = {
 
 def _item(it: Item, badges: Dict[str, int]) -> Dict[str, Any]:
     key, label, icon, route, badge = it
-    return {"key": key or route, "label": label, "icon": icon or None, "route": route,
-            "badge": badges.get(badge, 0) if badge else 0, "web": route in WEB_READY,
-            "icon_modern": MODERN_ICONS.get(route)}
+    return {"key": key or route, "label": label, "icon": icon or WEB_ICONS.get(route), "route": route,
+            "badge": badges.get(badge, 0) if badge else 0, "web": route in WEB_READY}
 
 
 def build_nav(user: Dict[str, Any]) -> Dict[str, Any]:

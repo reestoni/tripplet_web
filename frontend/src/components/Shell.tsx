@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { api, img, type Me, type Nav, type NavItem } from "../api";
 import { LangFlags, useI18n } from "../i18n";
-import { useDisplay } from "../display";
 import { LOGO, LOGO_BLACK } from "../brand";
 import { HelpHost, openHelp } from "./Help";
 import Bell from "./Notifications";
@@ -23,11 +22,8 @@ function loadClosed(): string[] {
   }
 }
 
-function Item({ it: raw }: { it: NavItem }) {
+function Item({ it }: { it: NavItem }) {
   const { t } = useI18n();
-  // modern look: entries without an icon (Admin, Superuser) get one; classic keeps the dot
-  const modern = useDisplay()?.prefs.theme === "modern";
-  const it = !raw.icon && modern && raw.icon_modern ? { ...raw, icon: raw.icon_modern } : raw;
   const label = t(`nav.${it.route}`) === `nav.${it.route}` ? it.label : t(`nav.${it.route}`);
   if (it.route === "/help") {
     // desktop: the sidebar "Help" opens the search window (also F1), it is not a screen
