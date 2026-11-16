@@ -115,3 +115,80 @@ html[data-theme="modern"] .bl-card {
 }
 html[data-theme="modern"] .bl-card:hover { box-shadow: var(--m-shadow-md); transform: translateY(-1px); }
 html[data-theme="modern"] .bl-title { font-weight: 600; }
+
+/* ======================= step 2: Show Experiment, All Experiments ======================= */
+
+/* header of a series */
+html[data-theme="modern"] .se-head { gap: 14px; margin-bottom: 12px; align-items: center; }
+html[data-theme="modern"] .se-title h1 { font-size: 21px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.25; }
+html[data-theme="modern"] .se-facts { gap: 6px 16px; font-size: 12.5px; }
+html[data-theme="modern"] .se-facts b { font-weight: 500; color: #475467; }
+html[data-theme="modern"] .se-actions { gap: 6px; }
+html[data-theme="modern"] .se-retest { border-radius: 10px; }
+html[data-theme="modern"] .se-notes, html[data-theme="modern"] .se-notes-edit textarea { border-radius: 10px; }
+
+/* tab bar: underlined tabs instead of black buttons */
+html[data-theme="modern"] .se-tabs { gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 10px; }
+html[data-theme="modern"] .se-tab {
+  background: transparent; border: none; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0;
+  color: #475467; font-weight: 500; padding: 8px 12px; margin-bottom: -1px; transition: color .12s, background .12s;
+}
+html[data-theme="modern"] .se-tab:hover { background: var(--m-hover); color: var(--text); }
+html[data-theme="modern"] .se-tab.on { background: transparent; color: var(--m-accent-ink); border-bottom-color: var(--accent); font-weight: 600; }
+html[data-theme="modern"] .se-tab.soon { background: transparent; color: #98a2b3; }
+
+/* save bar and tool rows */
+html[data-theme="modern"] .ed-bar {
+  background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 6px 10px; box-shadow: var(--m-shadow-sm);
+}
+html[data-theme="modern"] .md-bar { gap: 6px 14px; }
+html[data-theme="modern"] .md-tools { border-left-color: var(--border); }
+html[data-theme="modern"] .tb-sep { background: var(--border); }
+html[data-theme="modern"] .tb-btn { padding: 5px 11px; }
+html[data-theme="modern"] .tb-ref { border-radius: 8px; border-color: #f2c94c; background: #fff8e1; color: #6b4e00; }
+html[data-theme="modern"] .tb-ref.outline { background: #fff; }
+html[data-theme="modern"] .tb-ref:hover:not(:disabled) { background: #fdefc3; }
+html[data-theme="modern"] .tb-count { border-radius: 999px; box-shadow: 0 0 0 2px #fff; }
+html[data-theme="modern"] .schema-panel { border-radius: 12px; }
+
+/* pivot tables (Machine Data, R&D, lab tabs): rounded frame, finer lines - accent colours stay */
+html[data-theme="modern"] .pivot-wrap.table-wrap, html[data-theme="modern"] .pivot-wrap { border-radius: 12px; }
+html[data-theme="modern"] table.pivot { font-size: 13px; }
+html[data-theme="modern"] table.pivot th, html[data-theme="modern"] table.pivot td {
+  border-right-color: color-mix(in srgb, var(--accent) 12%, #ebedf0); border-bottom-color: color-mix(in srgb, var(--accent) 12%, #ebedf0);
+  padding: 6px 11px;
+}
+html[data-theme="modern"] table.pivot thead th { font-weight: 600; color: #344054; }
+html[data-theme="modern"] table.pivot tbody th { font-weight: 500; color: #344054; }
+html[data-theme="modern"] table.pivot tr.info td, html[data-theme="modern"] table.pivot tr.info th { background: #f8f9fb; color: #667085; }
+html[data-theme="modern"] table.pivot td.red { background: #fee4e2 !important; color: #b42318; font-weight: 600; }
+html[data-theme="modern"] table.pivot td.orange { background: #fef0c7 !important; color: #b54708; font-weight: 600; }
+html[data-theme="modern"] table.pivot td.dirty { background: #fff3b0 !important; }
+html[data-theme="modern"] table.pivot td.editable:focus { outline: 2px solid var(--accent); outline-offset: -2px; box-shadow: none; }
+html[data-theme="modern"] table.pivot td.editing input, html[data-theme="modern"] table.pivot td.editing select { border-radius: 4px; }
+
+/* All Experiments: filters and list */
+html[data-theme="modern"] .toolbar { gap: 8px 10px; }
+html[data-theme="modern"] .chip {
+  font-weight: 500; border-radius: 999px; border-color: var(--m-border-strong); color: #344054; box-shadow: var(--m-shadow-sm);
+  transition: background .12s, border-color .12s;
+}
+html[data-theme="modern"] .chip:hover { border-color: #98a2b3; background: #f9fafb; }
+html[data-theme="modern"] .chip.on { background: var(--m-accent-wash); border-color: color-mix(in srgb, var(--accent) 55%, white); color: var(--m-accent-ink); font-weight: 600; }
+html[data-theme="modern"] table.grid td { padding: 7px 10px; }
+html[data-theme="modern"] table.grid th { padding: 8px 10px; }
+html[data-theme="modern"] table.grid tbody tr { transition: background .1s; }
+html[data-theme="modern"] .status-sel { border-radius: 6px; }
+html[data-theme="modern"] .status-sel:hover { border-color: var(--m-border-strong); }
+html[data-theme="modern"] .page-head { align-items: center; }
+
+/* Inter runs wider than Segoe UI: slightly smaller sizes keep lists, filters and cards as compact as before */
+html[data-theme="modern"] { font-size: 13.5px; }
+html[data-theme="modern"] table.grid { font-size: 12.5px; }
+html[data-theme="modern"] table.grid td { padding: 6px 10px; }
+html[data-theme="modern"] table.grid th { padding: 7px 10px; font-size: 11.5px; }
+html[data-theme="modern"] .chip { font-size: 12.5px; padding: 4px 11px; }
+html[data-theme="modern"] .search { font-size: 13px; }
+html[data-theme="modern"] .bl-title { font-size: 12.5px; }
+html[data-theme="modern"] .bl-sub { font-size: 11px; }
+html[data-theme="modern"] .sb-item { font-size: 13.5px; }

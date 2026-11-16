@@ -369,7 +369,8 @@ bleibt unverändert; `src/theme-modern.css` wirkt nur unter `html[data-theme="mo
 den Wert). Schrift Inter lokal mitgeliefert (`@fontsource-variable/inter`, kein Internet nötig). Neue Gestaltung immer ins Modern-Thema
 (Selektor mit `html[data-theme="modern"]` beginnen), nie Klassisch verändern; Funktionen/Masse, auf die Code baut, nicht ändern.
 Stand Schritt 1: Grundgerüst (Farben, Schrift, Fokusrahmen, Scrollbalken), Seitenleiste hell (dunkles Logo `LOGO_BLACK`), Knöpfe,
-Felder, Karten, Dialoge, Tabellenköpfe, Backlog. Weitere Seiten folgen schrittweise.
+Felder, Karten, Dialoge, Tabellenköpfe, Backlog. Schritt 2: Show Experiment (unterstrichene Reiter, Speicherleiste, Pivot-Tabellen
+feiner, Akzent bleibt) und All Experiments (Filter-Pillen); Modern etwas kleinere Schrift (Inter 13.5 px), damit Listen gleich kompakt bleiben.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
