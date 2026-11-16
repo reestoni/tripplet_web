@@ -22,7 +22,7 @@ from ui import whats_new_data as wd  # noqa: E402
 from ui.widgets import whats_new_texts as wt  # noqa: E402
 
 router = APIRouter(prefix="/api/whats-new")
-LANGS = ("en", "de", "es")
+LANGS = ("en", "de", "es", "zh")
 SKETCH_DIR = str(core.CORE_PATH / "assets" / "images" / "whats_new")
 
 

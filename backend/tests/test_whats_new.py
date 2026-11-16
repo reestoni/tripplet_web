@@ -18,7 +18,8 @@ def _client():
 def test_releases_search_sketch():
     c, _uid = _client()
     d = c.get("/api/whats-new?lang=zh").json()
-    assert d["lang"] == "en" and d["releases"] and d["labels"]["WINDOW_TITLE"]
+    assert d["lang"] == "zh" and d["releases"] and d["labels"]["WINDOW_TITLE"]
+    assert c.get("/api/whats-new?lang=fr").json()["lang"] == "en"   # unknown language -> English
     card = next(f for s in d["releases"][0]["sections"] for f in s["features"])
     assert card["title"] and card["text"]
     de = c.get("/api/whats-new?lang=de").json()

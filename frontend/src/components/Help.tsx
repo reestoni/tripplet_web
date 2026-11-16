@@ -10,12 +10,13 @@ import { Modal } from "./SeriesTools";
      "How do I…?" entries of all helps + Knowledge Base hits, Take me there, Open full help, feedback.
    "Ask AI" of the desktop is deliberately left out of the web app (user decision 2026-11-13).
    Contents and search come from the desktop modules via backend/app/help.py; usage events are the
-   desktop's help_* events (Usage Stats -> Help). Help texts exist in EN/DE/ES (Chinese -> English). */
+   desktop's help_* events (Usage Stats -> Help). Help texts exist in EN/DE/ES/ZH. */
 
 const HELP_LANGS = [
   { code: "en", flag: "flag_gb.svg", name: "English" },
   { code: "de", flag: "flag_de.svg", name: "Deutsch" },
   { code: "es", flag: "flag_es.svg", name: "Español" },
+  { code: "zh", flag: "flag_cn.svg", name: "中文" },
 ];
 const LANG_KEY = "tripplet.helpLang";
 

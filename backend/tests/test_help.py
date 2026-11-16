@@ -28,7 +28,7 @@ def c(monkeypatch):
 def test_context_help_all_languages(c):
     for screen in ("all_experiments", "backlog", "show_experiment", "report", "create_experiment", "experiment_request"):
         d = c.get(f"/api/help/screen/{screen}").json()
-        assert set(d["texts"]) == {"en", "de", "es"}, screen
+        assert set(d["texts"]) == {"en", "de", "es", "zh"}, screen
         keys = {lang: [t["key"] for t in d["texts"][lang]["tabs"]] for lang in d["texts"]}
         assert keys["en"] == keys["de"] == keys["es"], screen      # same tabs in every language
         kinds = {b["t"] for t in d["texts"]["en"]["tabs"] for b in t["blocks"]}
@@ -43,7 +43,7 @@ def test_search_routes_and_kb(c):
     hits = c.get("/api/help/search", params={"q": "alle Aufträge einer Maschine"}).json()["hits"]
     assert hits and hits[0]["screen"] == "all_experiments" and hits[0]["route"] == "/experiments"
     assert hits[0]["web_ready"] is True and hits[0]["best_lang"] == "de"
-    assert set(hits[0]["by_lang"]) == {"en", "de", "es"}
+    assert set(hits[0]["by_lang"]) == {"en", "de", "es", "zh"}
     kb = [h for h in c.get("/api/help/search", params={"q": "set heater"}).json()["hits"] if h["kb"]]
     assert kb and kb[0]["route"].startswith("/knowledge-base/")
     assert c.get("/api/help/search", params={"q": ""}).json()["hits"] == []
@@ -74,7 +74,7 @@ def test_yarn_stock_help_has_the_desktop_tabs():
     c = TestClient(app)
     c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(user))
     d = c.get("/api/help/screen/yarn_stock").json()
-    assert set(d["langs"]) == {"en", "de", "es"}
+    assert set(d["langs"]) == {"en", "de", "es", "zh"}
     for lang in d["langs"]:
         tabs = d["texts"][lang]["tabs"]
         assert [t["key"] for t in tabs] == ["tasks", "screen", "background", "stocktake"]

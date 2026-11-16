@@ -4,7 +4,7 @@ import { HelpFlags, useHelpLang } from "./Help";
 
 /* "Fresh off the Spool" (desktop ui/whats_new.py) on backend/app/whats_new_api.py: versions on the left (NEW for
    unseen ones), the features of the chosen version as cards with their sketch, one tab per section, search over all
-   versions. Texts EN/DE/ES from the desktop module (flags shared with the help). Opens once by itself after login when
+   versions. Texts EN/DE/ES/ZH from the desktop module (flags shared with the help). Opens once by itself after login when
    the newest version is unseen; closing marks it seen (same value as the desktop). */
 
 type Card = { id: string; title: string; text: string; where: string; sketch: string | null };

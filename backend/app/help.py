@@ -25,7 +25,7 @@ from db.usage_log import log_usage_event  # noqa: E402
 
 router = APIRouter(prefix="/api/help")
 
-HELP_LANGS = ("en", "de", "es")
+HELP_LANGS = ("en", "de", "es", "zh")
 
 # desktop screen key -> web route ("Take me there"); show_experiment/report need an open
 # series -> All Experiments, like the desktop (help_index.NEEDS_SERIES)

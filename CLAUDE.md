@@ -303,7 +303,7 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   = Sicherheitsabstand oder wenig Luft. Feature `jet_advisor` (Stufe 0). Web `app/jet_advisor_api.py` (ein `Advisor` pro Prozess,
   Neu laden), Seite `JetAdvisor.tsx` (Formular in localStorage `tripplet.jetAdvisor`). Desktop `ui/screen_jet_advisor.py`.
   Dabei korrigiert (beide Apps, auch Prozess-Spielwiese): Punkte/m = 0 heisst "nicht gemessen" (`dty_whatif.clean_rows`).
-  Hilfe (beide Apps, EN/DE/ES, Reiter "Wie mache ich…?", "Wie entschieden wird", "Bildschirm"): `ui/widgets/help_texts_jet_advisor.py`
+  Hilfe (beide Apps, EN/DE/ES/ZH, Reiter "Wie mache ich…?", "Wie entschieden wird", "Bildschirm"): `ui/widgets/help_texts_jet_advisor.py`
   + Skizze `assets/images/help_jet_advisor.svg`, in `help_index.SOURCES` und `help.WEB_ROUTES`; Web `HelpButton screen="jet_advisor"`.
   Tests: Desktop `test_jet_advisor.py`, `test_screen_jet_advisor.py`; Web `test_jet_advisor_api.py`.
 - Requirement Hub `/tools/requirement-hub` (Karte) + Quick Scan `/tools/requirement-hub/quick-scan` (`QuickScan.tsx`, beide
@@ -347,7 +347,7 @@ bei Fokus und nach Yarn-Stock-Laden über das Ereignis `tripplet:bell`). Schnell
 
 **Fresh off the Spool** (2026-11-13): `components/WhatsNew.tsx` (Funken-Symbol im Seitenleisten-Fuss, öffnet sich nach dem Login einmal von
 selbst, wenn die neueste Version ungesehen ist), `app/whats_new_api.py` auf `ui/whats_new_data.py` + `ui/widgets/whats_new_texts.py`
-(EN/DE/ES, Flaggen wie die Hilfe, Chinesisch -> Englisch). "Gesehen" = `DisplaySettings.whats_new_seen` wie im Desktop. Skizzen über
+(EN/DE/ES/ZH seit 2026-11-16, Flaggen wie die Hilfe). "Gesehen" = `DisplaySettings.whats_new_seen` wie im Desktop. Skizzen über
 `/api/whats-new/sketch/<name>`. Kein PDF-Knopf (Browser-Druck).
 
 **Login-Sperre** (2026-11-14, beide Apps): `db/login_guard.py` - nach 5 falschen Passwörtern für einen Benutzernamen innerhalb 15 Min. ist er 15 Min. gesperrt (ab dem letzten Fehlversuch); Erfolg setzt zurück. Gezählt in `tblUsageLog` (EventType `security`, `login_failed`/`login_ok`, Username klein) mit DB-Zeit, Desktop und Web zusammen; auch das alte Passwort beim Passwortwechsel (`user_account.PW_LOCKED`). Fehler beim Log = niemand gesperrt. Web: 429 `locked` {minutes}, 401 `invalid` {left}.
@@ -379,8 +379,11 @@ gibt es im Web bewusst nicht** (Nutzerentscheid 2026-11-13: überall weglassen -
 einbauen; `tests/test_help.py` prüft, dass es keinen KI-Weg gibt). Frontend `src/components/Help.tsx`:
 `HelpHost` im Shell (F1 überall, Seitenleisten-Eintrag "Hilfe (F1)" öffnet die Suche statt einer Seite),
 `HelpButton screen=...` (runder "?") auf All Experiments, Backlog, Show Experiment, Report, Create Experiment.
-Hilfetexte gibt es nur EN/DE/ES (Desktop-Entscheid): eigene Flaggen im Dialog, Sprache in localStorage
-`tripplet.helpLang`, Chinesisch -> Englisch; die Fensterbeschriftung kommt aus `texts.ts` (`help.*`, 4 Sprachen).
+Hilfetexte gibt es seit 2026-11-16 in EN/DE/ES/ZH (Nutzerwunsch: Chinesisch nicht nur teilweise; gilt auch für Fresh off
+the Spool): eigene Flaggen im Dialog, Sprache in localStorage `tripplet.helpLang`; die Fensterbeschriftung kommt aus `texts.ts`
+(`help.*`). Neue/geänderte Hilfetexte immer in allen 4 Sprachen; Prüfung `python tools/check_help_translations.py zh` (Desktop-Repo,
+vergleicht Struktur, Platzhalter, Skizzen und Knopf-Marker mit Englisch). Hilfesuche mit Chinesisch: `help_index.tokens` zerlegt
+chinesischen Text in Zwei-Zeichen-Stücke (kein Leerzeichen zwischen Wörtern).
 Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTES` eintragen. Tests `tests/test_help.py`.
 
 ## Offene Punkte
