@@ -107,6 +107,23 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
   dirtyRef.current = dirty;
   const selRef = useRef(sel);
   selRef.current = sel;
+  // last cell that had the focus - after saving it gets it back (also when "Save" was clicked with the mouse)
+  const lastCell = useRef<string | null>(null);
+  useEffect(() => {
+    const onFocus = (e: FocusEvent) => {
+      const td = (e.target as HTMLElement | null)?.closest?.("td[data-k]") as HTMLElement | null;
+      if (td?.dataset.k) lastCell.current = td.dataset.k;
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, []);
+  const refocus = useCallback(() => {
+    const k = lastCell.current;
+    const active = document.activeElement as HTMLElement | null;
+    if (!k || (active && active !== document.body && active.tagName !== "BUTTON")) return;   // user moved on
+    const td = document.querySelector<HTMLElement>(`td[data-k="${CSS.escape(k)}"]`);
+    td?.focus({ preventScroll: true });
+  }, []);
 
   const setMany = useCallback((changes: Change[]) => {
     if (!changes.length) return;
@@ -183,6 +200,10 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       setMsg(res.failed?.length ? { kind: "err", text: t("ed.partly", { tabs: res.failed.join(", ") }) } : { kind: "ok", text: t("ed.saved") });
       setReloadKey((k) => k + 1);
       onSaved?.();
+      // the tables stay mounted while they reload (scroll position kept); give the cell its focus back -
+      // now and once more after the reload has re-rendered
+      window.setTimeout(refocus, 0);
+      window.setTimeout(refocus, 800);
     } catch (e) {
       if (e instanceof ApiError && e.code === "invalid_cells") {
         const cells = (e.data?.cells as CellAddr[] | undefined) ?? [];
@@ -190,7 +211,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
         setMsg({ kind: "err", text: t("ed.invalid") });
       } else setMsg({ kind: "err", text: e instanceof ApiError ? e.message : String(e) });
     } finally { setBusy(false); }
-  }, [busy, seriesId, machineMode, jetUnit, t, onSaved]);
+  }, [busy, seriesId, machineMode, jetUnit, t, onSaved, refocus]);
 
   const select = useCallback((td: HTMLElement, a: CellAddr, e: SelMods) => {
     const k = key(a);

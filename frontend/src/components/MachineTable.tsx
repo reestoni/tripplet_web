@@ -52,9 +52,16 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
   const ed = useEdit();
   const locked = !!ed?.hasDirty(source);   // unsaved edits refer to this view's rows/columns
 
+  // clear only when the view changes - after saving (reloadKey) the table stays, so the horizontal scroll
+  // position and the selected cell survive (user report 2026-11-16: "springt an den Anfang zurück")
+  const viewKey = `${seriesId}|${mode}|${source}|${custom}`;
+  const lastView = useRef(viewKey);
   useEffect(() => {
     let alive = true;
-    setData(null);
+    if (lastView.current !== viewKey) {
+      lastView.current = viewKey;
+      setData(null);
+    }
     api
       .machine(seriesId, mode, source, custom)
       .then((d) => {
