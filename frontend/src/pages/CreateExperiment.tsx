@@ -242,6 +242,7 @@ export default function CreateExperiment({ mode }: { mode: CreateMode }) {
         lab,
       });
       setMats([]); setJets([]); setLab([]); setSeriesName("");
+      window.dispatchEvent(new Event("tripplet:nav-changed"));   // badges: request is now linked, backlog grew
       navigate(`/series/${r.series_id}`);
     } catch (e) {
       setMsg({ kind: "err", text: errText(e) });

@@ -151,7 +151,17 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
   useEffect(() => {
     const reload = () => api.nav().then(setNav).catch(() => undefined);
     window.addEventListener("tripplet:nav-changed", reload);
-    return () => window.removeEventListener("tripplet:nav-changed", reload);
+    // changes by others (desktop, other users) - refresh when the tab comes back and every 2 minutes
+    const onVisible = () => { if (document.visibilityState === "visible") reload(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", reload);
+    const timer = window.setInterval(() => { if (document.visibilityState === "visible") reload(); }, 120_000);
+    return () => {
+      window.removeEventListener("tripplet:nav-changed", reload);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", reload);
+      window.clearInterval(timer);
+    };
   }, []);
 
   const toggle = (title: string) => {
