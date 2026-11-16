@@ -39,6 +39,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const [tab, setTab] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
   const [reload, setReload] = useState(0);
+  const [fresh, setFresh] = useState(0);          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
   const [rights, setRights] = useState<SeriesRights | null>(null);
   const [tool, setTool] = useState<Tool | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -119,6 +120,14 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const reloadAll = (msg?: string) => { setTool(null); setReload((x) => x + 1); if (msg) setToast(msg); };
   // tools that add/change trials reload the page - unsaved values would be lost (desktop asks the same)
   const openTool = (x: Tool) => { if (confirmLeave()) setTool(x); };
+  // desktop "↻ Screen aktualisieren (F5)": everything from the database again, same tab; unsaved values -> ask first
+  const refresh = () => {
+    if (!confirmLeave()) return;
+    setTool(null);
+    setFresh((x) => x + 1);
+    setReload((x) => x + 1);
+    setToast(t("se.refreshed"));
+  };
   const refAction = async (url: string, body: unknown, msg: string) => {
     await request("POST", url, body);
     reloadAll(msg);
@@ -140,7 +149,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
             <span><b>{t("se.owner")}:</b> {s.owner || "–"}</span>
             <span><b>{t("se.created")}:</b> {s.creation_date ? s.creation_date.replace("T", " ").slice(0, 16) : "–"}</span>
             <span><b>{t("se.trials")}:</b> {data.trials.length}</span>
-            <MaterialLine seriesId={s.id} />
+            <MaterialLine key={fresh} seriesId={s.id} />
             {s.notes && (
               <button className="link-btn" onClick={() => setShowNotes((v) => !v)}>
                 {t("se.notes")} {showNotes ? "▾" : "▸"}
@@ -150,7 +159,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
         </div>
         <div className="se-actions">
           {s.experiment_request_id != null && <span className="tb-icon big rqp-er"><RequestIcon id={s.experiment_request_id} big /></span>}
-          <Attachments seriesId={s.id} />
+          <Attachments key={fresh} seriesId={s.id} />
           {data.trials.length > 0 && (
             <>
               <span className="tb-sep" />
@@ -165,16 +174,18 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
             <button className="tb-btn" title={t("cv.seriesBoardsTip")} onClick={() => confirmLeave() && navigate(`/tools/canvas?series=${s.id}`)}>
               🖼 {t("cv.seriesBoards")}{data.boards ? ` (${data.boards})` : ""}</button>)}
           <button className="tb-btn" title={t("lk.seriesTip")} onClick={() => copyLink(seriesLink(s.id, tab))}>🔗 {t("lk.link")}</button>
-          <SavedReports seriesId={s.id} />
+          <SavedReports key={fresh} seriesId={s.id} />
           <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
             <img src="/api/img/analytics.png" alt={t("rep.open")} />
           </button>
+          <button className="tb-icon big se-refresh" onClick={refresh} title={t("se.refreshTip")}>↻</button>
           <HelpButton screen="show_experiment" />
         </div>
+        <RefreshKey onRefresh={refresh} />
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
 
-      <EditProvider key={s.id} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
+      <EditProvider key={`${s.id}:${fresh}`} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
         <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights} copyLink={copyLink}
@@ -223,6 +234,23 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       {toast && <div className="toast ok" onClick={() => setToast(null)}>{toast}</div>}
     </div>
   );
+}
+
+/** F5 = "↻" like the desktop (instead of reloading the whole browser page); not while a dialog is open. */
+function RefreshKey({ onRefresh }: { onRefresh: () => void }) {
+  const cb = useRef(onRefresh);
+  cb.current = onRefresh;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "F5" || e.ctrlKey || e.shiftKey || e.altKey || e.metaKey) return;
+      if (document.querySelector(".modal-backdrop, .modal, [role=dialog]")) return;
+      e.preventDefault();
+      cb.current();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  return null;
 }
 
 /** Notes of the series (desktop: Notes tab, auto-save 1.5 s after typing and when leaving the field). */

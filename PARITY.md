@@ -121,7 +121,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Discard unsaved | Save/Discard/Cancel prompt | **DONE** | "Discard" button |
 | Unsaved mark on tab (dot) | `_apply_unsaved_tab_mark` | **DONE** | `dirty-dot` on the tab |
 | Prompt Save/Discard/Cancel on leaving (tab close, back, series switch, logout, exit) | `confirm_close_with_unsaved` / `_back_all_experiments` / `closeEvent` | **PARTIAL** | `confirmLeave()` + link guard in `edit.tsx` (OK/Cancel instead of Save/Discard/Cancel; browser back not guarded) |
-| Refresh ↻ / F5 | `_on_refresh` | **DONE** | browser reload (warns if unsaved) |
+| Refresh ↻ / F5 | `_on_refresh` | **DONE** | button ↻ + F5 in `SeriesView.tsx` (2026-11-16): reloads every table, keeps the tab, asks if unsaved |
 | Back to list | `_back_all_experiments` | **DONE** | back arrow (`navigate(-1)`) |
 | Show attached images (gallery) | `_open_series_images_dialog` | **DONE** | `Attachments.tsx`: upload, rename, delete, big view with prev/next, zoom, fit, 100 %, rotate, save as |
 | Show attached PDFs | `_open_series_pdfs_dialog` | **DONE** | `Attachments.tsx`: upload, rename, delete, open |

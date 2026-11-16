@@ -894,6 +894,8 @@ const en = {
 
   // show experiment
   "se.back": "Back",
+  "se.refreshTip": "Refresh the screen (F5) – everything from the database again",
+  "se.refreshed": "Refreshed",
   "se.loading": "Loading series…",
   "se.notFound": "This series does not exist.",
   "se.machine": "Machine",
@@ -3298,6 +3300,8 @@ const de: Texts = {
 
   // show experiment
   "se.back": "Zurück",
+  "se.refreshTip": "Ansicht aktualisieren (F5) – alles neu aus der Datenbank",
+  "se.refreshed": "Aktualisiert",
   "se.loading": "Serie wird geladen…",
   "se.notFound": "Diese Serie existiert nicht.",
   "se.machine": "Maschine",
@@ -5700,6 +5704,8 @@ const es: Texts = {
 
   // show experiment
   "se.back": "Volver",
+  "se.refreshTip": "Actualizar la pantalla (F5) – todo de nuevo desde la base de datos",
+  "se.refreshed": "Actualizado",
   "se.loading": "Cargando serie…",
   "se.notFound": "Esta serie no existe.",
   "se.machine": "Máquina",
@@ -8099,6 +8105,8 @@ const zh: Texts = {
 
   // show experiment
   "se.back": "返回",
+  "se.refreshTip": "刷新界面（F5）– 从数据库重新加载全部数据",
+  "se.refreshed": "已刷新",
   "se.loading": "正在加载系列…",
   "se.notFound": "该系列不存在。",
   "se.machine": "机器",

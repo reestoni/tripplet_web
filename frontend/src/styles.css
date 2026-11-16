@@ -1630,3 +1630,6 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 
 /* prod badge (start_prod.ps1: local server against the production database) */
 .sb-env.prod { background: #C0392B; color: #fff; }
+
+/* Show Experiment: refresh (desktop btn_refresh) */
+.se-refresh { font-size: 20px; font-weight: 600; line-height: 1; color: var(--accent); }
