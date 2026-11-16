@@ -18,6 +18,8 @@ export type NavItem = {
   key: string;
   label: string;
   icon: string | null;
+  /** icon only for the modern look (entries the classic sidebar shows with a dot) */
+  icon_modern?: string | null;
   route: string;
   badge: number;
   web: boolean;

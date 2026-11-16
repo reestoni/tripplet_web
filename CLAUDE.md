@@ -371,7 +371,8 @@ den Wert). Schrift Inter lokal mitgeliefert (`@fontsource-variable/inter`, kein 
 Stand Schritt 1: Grundgerüst (Farben, Schrift, Fokusrahmen, Scrollbalken), Seitenleiste hell (dunkles Logo `LOGO_BLACK`), Knöpfe,
 Felder, Karten, Dialoge, Tabellenköpfe, Backlog. Schritt 2: Show Experiment (unterstrichene Reiter, Speicherleiste, Pivot-Tabellen
 feiner, Akzent bleibt) und All Experiments (Filter-Pillen); Modern etwas kleinere Schrift (Inter 13.5 px), damit Listen gleich kompakt bleiben. Schritt 3: Panels/Karten der Werkzeuge,
-Segment-Schalter (`.jr-seg`, `.ja-seg`), innere Reiter, Admin-Tabellen, Glocke/Zuletzt-Menü, Login-Karte.
+Segment-Schalter (`.jr-seg`, `.ja-seg`), innere Reiter, Admin-Tabellen, Glocke/Zuletzt-Menü, Login-Karte. Symbole für Admin-/Superuser-Einträge
+nur in Modern (`nav.MODERN_ICONS` -> `icon_modern`, Bilder `sb_*.png` im Desktop-Repo; Klassisch behält die Punkte).
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
