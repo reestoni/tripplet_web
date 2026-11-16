@@ -379,6 +379,10 @@ festen hellen Farben aus `styles.css`/`theme-modern.css`) + Handteil `frontend/t
 Glas-Dialoge, Monospace-Zahlen in Pivot-Tabellen, Prozess-Schema). **Nach Änderungen an styles.css/theme-modern.css den Generator neu
 laufen lassen**; Handregeln nur in `night_hand.css`. Diagramme: `Plot` in `YarnScopeView.tsx` legt im Nacht-Modus ein dunkles Layout darunter.
 Bleiben hell: Smart-Chart-Fläche und Report (Desktop-Vorlagen im iframe), Bilder.
+**Darstellung Blaupause** (2026-11-16, nur Web): technische Zeichnung (blaues Papier mit 10/50-px-Raster, weisse Linien, Schrift Bahnschrift,
+doppelte Rahmen, Beschriftungen in Grossbuchstaben; Akzentfarbe wirkt hier kaum, Linien sind weiss). Gleicher Weg wie Nacht:
+`html[data-blueprint]`, `DisplaySettings.theme = "blueprint"`, `src/theme-blueprint.css` vom selben Generator (`PROFILES` in
+`gen_night_css.py`) + Handteil `frontend/tools/blueprint_hand.css`; Diagramm-Farben `DARK_PLOT` in `YarnScopeView.tsx`.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

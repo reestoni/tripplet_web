@@ -65,31 +65,37 @@ function loadPlotly(): Promise<PlotlyLike> {
   return plotlyPromise;
 }
 
-/** night look: dark paper, light text and grid - merged under the plot's own layout */
-function nightLayout(layout: Record<string, unknown>): Record<string, unknown> {
-  const axis = (a: unknown) => ({ gridcolor: "#243040", zerolinecolor: "#3a4658", linecolor: "#3a4658",
+/** dark looks: dark paper, light text and grid - merged under the plot's own layout */
+const DARK_PLOT: Record<string, { paper: string; grid: string; line: string; font: string }> = {
+  night: { paper: "#0f151e", grid: "#243040", line: "#3a4658", font: "#c9d1dc" },
+  blueprint: { paper: "rgba(0,0,0,0)", grid: "rgba(214,234,255,0.16)", line: "rgba(214,234,255,0.45)", font: "#eaf3ff" },
+};
+function nightLayout(layout: Record<string, unknown>, theme: string): Record<string, unknown> {
+  const c = DARK_PLOT[theme];
+  const axis = (a: unknown) => ({ gridcolor: c.grid, zerolinecolor: c.line, linecolor: c.line,
     ...(a as Record<string, unknown> | undefined) });
-  const out: Record<string, unknown> = { paper_bgcolor: "#0f151e", plot_bgcolor: "#0f151e",
-    font: { color: "#c9d1dc", ...(layout.font as Record<string, unknown> | undefined) }, ...layout };
+  const out: Record<string, unknown> = { paper_bgcolor: c.paper, plot_bgcolor: c.paper,
+    font: { color: c.font, ...(layout.font as Record<string, unknown> | undefined) }, ...layout };
   for (const k of Object.keys(layout).filter((k) => /^[xy]axis\d*$/.test(k)).concat(["xaxis", "yaxis"])) out[k] = axis(layout[k]);
   return out;
 }
 
 export function Plot({ data, layout }: { data: unknown[]; layout: Record<string, unknown> }) {
   const ref = useRef<HTMLDivElement>(null);
-  const night = useDisplay()?.prefs.theme === "night";
+  const theme = useDisplay()?.prefs.theme ?? "classic";
+  const dark = theme in DARK_PLOT ? theme : "";
   useEffect(() => {
     let alive = true;
     loadPlotly().then((P) => {
       if (alive && ref.current) {
         const base = { margin: { l: 55, r: 15, t: 10, b: 40 }, showlegend: false, ...layout };
-        P.react(ref.current, data, night ? nightLayout(base) : base, { displaylogo: false, responsive: true });
+        P.react(ref.current, data, dark ? nightLayout(base, dark) : base, { displaylogo: false, responsive: true });
       }
     });
     return () => {
       alive = false;
     };
-  }, [data, layout, night]);
+  }, [data, layout, dark]);
   useEffect(() => () => {
     const el = ref.current;
     const w = window as unknown as { Plotly?: PlotlyLike };

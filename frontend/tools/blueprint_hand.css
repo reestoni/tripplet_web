@@ -1,0 +1,183 @@
+/* Blueprint look - hand-written part (copied to the end of src/theme-blueprint.css by tools/gen_night_css.py).
+   Idea: a technical drawing - blue paper with a millimetre grid, white ink lines, a DIN-like font (Bahnschrift,
+   comes with Windows), frames drawn twice like a drawing border, labels in small caps.
+   Selectors start with html[data-blueprint][data-theme] so they win over the generated twins and the modern look. */
+
+/* ---------- tokens ---------- */
+html[data-blueprint][data-theme] {
+  color-scheme: dark;
+  --ink: #eaf3ff;                                    /* the white "ink" of the drawing */
+  --ink-2: rgba(234, 243, 255, 0.55);
+  --ink-line: rgba(214, 234, 255, 0.34);
+  --ink-faint: rgba(214, 234, 255, 0.14);
+  --paper: #0e3d72;
+  --page-bg: #0e3d72;
+  --card-bg: rgba(10, 46, 90, 0.86);
+  --text: var(--ink);
+  --muted: #a9c8ea;
+  --border: var(--ink-line);
+  --dark: #0a2f59;
+  --sidebar-bg: #0a2f59;
+  --danger: #ff8a80;
+  --m-border-strong: rgba(214, 234, 255, 0.45);
+  --m-hover: rgba(234, 243, 255, 0.08);
+  --m-sidebar: #0a2f59;
+  --m-accent-ink: var(--ink);
+  --m-accent-wash: rgba(234, 243, 255, 0.12);
+  --m-ring: 0 0 0 2px var(--ink);
+  --m-shadow-sm: none;
+  --m-shadow-md: 0 8px 24px rgba(2, 16, 38, 0.45);
+  --m-shadow-lg: 0 24px 60px rgba(2, 16, 38, 0.6);
+  /* tables: the drawing has no accent colour - white lines on blue */
+  --accent-tint: rgba(234, 243, 255, 0.10);
+  --accent-sel: rgba(234, 243, 255, 0.20);
+  --accent-grid: rgba(234, 243, 255, 0.05);
+  --accent-line: rgba(214, 234, 255, 0.22);
+  --accent-soft: rgba(234, 243, 255, 0.04);
+  --xh-colour: rgba(255, 224, 102, 0.20);
+  --bp-font: "Bahnschrift", "DIN Alternate", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--bp-font);
+  font-variant-numeric: tabular-nums;
+}
+/* the paper: fine 10 px grid, strong 50 px grid, a soft light in the middle like a lit drawing table */
+html[data-blueprint][data-theme] body {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(1200px 800px at 55% 30%, rgba(80, 150, 230, 0.20), transparent 70%),
+    linear-gradient(var(--ink-faint) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ink-faint) 1px, transparent 1px),
+    linear-gradient(rgba(214, 234, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(214, 234, 255, 0.06) 1px, transparent 1px);
+  background-size: 100% 100%, 50px 50px, 50px 50px, 10px 10px, 10px 10px;
+  background-attachment: fixed;
+  color: var(--ink);
+}
+html[data-blueprint][data-theme] ::selection { background: rgba(255, 255, 255, 0.85); color: var(--paper); }
+html[data-blueprint][data-theme] ::-webkit-scrollbar-thumb { background: rgba(234, 243, 255, 0.28); background-clip: content-box; }
+html[data-blueprint][data-theme] ::-webkit-scrollbar-thumb:hover { background: rgba(234, 243, 255, 0.45); background-clip: content-box; }
+html[data-blueprint][data-theme] a { color: var(--ink); text-decoration-style: dotted; }
+html[data-blueprint][data-theme] .muted { color: var(--muted); }
+
+/* labels and headings: small caps with wide spacing, like the lettering on a drawing */
+html[data-blueprint][data-theme] :is(.page h1, .page-head h1, .se-title h1) { font-weight: 600; letter-spacing: 0.02em; }
+html[data-blueprint][data-theme] :is(h2, .sb-section-head, .yc-head, table.grid th, table.at thead th, .bl-head) {
+  text-transform: uppercase; letter-spacing: 0.09em; font-weight: 600;
+}
+html[data-blueprint][data-theme] :is(.card, .set-box, .yc-card, .jr-card) h2 { font-size: 13px; color: var(--ink); }
+
+/* ---------- fields: drawn boxes ---------- */
+html[data-blueprint][data-theme] :is(input, select, textarea) {
+  background-color: rgba(4, 28, 60, 0.45); color: var(--ink); border-color: var(--ink-line); font-family: var(--bp-font);
+}
+html[data-blueprint][data-theme] :is(input, select, textarea)::placeholder { color: rgba(169, 200, 234, 0.6); }
+html[data-blueprint][data-theme] :is(input, select, textarea):focus { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+html[data-blueprint][data-theme] select option { background: #0a2f59; }
+
+/* ---------- sidebar ---------- */
+html[data-blueprint][data-theme] .sidebar { background: rgba(8, 38, 74, 0.94); border-right: 1.5px solid var(--ink-line); }
+html[data-blueprint][data-theme] .sb-logo-light { display: block; }
+html[data-blueprint][data-theme] .sb-logo-dark { display: none; }
+html[data-blueprint][data-theme] :is(.sb-search, .sb-recent) { background: rgba(4, 28, 60, 0.45); border: 1px solid var(--ink-line); color: var(--muted); }
+html[data-blueprint][data-theme] .sb-search kbd { background: transparent; border-color: var(--ink-line); color: var(--muted); }
+html[data-blueprint][data-theme] .sb-section-head { color: var(--muted); font-size: 10.5px; }
+html[data-blueprint][data-theme] .sb-section-head img { filter: brightness(0) invert(0.85); }
+html[data-blueprint][data-theme] .sb-item { color: #cfe1f6; }
+html[data-blueprint][data-theme] .sb-item img { filter: brightness(0) invert(0.92); }   /* icons in white ink */
+html[data-blueprint][data-theme] .sb-item:hover { background: var(--m-hover); }
+html[data-blueprint][data-theme] .sb-item.active { background: rgba(234, 243, 255, 0.10); color: #fff; outline: 1px dashed var(--ink-2); outline-offset: -1px; }
+html[data-blueprint][data-theme] .sb-tool img { filter: brightness(0) invert(0.85); }
+html[data-blueprint][data-theme] .sb-badge { background: #ff6b5e; box-shadow: 0 0 0 2px #0a2f59; }
+
+/* ---------- buttons: outlined in ink, filled only when they are the main action ---------- */
+html[data-blueprint][data-theme] .btn-green {
+  background: var(--ink); color: var(--paper); border: 1.5px solid var(--ink); border-radius: 3px; box-shadow: none;
+  text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px;
+}
+html[data-blueprint][data-theme] .btn-green:hover:not(:disabled) { filter: none; background: #fff; }
+html[data-blueprint][data-theme] :is(.btn-plain, .tb-btn) {
+  background: transparent; color: var(--ink); border: 1px solid var(--ink-line); border-radius: 3px; box-shadow: none;
+}
+html[data-blueprint][data-theme] :is(.btn-plain, .tb-btn):hover:not(:disabled) { background: var(--m-hover); border-color: var(--ink); }
+html[data-blueprint][data-theme] .tb-icon img, html[data-blueprint][data-theme] .se-actions img { filter: brightness(0) invert(0.92); }
+html[data-blueprint][data-theme] .chip { background: transparent; color: var(--ink); border-color: var(--ink-line); border-radius: 3px; }
+html[data-blueprint][data-theme] .chip.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+html[data-blueprint][data-theme] :is(.jr-seg, .ja-seg) { background: transparent; border: 1px solid var(--ink-line); border-radius: 4px; }
+html[data-blueprint][data-theme] :is(.jr-seg, .ja-seg) button { color: var(--muted); border-radius: 2px; }
+html[data-blueprint][data-theme] :is(.jr-seg, .ja-seg) button.on { background: var(--ink); color: var(--paper); box-shadow: none; }
+
+/* ---------- frames drawn twice, like the border of a drawing ---------- */
+html[data-blueprint][data-theme] :is(.card, .set-box, .table-wrap, .bl-box, .yc-card, .jr-card, .as-panel, .ja-panel, .pp-panel) {
+  background: var(--card-bg); border: 1px solid var(--ink-line); border-radius: 2px; box-shadow: none;
+  outline: 1px solid var(--ink-faint); outline-offset: 3px;
+}
+html[data-blueprint][data-theme] .bl-card {
+  background: rgba(6, 34, 70, 0.75); border: 1px solid var(--ink-line); border-radius: 2px; box-shadow: none;
+}
+html[data-blueprint][data-theme] .bl-card { border-left-width: 4px; }
+html[data-blueprint][data-theme] .bl-card:hover { border-color: var(--ink); transform: none; box-shadow: none; }
+html[data-blueprint][data-theme] .bl-count { background: transparent; color: var(--ink); border: 1px solid var(--ink-line); border-radius: 2px; }
+html[data-blueprint][data-theme] .ed-bar { background: rgba(6, 34, 70, 0.75); border: 1px dashed var(--ink-line); border-radius: 2px; box-shadow: none; }
+
+/* tabs: underlined in ink */
+html[data-blueprint][data-theme] .se-tabs { border-bottom: 1.5px solid var(--ink-line); }
+html[data-blueprint][data-theme] .se-tab { color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-size: 12px; }
+html[data-blueprint][data-theme] .se-tab.on { color: #fff; border-bottom: 2px solid var(--ink); }
+
+/* ---------- dialogs and menus: a sheet laid on the drawing ---------- */
+html[data-blueprint][data-theme] .modal-back { background: rgba(2, 16, 38, 0.6); }
+html[data-blueprint][data-theme] :is(.modal, .sb-me-menu, .bell-panel, .recent-menu, .cm) {
+  background: #0f427a; border: 1.5px solid var(--ink); border-radius: 2px; box-shadow: var(--m-shadow-lg);
+  outline: 1px solid var(--ink-line); outline-offset: -6px;
+}
+html[data-blueprint][data-theme] .toast { border-radius: 2px; border: 1px solid var(--ink); }
+
+/* ---------- tables: white lines on blue ---------- */
+html[data-blueprint][data-theme] table.grid th, html[data-blueprint][data-theme] table.at thead th {
+  background: rgba(234, 243, 255, 0.08); color: var(--muted); font-size: 11px; border-bottom: 1px solid var(--ink-line);
+}
+html[data-blueprint][data-theme] table.grid td { border-bottom-color: rgba(214, 234, 255, 0.12); }
+html[data-blueprint][data-theme] table.grid tbody tr:hover td { background: rgba(234, 243, 255, 0.06); }
+html[data-blueprint][data-theme] table.pivot { font-family: var(--bp-font); }
+html[data-blueprint][data-theme] table.pivot th, html[data-blueprint][data-theme] table.pivot td {
+  border-right-color: rgba(214, 234, 255, 0.18); border-bottom-color: rgba(214, 234, 255, 0.18);
+}
+html[data-blueprint][data-theme] table.pivot td { background: rgba(6, 34, 70, 0.55); }
+html[data-blueprint][data-theme] table.pivot thead th { background: rgba(234, 243, 255, 0.10); color: #fff; }
+html[data-blueprint][data-theme] table.pivot tbody th { background: rgba(234, 243, 255, 0.05); color: #d7e7f8; }
+html[data-blueprint][data-theme] table.pivot tr.info td, html[data-blueprint][data-theme] table.pivot tr.info th { background: rgba(2, 20, 46, 0.4); color: var(--muted); }
+html[data-blueprint][data-theme] table.pivot :is(td, th).ref,
+html[data-blueprint][data-theme] table.pivot thead th.ref { background: rgba(255, 213, 79, 0.16); }
+html[data-blueprint][data-theme] table.pivot td.red { background: rgba(255, 110, 100, 0.28) !important; color: #ffd0cc; }
+html[data-blueprint][data-theme] table.pivot td.orange { background: rgba(255, 170, 60, 0.26) !important; color: #ffe0b0; }
+html[data-blueprint][data-theme] table.pivot td.dirty { background: rgba(255, 230, 90, 0.30) !important; color: #fff6c4; }
+html[data-blueprint][data-theme] table.pivot td.editable:focus { outline: 2px solid #fff; box-shadow: none; }
+html[data-blueprint][data-theme] table[data-xh] .xh-label { color: #1a1a1a; }
+html[data-blueprint][data-theme] .tb-ref { background: rgba(255, 213, 79, 0.14); border-color: rgba(255, 213, 79, 0.6); color: #ffe38a; }
+html[data-blueprint][data-theme] .tb-ref.outline { background: transparent; }
+
+/* process schema in Show Experiment: white ink drawing */
+html[data-blueprint][data-theme] .schema-svg rect[fill="#F4F6F3"] { fill: rgba(6, 34, 70, 0.6); }
+html[data-blueprint][data-theme] .schema-svg text[fill="#2B2B2B"] { fill: #eaf3ff; }
+html[data-blueprint][data-theme] .schema-svg text[fill="#7A847A"] { fill: #a9c8ea; }
+html[data-blueprint][data-theme] .schema-svg :is(circle, rect)[fill="#FFFFFF"] { fill: #0e3d72; }
+html[data-blueprint][data-theme] .schema-svg [fill="#E8F5E9"] { fill: #1d4f7f; }
+html[data-blueprint][data-theme] .schema-svg [fill="#E3F1FB"] { fill: #1a4a7c; }
+html[data-blueprint][data-theme] .schema-svg [fill="#FBE3CC"] { fill: #4a4a5e; }
+html[data-blueprint][data-theme] .schema-svg [fill="#E0E0E0"] { fill: #3d5a7c; }
+
+/* plots */
+html[data-blueprint][data-theme] .ys-plot { background: transparent; border-color: var(--ink-line); }
+
+/* login: the card is a title block */
+html[data-blueprint][data-theme] .login-page { background: transparent; }
+html[data-blueprint][data-theme] .login-card {
+  background: rgba(10, 46, 90, 0.9); border: 1.5px solid var(--ink); border-radius: 2px; outline: 1px solid var(--ink-line); outline-offset: 5px;
+}
+
+/* ---------- the preview of this look in Settings ---------- */
+.set-theme-swatch.blueprint i { background: #0a2f59; border-right: 1px solid rgba(214, 234, 255, 0.4); }
+.set-theme-swatch.blueprint b {
+  background-color: #0e3d72;
+  background-image: linear-gradient(rgba(214, 234, 255, 0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(214, 234, 255, 0.22) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
