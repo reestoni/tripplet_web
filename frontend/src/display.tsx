@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { request } from "./api";
+import { useI18n } from "./i18n";
 
 /* The user's display settings for the tables (desktop ui/display_prefs.py, stored in tblUser.DisplaySettings via
    backend/app/settings_api.py - same values as the desktop): high contrast, crosshair, reading bar, warning
@@ -10,18 +11,19 @@ import { request } from "./api";
 export type DisplayPrefs = { contrast: boolean; crosshair: boolean; readbar: boolean; alert_marks: boolean;
   cb_colours: boolean; app_scale: number; scale: number; start?: string };
 
-type Ctx = { prefs: DisplayPrefs; set: (p: Partial<DisplayPrefs>, persist?: boolean) => void; read: string | null };
+type Read = { where: string; value: string; warn: "red" | "orange" | null };
+type Ctx = { prefs: DisplayPrefs; set: (p: Partial<DisplayPrefs>, persist?: boolean) => void; read: Read | null };
 const DisplayCtx = createContext<Ctx | null>(null);
 export const useDisplay = () => useContext(DisplayCtx);
 
 const SCALE_MIN = 80, SCALE_MAX = 300, SCALE_STEP = 10;
 
-/** Header text of a body cell: every header row covering its column (rowSpan / colSpan aware). */
-function headerText(td: HTMLTableCellElement): string {
+/** Header cells above a body cell: every header row covering its column (rowSpan / colSpan aware). */
+function headerCells(td: HTMLTableCellElement): HTMLTableCellElement[] {
   const table = td.closest("table");
-  if (!table || !table.tHead) return "";
+  if (!table || !table.tHead) return [];
   const col = td.cellIndex;
-  const parts: string[] = [];
+  const out: HTMLTableCellElement[] = [];
   const carry: number[] = [];      // columns taken by rowSpan cells of earlier rows
   Array.from(table.tHead.rows).forEach((row, ri) => {
     let pos = 0;
@@ -29,16 +31,33 @@ function headerText(td: HTMLTableCellElement): string {
       while (carry.includes(pos) && ri > 0) pos++;
       const span = cell.colSpan || 1;
       if (cell.rowSpan > 1) for (let k = 0; k < span; k++) carry.push(pos + k);
-      if (col >= pos && col < pos + span && cell.innerText.trim() && !(ri > 0 && cell.rowSpan > 1)) parts.push(cell.innerText.trim());
+      if (col >= pos && col < pos + span && !(ri > 0 && cell.rowSpan > 1)) out.push(cell);
       pos += span;
     }
   });
+  return out;
+}
+
+function headerText(td: HTMLTableCellElement): string {
+  const parts = headerCells(td).map((c) => c.innerText.trim()).filter(Boolean);
   return parts.filter((x, i) => parts.indexOf(x) === i).join(" · ");
+}
+
+/** Reading bar (desktop FrozenFirstColumnTable.read_bar_text): where · parameter = value, warning of marked cells. */
+function ReadBar({ read }: { read: Read }) {
+  const { t } = useI18n();
+  return (
+    <div className="readbar">
+      {read.where} = {read.value ? <b>{read.value}</b> : <span className="rb-empty">{t("rdb.empty")}</span>}
+      {read.warn === "red" && <b className="rb-warn">– ! {t("rdb.warning")}</b>}
+      {read.warn === "orange" && <b className="rb-check">– ! {t("rdb.check")}</b>}
+    </div>
+  );
 }
 
 export function DisplayProvider({ initial, children }: { initial: DisplayPrefs; children: ReactNode }) {
   const [prefs, setPrefs] = useState<DisplayPrefs>(initial);
-  const [read, setRead] = useState<string | null>(null);
+  const [read, setRead] = useState<Read | null>(null);
   const saveT = useRef<number | null>(null);
   const focus = useRef<HTMLTableCellElement | null>(null);
 
@@ -63,6 +82,7 @@ export function DisplayProvider({ initial, children }: { initial: DisplayPrefs; 
     let st = document.getElementById("xh-style") as HTMLStyleElement | null;
     if (!st) { st = document.createElement("style"); st.id = "xh-style"; document.head.appendChild(st); }
     document.querySelectorAll("table[data-xh]").forEach((t) => t.removeAttribute("data-xh"));
+    document.querySelectorAll(".xh-label").forEach((c) => c.classList.remove("xh-label"));
     const td = focus.current;
     if (!td || !document.body.contains(td)) { st.textContent = ""; setRead(null); return; }
     const table = td.closest("table");
@@ -72,12 +92,15 @@ export function DisplayProvider({ initial, children }: { initial: DisplayPrefs; 
       const row = Array.from(tr.parentElement.children).indexOf(tr) + 1;
       const col = td.cellIndex + 1;
       st.textContent = `table[data-xh] tbody tr:nth-child(${row}) > *, table[data-xh] tbody tr > *:nth-child(${col}) { box-shadow: inset 0 0 0 9999px var(--xh-colour); }`;
+      // like the desktop: the parameter name and the trial header of the current cell stronger (_CROSS_LABEL)
+      tr.querySelector("th")?.classList.add("xh-label");
+      headerCells(td).forEach((c) => c.classList.add("xh-label"));
     } else st.textContent = "";
     if (prefs.readbar && tr) {
       const title = (tr.querySelector("th") as HTMLElement | null)?.innerText.trim() ?? "";
       const head = headerText(td);
-      const warn = td.classList.contains("red") || td.classList.contains("orange");
-      setRead(`${head ? head + " · " : ""}${title} = ${td.innerText.trim() || "–"}${warn ? "  ⚠" : ""}`);
+      const warn = td.classList.contains("red") ? "red" : td.classList.contains("orange") ? "orange" : null;
+      setRead({ where: [head, title].filter(Boolean).join(" · "), value: td.innerText.trim(), warn });
     } else setRead(null);
   }, [prefs.crosshair, prefs.readbar]);
 
@@ -110,7 +133,7 @@ export function DisplayProvider({ initial, children }: { initial: DisplayPrefs; 
   return (
     <DisplayCtx.Provider value={{ prefs, set, read }}>
       {children}
-      {read && <div className="readbar" title="">{read}</div>}
+      {read && <ReadBar read={read} />}
     </DisplayCtx.Provider>
   );
 }

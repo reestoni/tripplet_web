@@ -283,7 +283,8 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                         hoverImg={cell.img != null ? `/api/housing-image/${cell.img}` : undefined}
                         className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")
                           + (hl && row.key && hl.keys.includes(row.key) && hl.cols.includes(c.c) ? " schema-hl-cell" : "")}
-                        hoverTip={cell.tip || undefined}
+                        hoverTip={cell.of_base != null ? ofSpeedTip(cell.of_base, ed?.pending({ tab: source, r: row.r, c: c.c })?.value ?? cell.v) ?? (cell.tip || undefined)
+                          : (cell.tip || undefined)}
                         title={notesTip(cell.notes) || undefined}
                         onContextMenu={menus ? (e, a) => menus.cellMenu(e, a, cell, `${c.trial_label}${c.ply ? " · " + c.ply : ""} · ${rowTitle(row.title)}`,
                           [...(ed?.canWrite && !row.readonly ? [{ label: t("cm.fillRow"), onClick: () => menus.openFill(source, row.r, rowTitle(row.title),
@@ -298,4 +299,13 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
       )}
     </>
   );
+}
+
+
+/** OF row of R&D Machine Data: "Speed: N m/min" from the OF currently in the cell - also while it is not saved yet
+ *  (desktop machine_tab "live OF speed tooltip", db/machine_data.of_speed_base). */
+function ofSpeedTip(base: number, of: string | number | null): string | undefined {
+  const v = typeof of === "number" ? of : parseFloat(String(of ?? "").replace(",", "."));
+  if (!Number.isFinite(v)) return undefined;
+  return `Speed: ${Math.round(base * (100 + v) / 100)} m/min`;
 }

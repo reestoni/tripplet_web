@@ -309,6 +309,9 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
         dd_rows[rr] = _options(lst)
     rows = []
     prof = _schema_profile(cache, md.row_keys)
+    # OF row in Machine Data (RDSetting = 2): the page computes the speed tooltip live from the typed OF
+    of_row = mdm.of_row_index(md.row_titles)
+    m_matrix = [[mdm._text(v) for v, _b in row] for row in md.cells] if of_row is not None else []
     for r, title in enumerate(md.row_titles):
         if r in hidden:
             continue
@@ -332,6 +335,10 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
                 cell["img"] = _int_or(stored)                     # desktop: housing picture on hover
             if tip:
                 cell["tip"] = tip
+            if r == of_row:
+                base = mdm.of_speed_base(md.row_titles, m_matrix, c)
+                if base is not None:
+                    cell["of_base"] = round(base, 6)
             alert = md.cell_alerts.get((r, c))
             if alert:
                 cell["alert"] = alert
@@ -500,6 +507,9 @@ def rd_machine_data(series_id: int, mode: str = "single", _user: Dict[str, Any] 
                 cell["img"] = _int_or(stored)
             if tip:
                 cell["tip"] = tip
+            if r == rd.of_row and c in rd.of_speed_base:
+                # live OF tooltip (desktop machine_tab): the page computes base x (100 + OF) / 100 from the typed OF
+                cell["of_base"] = round(rd.of_speed_base[c], 6)
             alert = rd.cell_alerts.get((r, c))
             if alert:
                 cell["alert"] = alert

@@ -187,7 +187,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Change log, DY ratio, tension timestamps, multi-ply tracking on save | `_save_all` / `_stamp_trial_timestamp` / `_track_multi_ply` | **DONE** | `db/series_save.save_series_edits` |
 | Zoom Ctrl+wheel / Ctrl+± / Ctrl+0 | `FrozenFirstColumnTable` shortcuts | **PARTIAL** | browser zoom only |
 | Display prefs: text size, contrast stripes, crosshair | `display_prefs` / `_pass_display_to_model` | **DONE** | `fe/display.tsx` (contrast, crosshair, reading bar, warning symbols, colour-blind colours, Ctrl+wheel table zoom) from `tblUser.DisplaySettings` via `be/settings_api.py`; text size = browser zoom |
-| Read bar (parameter + value of current cell, warning) | `read_bar_text` | **MISSING** | |
+| Read bar (parameter + value of current cell, warning) | `read_bar_text` | **DONE** | `display.tsx` ReadBar (desktop style, ! Warning / ! Check), Settings "Lesezeile" |
 | Frozen first column / header while scrolling | `FrozenFirstColumnTable` | **DONE** | sticky CSS (assumed in styles.css) |
 
 ### 3d. Context menus
@@ -227,7 +227,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Spool row tooltips (single plies) | `md.spool_tooltips` | **DONE** | via `md.cell_tooltips` (`db/machine_data`) |
 | Housing row: picture tooltip | `_HousingImageTooltipFilter` / `_RDHousingTooltipFilter` | **DONE** | `img` on housing cells → `/api/housing-image/{id}` |
 | Copy link to series + open tab / to a trial column (header button, trial right-click); link opens tab and flashes the trial | – | **WEB ONLY** | `fe/links.ts`, also saved reports and Canvas boards; user decision 2026-11-14: not in the desktop |
-| Live OF speed tooltip | `machine_tab` ("live OF speed tooltip") | **PARTIAL** | R&D OF row tooltip from `rd_tooltip` (computed on load, not live while editing) |
+| Live OF speed tooltip | `machine_tab` ("live OF speed tooltip") | **DONE** | `of_base` per cell, computed live from the typed OF (`ofSpeedTip`); since 2026-11-16 also in Machine Data (RDSetting 2) in both apps |
 | Retest flag tooltip on header | `_apply_lab_retest_flags` | **DONE** | |
 | Single-ply-trial merge cells locked with tooltip | `machine_tab` | **DONE** | non-editable cells (no tooltip text) |
 
