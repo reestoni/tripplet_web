@@ -142,7 +142,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
             <div className="sb-brand-sub" title={me.release || undefined}>HEBERLEIN · WEB {me.version}</div>
           </div>
         </button>
-        {(me.mode !== "prod" || me.instance) && <div className="sb-env">{me.instance ? `${me.instance.toUpperCase()} · ` : ""}{me.mode.toUpperCase()} · {me.db}</div>}
+        {(me.mode !== "prod" || me.instance) && <div className={"sb-env" + (me.mode === "prod" ? " prod" : "")}>{me.instance ? `${me.instance.toUpperCase()} · ` : ""}{me.mode.toUpperCase()} · {me.db}</div>}
         {nav && (
           <div className="sb-find">
             <button type="button" className="sb-search" onClick={openQuickSearch} title={`${t("qsr.title")} (Ctrl+F)`}>

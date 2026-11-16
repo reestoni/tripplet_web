@@ -1627,3 +1627,6 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .ja-basis .muted { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ja-inputs .jr-form label { grid-template-columns: 105px minmax(0, 1fr); }
 .ja-inputs .jr-form select { min-width: 0; max-width: 100%; }
+
+/* prod badge (start_prod.ps1: local server against the production database) */
+.sb-env.prod { background: #C0392B; color: #fff; }

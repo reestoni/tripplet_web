@@ -41,6 +41,11 @@ Umgebungsvariable + Lesen/Schreiben fürs Dienstkonto). Freischalten von dev/pro
 - **Phase 1: nur der Nutzer selbst, nur `dev_local`, Server nur auf 127.0.0.1.**
   `backend/app/core.py` verweigert den Start mit jedem anderen `TRIPPLET_MODE`
   (`ALLOWED_MODES`). Erweiterung auf dev/prod nur auf ausdrückliche Freigabe.
+  **Ausnahme seit 2026-11-16 (Nutzerfreigabe, schreibend):** lokale Prod-Tests mit `start_prod.ps1` - Port 8010, nur
+  127.0.0.1, `TRIPPLET_MODE=prod` wirkt nur zusammen mit `TRIPPLET_WEB_ALLOW_PROD=1` (sonst Startverweigerung), eigenes
+  Cookie `tripplet_session_prod` (Cookies unterscheiden keine Ports), rotes Abzeichen "LOCAL · PROD · tripplet"
+  (`TRIPPLET_WEB_INSTANCE=local`). `start_dev.ps1` bleibt dev_local; Tests sind fest auf dev_local (`conftest.py`
+  entfernt den Schalter, `tests/test_core_mode.py`). `dev` bleibt gesperrt.
 - **Logik wird NICHT kopiert.** Das Backend importiert `db/` und die Qt-freien
   Logik-Module direkt aus `tripplet_project` (`TRIPPLET_CORE_PATH`, Default
   `C:\python\tripplet_project`). Steckt benötigte Logik noch in einem Qt-Screen, wird sie
@@ -76,6 +81,7 @@ Umgebungsvariable + Lesen/Schreiben fürs Dienstkonto). Freischalten von dev/pro
 - Python: `C:\Users\soj\AppData\Local\Programs\Python\Python312\python.exe` (hat FastAPI etc.).
 - Entwicklung: `start_dev.ps1` (FastAPI mit Reload auf :8000 + Vite auf :5173, Browser öffnet sich).
 - Gebaute Version: `start.ps1` (ein Prozess, http://127.0.0.1:8000).
+- Gegen die PRODUKTIONS-DB: `start_prod.ps1` (baut das Frontend, ein Prozess, http://127.0.0.1:8010; alles Gespeicherte ist echt).
 - Tests Backend: im Ordner `backend/` `python -m pytest` (gegen dev_local; `test_move_real_roundtrip_restores` schreibt echt und stellt danach wieder her).
 - Läuft `start_dev.ps1` beim Nutzer, belegt es Port 8000/5173 – für eigene Tests einen anderen Port nehmen (z. B. 8001), nicht seinen Server beenden. Der `--reload` lädt Backend-Änderungen nicht immer zuverlässig neu → nach Backend-Änderungen dem Nutzer Neustart empfehlen.
 - Frontend prüfen: im Ordner `frontend/` `npm run build` (Typecheck + Build).

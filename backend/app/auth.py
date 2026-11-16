@@ -21,7 +21,8 @@ from . import user_context
 from db.connection import check_credentials, is_user_active, verify_user_password  # noqa: E402
 from db.user_profile import load_profile  # noqa: E402
 
-COOKIE_NAME = "tripplet_session"
+# prod has its own cookie: cookies do not tell ports apart, a dev_local login must never count on prod
+COOKIE_NAME = "tripplet_session" if core.MODE == "dev_local" else f"tripplet_session_{core.MODE}"
 SESSION_MAX_AGE = 12 * 3600          # seconds; log in again after a working day
 PROFILE_TTL = 60                     # seconds
 

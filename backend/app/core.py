@@ -5,7 +5,9 @@ modules are imported straight from the desktop project. This module must be
 imported before anything from the core (it sets TRIPPLET_MODE and sys.path).
 
 Phase 1 (2026-11-13): only dev_local is allowed - the backend refuses to
-start against dev or prod.
+start against dev or prod. Exception (user's go 2026-11-16): local tests
+against prod, only when TRIPPLET_WEB_ALLOW_PROD=1 is set as well
+(start_prod.ps1 does that; port 8010, own session cookie, red badge).
 """
 from __future__ import annotations
 
@@ -17,6 +19,10 @@ CORE_PATH = Path(os.environ.get("TRIPPLET_CORE_PATH", r"C:\python\tripplet_proje
 
 # Phase 1: only the local development database. Widen deliberately later.
 ALLOWED_MODES = {"dev_local"}
+# local prod tests (user's go 2026-11-16): only with this second switch, so a stray TRIPPLET_MODE=prod never starts
+ALLOW_PROD = os.environ.get("TRIPPLET_WEB_ALLOW_PROD", "").strip() == "1"
+if ALLOW_PROD:
+    ALLOWED_MODES = ALLOWED_MODES | {"prod"}
 
 MODE = os.environ.setdefault("TRIPPLET_MODE", "dev_local")
 if MODE not in ALLOWED_MODES:
@@ -28,8 +34,10 @@ if str(CORE_PATH) not in sys.path:
 
 from db import connection as db  # noqa: E402  (core import after sys.path)
 
-if not db.is_dev_local_mode():
+if MODE == "dev_local" and not db.is_dev_local_mode():
     raise RuntimeError("db.connection is not in dev_local mode - refusing to start")
+if MODE == "prod" and (db.is_dev_mode() or db.is_offline_mode() or db.current_db_name() != "tripplet"):
+    raise RuntimeError(f"TRIPPLET_MODE=prod but the database is {db.current_db_name()!r} - refusing to start")
 
 import app_meta  # noqa: E402
 
