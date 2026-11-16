@@ -13,6 +13,7 @@ import { useI18n } from "../i18n";
 type Field = { name: string; label: string; text: string; multiline: boolean };
 type View = { id: number; title: string; display: Field[]; images: { id: number; name: string }[];
   history_target_id: number; has_versions: boolean;
+  status_id?: number | null; created_at?: string; denial_reason?: string;
   /** conclusions of the series linked to this request (db/series_conclusion.for_request) */
   conclusions?: { series_id: number; series_name: string; experiment_id: string; outcome: string | null; summary: string;
     recommendation: string | null; recommendation_text: string }[] };
@@ -62,12 +63,10 @@ export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
     <Overlay onClose={onClose} wide="rqp-wide">
       {nav}
       <div className="rqp-head">
-        <h2>{prefix ?? ""}{data?.title ?? t("rqp.title")}</h2>
-        {data && data.images.length > 0 && (
-          <button className="tb-icon" title={t("rqp.images")} onClick={() => setShowImages(true)}>
-            <img src={img("picture.png")} alt={t("rqp.images")} />
-          </button>
-        )}
+        <div className="rqp-titlebox">
+          <h2>{prefix ?? ""}{data?.title ?? t("rqp.title")}</h2>
+          {data && <RequestMeta data={data} label={label} />}
+        </div>
         {data?.has_versions && (
           <button className="btn-plain" title={t("rqp.historyTip")} onClick={() => setShowHistory(true)}>{t("rqp.history")}</button>
         )}
@@ -75,15 +74,21 @@ export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
       <div className="rqp-body">
         {err && <div className="login-error">{err}</div>}
         {!data && !err && <div className="muted">{t("app.loading")}</div>}
+        {data && data.status_id === 2 && data.denial_reason && (
+          <div className="rqp-denied"><b>{t("rqs.2")}:</b> {data.denial_reason}</div>
+        )}
         {data && (
-          <dl className="rqp-fields">
-            {data.display.map((f) => (
-              <div key={f.name} className="rqp-row">
-                <dt>{label(f.name, f.label)}</dt>
-                <dd className={f.multiline ? "multi" : ""}>{f.text || <span className="muted">–</span>}</dd>
-              </div>
-            ))}
-          </dl>
+          <div className={"rqp-main" + (data.images.length ? " with-img" : "")}>
+            <div className="rqp-grid">
+              {data.display.filter((f) => !META_FIELDS.includes(f.name) && f.text).map((f) => (
+                <div key={f.name} className="rqp-row">
+                  <div className="rqp-k">{label(f.name, f.label)}</div>
+                  <div className={"rqp-v" + (f.multiline ? " multi" : "")}>{f.text}</div>
+                </div>
+              ))}
+            </div>
+            {data.images.length > 0 && <InlineImages requestId={data.id} images={data.images} onOpen={() => setShowImages(true)} />}
+          </div>
         )}
         {data && data.conclusions && data.conclusions.length > 0 && (
           <div className="rqp-concl">
@@ -105,6 +110,68 @@ export default function RequestPopup({ id, prefix, onClose, nav, actions }: {
       {showImages && data && <ImageViewer requestId={data.id} images={data.images} onClose={() => setShowImages(false)} />}
       {showHistory && data && <VersionHistory requestId={data.history_target_id} onClose={() => setShowHistory(false)} />}
     </Overlay>
+  );
+}
+
+/** fields shown in the header line instead of the field list */
+const META_FIELDS = ["CreatedBy", "Projekt", "Wunschtermin"];
+
+/** "01.06.2026" / "2026-06-01" -> days from today (negative = past), null if not a date */
+function daysUntil(text: string): number | null {
+  let m = text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+  let d: Date | null = null;
+  if (m) d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  else if ((m = text.match(/^(\d{4})-(\d{2})-(\d{2})/))) d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  if (!d || Number.isNaN(d.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - today.getTime()) / 86400000);
+}
+
+/** Header line: request number, status, created by / when, project, due date (with "in n days" / overdue) */
+function RequestMeta({ data, label }: { data: View; label: (name: string, fallback: string) => string }) {
+  const { t } = useI18n();
+  const f = (name: string) => data.display.find((x) => x.name === name);
+  const by = f("CreatedBy"), project = f("Projekt"), due = f("Wunschtermin");
+  const days = due?.text ? daysUntil(due.text) : null;
+  const open = data.status_id === 1 || data.status_id === 3;      // overdue only matters before the experiment exists
+  return (
+    <div className="rqp-meta">
+      <span className="rqp-chip id">#{data.id}</span>
+      {data.status_id != null && <span className={`rq-status s${data.status_id}`}>{t(`rqs.${data.status_id}`)}</span>}
+      {by?.text && <span><span className="muted">{label(by.name, by.label)}:</span> {by.text}{data.created_at ? `, ${data.created_at.slice(0, 10)}` : ""}</span>}
+      {project?.text && <span><span className="muted">{label(project.name, project.label)}:</span> {project.text}</span>}
+      {due?.text && (
+        <span className={"rqp-due" + (open && days != null && days < 0 ? " late" : open && days != null && days <= 7 ? " soon" : "")}>
+          <span className="muted">{label(due.name, due.label)}:</span> <b>{due.text}</b>
+          {open && days != null && <> ({days < 0 ? t("rqp.overdue", { n: -days }) : days === 0 ? t("rqp.dueToday") : t("rqp.dueIn", { n: days })})</>}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Images next to the fields, always visible (desktop preview: image panel on the right) */
+function InlineImages({ requestId, images, onOpen }: { requestId: number; images: { id: number; name: string }[]; onOpen: () => void }) {
+  const { t } = useI18n();
+  const [i, setI] = useState(0);
+  const [failed, setFailed] = useState<Set<number>>(new Set());
+  const cur = images[Math.min(i, images.length - 1)];
+  return (
+    <div className="rqp-imgs">
+      <button type="button" className="rqp-img" onClick={onOpen} title={t("rqp.imgOpen")}>
+        {failed.has(cur.id)
+          ? <span className="muted small">{t("rqp.imgMissing")}</span>
+          : <img src={`/api/requests/${requestId}/images/${cur.id}/file`} alt={cur.name}
+              onError={() => setFailed((s) => new Set(s).add(cur.id))} />}
+      </button>
+      <div className="rqp-img-nav">
+        <button className="btn-plain" disabled={i === 0} onClick={() => setI(i - 1)}>‹</button>
+        <span className="muted small">{i + 1} / {images.length}</span>
+        <button className="btn-plain" disabled={i >= images.length - 1} onClick={() => setI(i + 1)}>›</button>
+      </div>
+      <div className="rqp-img-name" title={cur.name}>{cur.name}</div>
+    </div>
   );
 }
 
