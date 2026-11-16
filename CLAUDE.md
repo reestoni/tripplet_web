@@ -233,7 +233,7 @@ Verbesserungen (Nutzerentscheid 2026-11-13, beide Apps): Ergebnis-Cache pro Visu
 (`TrialDataset(include_refs=)`, Feld "Reference sample", Häkchen im Filterbereich der Seite, `refs` in der Ansicht; Web hält zwei
 Versuchsbestände mit gleichem Katalog); Formelvorschau auch über die gefilterten Versuche; Formeln aus anderen Dashboards
 übernehmen (`calc_library`); Ordner (`folder` in ConfigJSON) und Favoriten (`DisplaySettings.smart_favs`, `group_views`);
-`ConfigJSON` MEDIUMTEXT auf dev_local per `tools/smart_chart_views_migration.py` (dev/prod noch TEXT - nur auf Freigabe,
+`ConfigJSON` MEDIUMTEXT auf dev_local per `tools/smart_chart_views_migration.py` (prod seit 2026-11-16 auch; dev hat die Tabelle nicht,
 `config_limit()` richtet sich nach der Spalte). Nur Web: ungespeicherte Änderungen (`summary.dirty`, Punkt im Titel), Entwurf
 in localStorage `tripplet.smart.draft` (pro Benutzer) mit "Wiederherstellen" (`/restore`), Warnung beim Verlassen.
 
@@ -268,7 +268,7 @@ Compare, Label Generator, TDMS Inspector, Canvas, Process Playground, Requiremen
   Seite `TdmsInspector.tsx` nutzt `YarnScopeView`/`YarnScopeAty` mit `inspector` (blendet Batch/Vergleich/Speichern aus).
   Desktop unverändert (der Screen war schon nur eine Hülle um die YarnScope-Reiter).
 - **Canvas-Bretter in der DB** (2026-11-14, beide Apps): `db/canvas_boards.py` + Tabelle `tblCanvasBoard` (angelegt nur über
-  `tools/canvas_board_migration.py`, dev_local erledigt; dev/prod am Montag). App-neutrales Brett-Format (Mittelpunkt/Grösse/Winkel,
+  `tools/canvas_board_migration.py`, dev_local, dev und prod angelegt 2026-11-16). App-neutrales Brett-Format (Mittelpunkt/Grösse/Winkel,
   Quellen `series_image`/`series_pdf` per ID oder `file` = Datei beim Brett unter `file_roots` `CANVAS_FILES`/<BrettID>/). Optional an eine
   Serie gehängt, für alle mit Canvas sichtbar, Speichern ab Stufe 2, Löschen Ersteller/Superuser, Versionsprüfung (409 `conflict`).
   Web `app/canvas_api.py` (`/api/canvas/boards…`; Uploads/Zwischenablage werden beim Speichern zu Brett-Dateien), Seite speichert
@@ -379,10 +379,10 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
 
 ## Offene Punkte
 
-- **DB-Änderungen auf dev/prod am Montag 2026-11-16** (Nutzerentscheid: alle zusammen): `tools/smart_chart_views_migration.py apply`
-  (ConfigJSON MEDIUMTEXT), `tools/canvas_board_migration.py apply` (tblCanvasBoard), `tools/series_conclusion_migration.py apply`
-  (tblSeriesConclusion); jeweils mit `--target dev` bzw. `--target prod` und
-  passendem `TRIPPLET_MODE`. Ordner auf der Freigabe legen die Apps selbst an (UserAvatars, CanvasFiles). Neue DB-Änderungen hier anhängen.
+- ✅ **DB-Änderungen auf dev/prod am 2026-11-16 ausgeführt** (Nutzerfreigabe): `tblCanvasBoard` und `tblSeriesConclusion` auf dev +
+  prod angelegt, `tblSmartChartView.ConfigJSON` auf prod MEDIUMTEXT (dev hat keine `tblSmartChartView` - dort übersprungen).
+  Neue DB-Änderungen: Migrationsskript unter `tools/` (status/apply/rollback, `--target`, `TRIPPLET_MODE`), zuerst dev_local,
+  dev/prod nur auf ausdrückliche Freigabe; hier auflisten. Ordner auf der Freigabe legen die Apps selbst an (UserAvatars, CanvasFiles).
 
 - **Nächste Schritte in dieser Reihenfolge** (Nutzerentscheid 2026-11-13): 1. ✅ F1-Hilfe / Kontext-Hilfe (ohne Ask AI)
   (siehe "Hilfe" unten), 2. ✅ YarnScope ergänzen (Trends/Prozesswelle, Prozessvergleich, ATY + Batch), 3. ✅ Manage Jets, ✅ Manage Yarn, ✅ Yarn Stock + Inventur + Hilfe (siehe unten). Danach (Nutzerentscheid
@@ -390,7 +390,7 @@ Neue Seite mit Desktop-Hilfe: `HelpButton` einbauen und Route in `help.WEB_ROUTE
   nacheinander die Werkzeuge (✅ alle, zuletzt Process Playground und Requirement Hub, 2026-11-13). **Kleinkram für später** (nicht vergessen): weitere PARTIAL/MISSING-Zeilen in `PARITY.md`.
 
 **Fazit pro Serie** (2026-11-14, beide Apps, Nutzerwunsch): `db/series_conclusion.py` + Tabelle `tblSeriesConclusion` (eine Zeile pro
-Serie, nur über `tools/series_conclusion_migration.py`, dev_local erledigt, dev/prod am Montag). Nicht an einen Statuswechsel gebunden
+Serie, nur über `tools/series_conclusion_migration.py`, dev_local, dev und prod angelegt 2026-11-16). Nicht an einen Statuswechsel gebunden
 ("Done" = bereit zur Auswertung). Felder: eigenes Ziel (nur ohne Experiment-Anfrage; mit Anfrage werden Titel/Versuchsgrund/Aufgabe/
 Beurteilung gezeigt), Ergebnis achieved/partly/not_achieved/open, Kurzfazit (300 Z.), beste Versuche, Erkenntnisse, Empfehlung
 follow_up/release/discard + Text. Schreiben ab Stufe 2, Änderungsprotokoll (Source `conclusion`), erstes Speichern = Glocke an den
