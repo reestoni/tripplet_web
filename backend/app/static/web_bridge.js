@@ -6,7 +6,7 @@
   "use strict";
   var DB_SLOTS = ["getSeriesList", "loadSeriesData", "runVisualQuery", "loadReportList", "loadReport",
     "loadFreeField", "getLayoutTemplates", "getPdfTemplates", "saveReport", "deleteReport",
-    "saveLayoutTemplate", "overwriteLayoutTemplate", "deleteLayoutTemplate"];
+    "saveLayoutTemplate", "overwriteLayoutTemplate", "deleteLayoutTemplate", "loadConclusions"];
 
   function post(url, body) {
     return fetch(url, {

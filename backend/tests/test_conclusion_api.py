@@ -75,3 +75,12 @@ def test_errors(env):
     assert r.status_code == 400 and r.json()["code"] == "too_long"
     r = c.put("/api/series/999999999/conclusion", json={"summary": "x"})
     assert r.status_code == 404
+
+
+def test_report_slot_conclusions(env):
+    """Report page button "✅ Conclusion": slot loadConclusions (db/series_conclusion.for_report), arguments checked."""
+    c, sid, _ = env
+    r = c.post("/api/report/slot/loadConclusions", json={"args": [f"[{sid}]"], "series_pk": sid}).json()
+    assert r["receiver"] == "receiveConclusions" and r["args"][0][0]["series_id"] == sid and not r["args"][0][0]["exists"]
+    for bad in ['["1; DROP"]', "[1.5]", "{}", "x", "[" + ",".join(["1"] * 21) + "]"]:
+        assert c.post("/api/report/slot/loadConclusions", json={"args": [bad]}).status_code == 400, bad

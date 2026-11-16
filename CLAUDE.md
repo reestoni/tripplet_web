@@ -411,6 +411,11 @@ Ergebnisse im Request-Popup (`for_request`), Archivieren ohne Fazit: `POST /api/
 `ignore_conclusion`. Desktop: `ui/widgets/conclusion_tab.py` (Reiter "Conclusion" rechts von Notes), Backlog-Karte, All Experiments
 (Spalten 10/11 + Filter), Quick Search 5. Feld, Request-Popup, Hinweis beim Archivieren. Tests: Desktop `test_series_conclusion.py`,
 Web `test_conclusion_api.py`.
+**Fazit im Report** (2026-11-16, beide Apps über die gemeinsame Report-Seite): Knopf "✅ Conclusion" in `ui/report_html_template.py`
+zeigt die Fazits aller Serien der Seite (Haupt- + Vergleichsserien) über den Diagrammen; Slot `loadConclusions` ->
+`series_conclusion.for_report()` (Desktop `screen_report.py` @Slot, Web `web_bridge.js` + Prüfung in `report.py`: nur Liste von
+höchstens 20 Ganzzahlen). Ein/aus wird in `queryConfig.showConclusion` des Reports gespeichert (keine DB-Änderung). PDF: die Seite
+schickt nur `conclusionSeries` (IDs), `build_report_pdf` liest die Fazits frisch aus der DB (`report_text`), Abschnitt nach "Observations".
 
 **Links, Live-Backlog, Tooltips** (2026-11-14): Links **nur im Web** (Nutzerentscheid 2026-11-14: im Desktop nicht nötig) -
 `frontend/src/links.ts` (`/series/<id>?tab=<key>&trial=<id>`, `/series/<id>/report?report=<id>`, `/tools/canvas?board=<id>`; Reiter-Schlüssel

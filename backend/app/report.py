@@ -80,6 +80,13 @@ def _check_slot_args(slot: str, args: List[Any]) -> Optional[str]:
             return "unknown field"
         if condition.strip() and not _COND.match(condition):
             return "condition not allowed"
+    elif slot == "loadConclusions":
+        try:
+            pks = json.loads(args[0] or "[]") if args else []
+        except (TypeError, ValueError):
+            return "bad arguments"
+        if not isinstance(pks, list) or len(pks) > 20 or not all(isinstance(x, int) for x in pks):
+            return "bad arguments"
     elif slot == "runVisualQuery":
         try:
             filters = json.loads(args[2] or "[]") if len(args) > 2 else []

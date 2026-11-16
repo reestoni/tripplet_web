@@ -495,6 +495,7 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Request popup: results of the linked series | `_ExperimentRequestReadOnlyDialog` | **DONE** | `RequestPopup.tsx` |
 | Bell for the requester on first save | `notification_panel` type `series_conclusion` | **DONE** | `Notifications.tsx` |
 | Hint when archiving without conclusion | Backlog / All Experiments | **DONE** | 409 `no_conclusion` + confirm |
+| Report: "✅ Conclusion" block above the charts + in the PDF | shared report page, `screen_report.loadConclusions` | **DONE** | same page in the iframe, `web_bridge.js` slot `loadConclusions` (2026-11-16) |
 
 ## Jet Advisor (added 2026-11-15, both apps)
 
