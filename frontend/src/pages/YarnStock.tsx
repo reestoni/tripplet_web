@@ -650,9 +650,10 @@ function PrintDialog({ count, onClose, onPrinted }: { count: number; onClose: ()
       const res = await fetch("/api/yarn-stock/labels/pdf", { method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start_index: start, template: tpl }) });
       if (!res.ok) { const j = await res.json(); throw new ApiError(res.status, j.detail ?? res.statusText, j.code, j); }
-      // Save as a file (like the desktop's save dialog), not a preview tab.
+      // Save as a file (like the desktop's save dialog), not a preview tab. Neutral type: Chrome opens
+      // downloaded application/pdf files in a tab on its own ("Open PDFs in Chrome").
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(await res.blob());
+      a.href = URL.createObjectURL(new Blob([await res.blob()], { type: "application/octet-stream" }));
       a.download = "yarn_labels.pdf";
       document.body.appendChild(a); a.click(); a.remove();
       window.setTimeout(() => URL.revokeObjectURL(a.href), 60000);
