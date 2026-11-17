@@ -387,6 +387,7 @@ html[data-night] .pi-kind { background: #1c212b; color: #abb1bd; }
 html[data-night] .pi-kind.statimat { background: #162d43; color: #71ade0; }
 html[data-night] .pi-kind.itemat { background: #2e1540; color: #ad81d0; }
 html[data-night] .pi-kind.unknown { background: #1a1f29; }
+html[data-night] .rqp-float-x:hover { background: rgba(255, 255, 255, 0.096); }
 
 /* ---- dark twins of theme-modern.css ---- */
 html[data-theme="modern"][data-night] ::-webkit-scrollbar-thumb { background: #3a4250; }

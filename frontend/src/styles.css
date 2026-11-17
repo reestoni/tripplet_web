@@ -1726,3 +1726,4 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .rqp-float-body { flex: 1; min-height: 0; overflow: auto; padding: 14px 18px; }
 .rqp-float .rqp-body { max-height: none; overflow: visible; }
 .rqp-float .rqp-main.with-img { grid-template-columns: minmax(0, 1fr) 220px; }
+.set-page .page-head .set-close { margin-left: auto; align-self: center; }

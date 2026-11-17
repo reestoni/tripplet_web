@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { useDisplay, type DisplayPrefs } from "../display";
@@ -88,6 +89,22 @@ export default function Settings() {
       setD(x); setWelcome(x.welcome); setAccent(x.accent); setStart(x.prefs.start || "backlog");
     }).catch((e) => setMsg({ kind: "err", text: String(e) }));
   }, []);
+
+  // Close = back to the screen the settings were opened from (opened directly -> start page).
+  const navigate = useNavigate();
+  const loc = useLocation();
+  const close = () => { if (loc.key !== "default") navigate(-1); else navigate("/"); };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const el = e.target as HTMLElement | null;
+      if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+      if (document.querySelector("[role=dialog], .modal-backdrop")) return;
+      close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
   if (!d || !disp) return <div className="muted">{msg?.text ?? t("app.loading")}</div>;
   const p = disp.prefs;
 
@@ -103,7 +120,8 @@ export default function Settings() {
 
   return (
     <div className="page set-page">
-      <div className="page-head"><h1>{t("set.title")}</h1></div>
+      <div className="page-head"><h1>{t("set.title")}</h1>
+        <button type="button" className="set-close" title={`${t("set.close")} (Esc)`} onClick={close}>✕ {t("set.close")}</button></div>
 
       <AvatarBox d={d} />
 
