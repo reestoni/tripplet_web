@@ -50,9 +50,13 @@ export function LabelsDialog({ seriesId, onClose }: { seriesId: number; onClose:
       const res = await fetch(`/api/series/${seriesId}/labels/pdf`, { method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from_no: from, to_no: to, start_index: start, template: tpl }) });
       if (!res.ok) throw new Error((await res.json()).detail ?? res.statusText);
-      const url = URL.createObjectURL(await res.blob());
-      window.open(url, "_blank");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // Save as a file (like the desktop's save dialog), not a preview tab.
+      const name = (info?.header ?? "").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_").replace(/^_+|_+$/g, "");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(await res.blob());
+      a.download = name ? `trial_labels_${name}.pdf` : "trial_labels.pdf";
+      document.body.appendChild(a); a.click(); a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 60000);
     } catch (e) { setMsg({ kind: "err", text: errText(e) }); }
   };
   const saveTpl = async () => {

@@ -231,7 +231,7 @@ def labels_pdf(series_id: int, body: LabelReq, _user: Dict[str, Any] = Depends(c
         return _err(404, "no_trials", "No trials in this series.")
     log_usage_event("feature", "print_trial_labels", "web")
     return Response(content=data, media_type="application/pdf",
-                    headers={"Content-Disposition": f'inline; filename="labels_{series_id}.pdf"'})
+                    headers={"Content-Disposition": f'attachment; filename="trial_labels_{series_id}.pdf"'})
 
 
 class LabelTemplate(BaseModel):
