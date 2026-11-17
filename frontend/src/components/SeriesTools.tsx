@@ -25,6 +25,29 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
   );
 }
 
+/* Label PDFs are saved as a file, not opened as a preview tab. Neutral type: Chrome opens downloaded
+   application/pdf files in a tab on its own ("Open PDFs in Chrome"). */
+export async function downloadPdf(res: Response, filename: string) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([await res.blob()], { type: "application/octet-stream" }));
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+}
+
+/* Small notice after the download (replaces the labels dialog), only OK. */
+export function PdfSavedNotice({ file, onOk }: { file: string; onOk: () => void }) {
+  const { t } = useI18n();
+  return (
+    <Modal title={t("tl.pdfSavedTitle")} onClose={onOk}>
+      <p>{t("tl.pdfSaved")}<br /><b>{file}</b></p>
+      <div className="modal-buttons">
+        <button className="btn-green" autoFocus onClick={onOk}>{t("tl.ok")}</button>
+      </div>
+    </Modal>
+  );
+}
+
 /* ------------------------------------------------------------------ Print labels */
 type LabelInfo = { range: [number, number] | null; header: string; template: Record<string, number>; fields: [string, string][] };
 
@@ -36,6 +59,7 @@ export function LabelsDialog({ seriesId, onClose }: { seriesId: number; onClose:
   const [to, setTo] = useState(1);
   const [start, setStart] = useState(0);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
   useEffect(() => {
     request<LabelInfo>("GET", `/api/series/${seriesId}/labels`).then((i) => {
       setInfo(i); setTpl(i.template);
@@ -50,20 +74,17 @@ export function LabelsDialog({ seriesId, onClose }: { seriesId: number; onClose:
       const res = await fetch(`/api/series/${seriesId}/labels/pdf`, { method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ from_no: from, to_no: to, start_index: start, template: tpl }) });
       if (!res.ok) throw new Error((await res.json()).detail ?? res.statusText);
-      // Save as a file (like the desktop's save dialog), not a preview tab. Neutral type: Chrome opens
-      // downloaded application/pdf files in a tab on its own ("Open PDFs in Chrome").
       const name = (info?.header ?? "").replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_").replace(/^_+|_+$/g, "");
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([await res.blob()], { type: "application/octet-stream" }));
-      a.download = name ? `trial_labels_${name}.pdf` : "trial_labels.pdf";
-      document.body.appendChild(a); a.click(); a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      const file = name ? `trial_labels_${name}.pdf` : "trial_labels.pdf";
+      await downloadPdf(res, file);
+      setSaved(file);
     } catch (e) { setMsg({ kind: "err", text: errText(e) }); }
   };
   const saveTpl = async () => {
     try { await request("POST", "/api/series/labels/template", { template: tpl }); setMsg({ kind: "ok", text: t("tl.tplSaved") }); }
     catch (e) { setMsg({ kind: "err", text: errText(e) }); }
   };
+  if (saved) return <PdfSavedNotice file={saved} onOk={onClose} />;
   return (
     <Modal title={t("tl.labelsTitle")} onClose={onClose} wide>
       {info && !info.range && <p className="muted">{t("tl.noTrials")}</p>}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
-import { Modal } from "../components/SeriesTools";
+import { Modal, PdfSavedNotice, downloadPdf } from "../components/SeriesTools";
 import { HelpButton } from "../components/Help";
 
 /* Yarn Stock (desktop ui/screen_yarn_stock.py) on backend/app/yarn_stock_api.py / db/yarn_stock.py.
@@ -637,6 +637,7 @@ function PrintDialog({ count, onClose, onPrinted }: { count: number; onClose: ()
   const [tpl, setTpl] = useState<Record<string, number>>({});
   const [start, setStart] = useState(0);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
   useEffect(() => {
     request<{ template: Record<string, number>; fields: [string, string][] }>("GET", "/api/yarn-stock/labels/template")
       .then((r) => { setTpl(r.template); setFields(r.fields); }).catch((e) => setMsg({ kind: "err", text: errText(t, e) }));
@@ -650,20 +651,15 @@ function PrintDialog({ count, onClose, onPrinted }: { count: number; onClose: ()
       const res = await fetch("/api/yarn-stock/labels/pdf", { method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start_index: start, template: tpl }) });
       if (!res.ok) { const j = await res.json(); throw new ApiError(res.status, j.detail ?? res.statusText, j.code, j); }
-      // Save as a file (like the desktop's save dialog), not a preview tab. Neutral type: Chrome opens
-      // downloaded application/pdf files in a tab on its own ("Open PDFs in Chrome").
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([await res.blob()], { type: "application/octet-stream" }));
-      a.download = "yarn_labels.pdf";
-      document.body.appendChild(a); a.click(); a.remove();
-      window.setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-      onPrinted();
+      await downloadPdf(res, "yarn_labels.pdf");
+      setSaved("yarn_labels.pdf");
     } catch (e) { setMsg({ kind: "err", text: errText(t, e) }); }
   };
   const saveTpl = async () => {
     try { await request("POST", "/api/yarn-stock/labels/template", { template: tpl }); setMsg({ kind: "ok", text: t("tl.tplSaved") }); }
     catch (e) { setMsg({ kind: "err", text: errText(t, e) }); }
   };
+  if (saved) return <PdfSavedNotice file={saved} onOk={onPrinted} />;
   return (
     <Modal title={t("st.print_title")} onClose={onClose} wide>
       <p className="muted">{t("st.print_info", { n: count })}</p>
