@@ -650,9 +650,12 @@ function PrintDialog({ count, onClose, onPrinted }: { count: number; onClose: ()
       const res = await fetch("/api/yarn-stock/labels/pdf", { method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" }, body: JSON.stringify({ start_index: start, template: tpl }) });
       if (!res.ok) { const j = await res.json(); throw new ApiError(res.status, j.detail ?? res.statusText, j.code, j); }
-      const url = URL.createObjectURL(await res.blob());
-      window.open(url, "_blank");
-      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+      // Save as a file (like the desktop's save dialog), not a preview tab.
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(await res.blob());
+      a.download = "yarn_labels.pdf";
+      document.body.appendChild(a); a.click(); a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(a.href), 60000);
       onPrinted();
     } catch (e) { setMsg({ kind: "err", text: errText(t, e) }); }
   };

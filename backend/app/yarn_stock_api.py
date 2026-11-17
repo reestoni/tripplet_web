@@ -400,7 +400,7 @@ def labels_pdf(body: PrintBody, user: Dict[str, Any] = Depends(require_feature(F
     ys.mark_printed([it["QueueID"] for it in items])
     log_usage_event("feature", "yarn_stock_print_labels", f"web {len(items)}")
     return Response(content=data, media_type="application/pdf",
-                    headers={"Content-Disposition": 'inline; filename="yarn_labels.pdf"'})
+                    headers={"Content-Disposition": 'attachment; filename="yarn_labels.pdf"'})
 
 
 # ------------------------------------------------------------------ Excel
