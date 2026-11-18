@@ -213,6 +213,8 @@ def delete(body: DeleteBody, user: Dict[str, Any] = Depends(current_user)):
         return _err(400, "delete_self", "You cannot delete your own account.")
     try:
         n = ua.delete_users(body.ids)
+    except ua.UserHasData as e:
+        return _err(409, "has_data", f"The user still has data ({', '.join(e.tables)}) - deactivate the account instead.")
     except Exception as e:
         return _err(409, "delete_failed", f"Could not delete: {e}")
     log_usage_event("feature", "web_manage_user_delete", str(n))
