@@ -48,7 +48,7 @@ Legende: **voll** = alles wie Desktop, nur umgebaut · **abgespeckt** = Kernfunk
 | Yarn Count | `/tools/yarn-count` | voll | voll | 2 | eine Spalte, Zahlen-Tastatur (`inputmode="decimal"`) |
 | Jet Advisor | `/tools/jet-advisor` | voll | abgespeckt | 2 | Formular als Blatt, Rangliste als Karten (Düse, Einstellung, Chance); Details aufklappen |
 | DTY/ATY-YarnScope | Reiter in Show Experiment | voll | lesend | 3 | gespeicherte/berechnete Ansichten untereinander (Plotly passt Breite an), Garnspiegel waagrecht scrollbar; Prozessvergleich/Batch Tablet+ |
-| Manage Jets / Yarn / Stammtabellen / Projekte | `/admin/…` | voll | abgespeckt | 3 | Liste mit Suche → Detailformular pro Zeile (statt breiter Tabelle), Speichern unten; neue Düse/Garn ja; Spaltenreihenfolge/Mehrfachkopie Tablet+ |
+| Manage Jets / Yarn / Stammtabellen / Projekte | `/admin/…` | voll | abgespeckt | ✅ | 2026-11-18 (Nutzerwunsch: übersichtlicher): `AdminTable` auf dem Handy = Kartenliste (Name, #ID, die ersten Spalten nach den eingefrorenen als Kennwerte, gelb = ungespeichert, 100 + „weitere anzeigen“), Antippen = Blatt mit allen Feldern untereinander (Eingabe/Auswahl/Häkchen wie in der Tabelle, sofort als Änderung, Speichern über die Seite); Knopfleiste kompakt. Gilt auch für Manage User |
 | Manage User | `/superuser/users` | voll | abgespeckt | 3 | Liste → Detail; Access-Matrix Tablet+ |
 | Papierkorb | `/superuser/recycle-bin` | voll | voll | 3 | Kartenliste, Aktionen über „⋯“ mit Bestätigung |
 | Dashboards | `/tools/dashboards` | voll | lesend | 3 | Visuals untereinander (Desktop-Fläche im iframe, Breite anpassen) |

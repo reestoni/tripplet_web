@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n";
+import { PHONE, useMedia } from "../media";
 
 /* Editable master-data table like the desktop admin screens (Manage Jets, later Manage Yarn):
    frozen first columns, sort per header click, filter row (text = contains; number columns also
@@ -97,6 +98,10 @@ export default function AdminTable(p: AdminTableProps) {
   const rowEst = useRef(ROW_EST);
   const [view, setView] = useState({ top: 0, h: 800 });
   const [measured, setMeasured] = useState(0);
+  // phone (MOBILE.md): cards + a detail sheet per row instead of the wide grid
+  const phone = useMedia(PHONE);
+  const [sheet, setSheet] = useState<number | null>(null);
+  const [limit, setLimit] = useState(100);
 
   const value = (row: Row, col: string) => {
     const id = Number(row[p.idCol]);
@@ -284,6 +289,97 @@ export default function AdminTable(p: AdminTableProps) {
         }} />
     );
   };
+
+  if (phone) {
+    const label = (c: string) => (p.header ? p.header(c) : c);
+    const nameCol = p.columns[1] ?? p.idCol;
+    // card: name (2nd column) as title, ID + the next columns with a value as short facts
+    const facts = p.columns.filter((c, i) => i >= p.frozen && !p.narrow?.has(c)).slice(0, 4);
+    const sheetRow = sheet == null ? null : p.rows.find((r) => Number(r[p.idCol]) === sheet) ?? null;
+    const openSheet = (id: number) => { p.onSelect(new Set([id])); setSheet(id); };
+    const field = (row: Row, c: string) => {
+      const id = Number(row[p.idCol]);
+      const val = (x: string) => value(row, x);
+      const special = p.cell?.(c, row, val);
+      if (special !== undefined) return <div className="atm-ro">{special}</div>;
+      if (p.boolCols.has(c)) {
+        const on = value(row, c) === 1 || value(row, c) === true;
+        return <input type="checkbox" checked={on} disabled={!canEditCell(c)} onChange={() => p.onEdit(id, c, on ? 0 : 1)} />;
+      }
+      if (!canEditCell(c)) return <div className="atm-ro">{p.prefix?.(c, row, val)}{text(row, c) || "–"}</div>;
+      const v = value(row, c);
+      const items = p.fk[c];
+      if (items) {
+        return (
+          <select value={v === null || v === undefined ? "" : String(v)} onChange={(e) => {
+            if (e.target.value === "__add__") { p.addNew?.onAdd(c, id); return; }
+            commit(id, c, e.target.value === "" ? null : items.find(([i]) => String(i) === e.target.value)?.[0] ?? e.target.value);
+          }}>
+            <option value="" />
+            {items.map(([i, n]) => <option key={String(i)} value={String(i)}>{n}</option>)}
+            {p.addNew?.cols.has(c) && <option value="__add__">{p.addNew.label}</option>}
+          </select>
+        );
+      }
+      return (
+        <input key={`${id}:${c}:${String(v ?? "")}`} defaultValue={v === null || v === undefined ? "" : String(v)}
+          inputMode={p.numericCols.has(c) ? "decimal" : undefined}
+          onBlur={(e) => commit(id, c, e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+      );
+    };
+    return (
+      <div className="atm">
+        {shown.slice(0, limit).map((row) => {
+          const id = Number(row[p.idCol]);
+          const dirty = !!p.changes[id] && Object.keys(p.changes[id]).length > 0;
+          return (
+            <button key={id} type="button" className={"atm-card" + (dirty ? " dirty" : "") + (p.selected.has(id) ? " sel" : "")}
+              onClick={() => openSheet(id)}
+              onContextMenu={p.onCellMenu ? (e) => p.onCellMenu!(e, nameCol, value(row, nameCol), row) : undefined}>
+              <span className="atm-title">
+                {p.prefix?.(nameCol, row, (x) => value(row, x))}
+                {text(row, nameCol) || "–"}
+                {dirty && <span className="atm-dot" />}
+              </span>
+              <span className="atm-facts">
+                <span>#{id}</span>
+                {facts.map((c) => {
+                  const tx = p.cell?.(c, row, (x) => value(row, x)) === undefined ? text(row, c) : "";
+                  return tx ? <span key={c}><b>{label(c)}:</b> {tx}</span> : null;
+                })}
+              </span>
+            </button>
+          );
+        })}
+        {shown.length > limit && (
+          <button type="button" className="btn-plain atm-more" onClick={() => setLimit((l) => l + 100)}>
+            {t("adm.more", { n: Math.min(100, shown.length - limit) })}</button>
+        )}
+        {sheetRow && sheet != null && (
+          <div className="modal-back" onMouseDown={() => setSheet(null)}>
+            <div className="modal atm-sheet" onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+              <h2>{text(sheetRow, nameCol) || `#${sheet}`}
+                <button type="button" className="m-x" onClick={() => setSheet(null)} aria-label={t("adm.close")}>✕</button></h2>
+              <div className="atm-fields">
+                {p.columns.map((c) => {
+                  const dirty = !!p.changes[sheet] && c in p.changes[sheet];
+                  return (
+                    <label key={c} className={"atm-field" + (dirty ? " dirty" : "")}>
+                      <span className="atm-label">{label(c)}</span>
+                      {field(sheetRow, c)}
+                    </label>
+                  );
+                })}
+              </div>
+              {p.detail?.(sheetRow) && <div className="atm-detail">{p.detail(sheetRow)}</div>}
+              <div className="modal-buttons"><button className="btn-green" onClick={() => setSheet(null)}>{t("adm.close")}</button></div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="at-wrap" tabIndex={0} onKeyDown={onKey} ref={wrapRef}>

@@ -197,6 +197,31 @@
   .report-bar > .muted { display: none; }
   .report-bar .btn-plain { white-space: nowrap; padding: 4px 10px; }
 
+  /* admin tables (AdminTable phone mode): cards, a sheet per row */
+  .mj-page { height: auto; padding: 10px 10px 0; }
+  .mj-page .toolbar { gap: 6px; flex-wrap: wrap; }
+  .mj-page .toolbar .mj-search { min-width: 0; flex: 1 1 100%; }
+  .mj-page .toolbar .btn-plain, .mj-page .toolbar .btn-green { padding: 6px 10px; font-size: 13px; min-height: 36px; }
+  .mj-page .mj-sep { display: none; }
+  .atm { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; }
+  .atm-card { all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 3px; padding: 10px 12px;
+    background: var(--card-bg); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; cursor: pointer; }
+  .atm-card.sel { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .atm-card.dirty { border-left-color: #e0a800; }
+  .atm-title { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+  .atm-dot { width: 8px; height: 8px; border-radius: 50%; background: #e0a800; flex: none; }
+  .atm-facts { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--muted); }
+  .atm-facts b { font-weight: 600; }
+  .atm-more { align-self: center; margin-top: 4px; }
+  .atm-fields { display: flex; flex-direction: column; gap: 10px; padding-bottom: 8px; }
+  .atm-field { display: flex; flex-direction: column; gap: 3px; }
+  .atm-field.dirty input, .atm-field.dirty select { background: #fff6cc; }
+  .atm-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .atm-field input:not([type=checkbox]), .atm-field select { width: 100%; box-sizing: border-box; min-height: 38px; padding: 6px 8px; }
+  .atm-field input[type=checkbox] { width: 22px; height: 22px; }
+  .atm-ro { font-size: 14px; padding: 4px 0; overflow-wrap: anywhere; }
+  .atm-detail { margin: 6px 0 10px; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }
