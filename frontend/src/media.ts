@@ -18,6 +18,17 @@ export function useMedia(query: string): boolean {
   return hit;
 }
 
+/* Touch (finger is the main pointer) - asked at the moment of the tap. Lists that open with a double click on the
+   PC (Backlog cards, All Experiments, My Requests) open with ONE tap on touch: phones send no reliable dblclick. */
+export function isTouch(): boolean {
+  return typeof window !== "undefined" && window.matchMedia(TOUCH).matches;
+}
+
+/* A tap on a button/link/field inside a row is that control's, not "open the row". */
+export function tapOnControl(e: { target: EventTarget | null }): boolean {
+  return e.target instanceof Element && !!e.target.closest("button, a, input, select, textarea, label, [role=button]");
+}
+
 /* Long press = right click, everywhere. Android Chrome fires "contextmenu" on a long press by itself; iOS Safari
    does not - there a held finger (500 ms, not moved) sends a synthetic "contextmenu" to the element under it, so
    every existing onContextMenu menu (Backlog cards, trial columns, tables...) works on touch without changes. */

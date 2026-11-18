@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { isTouch, tapOnControl } from "../media";
 import { useNavigate } from "react-router-dom";
 import { api, img, type ExperimentRow } from "../api";
 import { useI18n } from "../i18n";
@@ -166,6 +167,7 @@ export default function AllExperiments() {
           <tbody>
             {shown.map((r) => (
               <tr key={r.series_id} onDoubleClick={(e) => openSeriesFrom(e, r.series_id, (id) => navigate(`/series/${id}`))} title={t("exp.openTip")}
+                onClick={(e) => { if (isTouch() && !tapOnControl(e)) openSeriesFrom(e, r.series_id, (id) => navigate(`/series/${id}`)); }}
                 onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); window.open(`/series/${r.series_id}`, "_blank"); } }}
                 onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
                 onContextMenu={(e) => admin.open(e, { series_id: r.series_id, name: r.series_name })}>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type MouseEvent as RME } from "react";
+import { isTouch, tapOnControl } from "../media";
 import { useNavigate } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
@@ -200,6 +201,7 @@ export default function MyRequests() {
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} onDoubleClick={() => navigate(`/requests/${r.open_id}`)} title={r.tooltip || t("exp.open")}
+                onClick={(e) => { if (isTouch() && !tapOnControl(e)) navigate(`/requests/${r.open_id}`); }}
                 onContextMenu={(e) => menu(e, r)}>
                 <td className="nowrap">{r.id}</td>
                 <td>

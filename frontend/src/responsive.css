@@ -76,6 +76,13 @@
   .qsr-fields { grid-template-columns: 1fr; }
   .modal.qsr { max-height: none; }
 
+  /* Backlog: the board fits the window on the PC (boxes shrink) - on the phone the page scrolls instead and
+     every status box shows several cards */
+  .page-wide:has(.board) { height: auto; }
+  .board, .board.board-expanded { flex: none; overflow: visible; }
+  .bl-box { max-height: 70vh; }
+  .bl-list { min-height: 60px; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }

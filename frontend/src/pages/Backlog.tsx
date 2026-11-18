@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { isTouch, tapOnControl } from "../media";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, request, type ArchivedRow, type BacklogCard, type Status } from "../api";
 import { SeriesIcons } from "../components/Icons";
@@ -48,7 +49,7 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, s
   return (
     <div className={"bl-card" + (dragging ? " dragging" : "") + (selected ? " selected" : "")} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
       style={c.owner_colour ? { borderLeftColor: c.owner_colour } : undefined}
-      onClick={onSelect} onDoubleClick={onOpen} onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e); } }}
+      onClick={(e) => { if (isTouch() && !e.ctrlKey && !e.shiftKey && !tapOnControl(e)) onOpen(e); else onSelect(e); }} onDoubleClick={onOpen} onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e); } }}
       onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
       onContextMenu={onMenu} title={[retestTip, conclTip].filter(Boolean).join("\n\n") || t("bl.cardTip")}>
       <div className="bl-title">
@@ -115,7 +116,7 @@ function Archived({ rows, onOpen, onDragStart, onDragEnd, onMenu }: {
                       {xOpen &&
                         list.map((r) => (
                           <div key={r.series_id} className="arch-row" draggable onDragStart={(e) => onDragStart(e, r)}
-                            onDragEnd={onDragEnd} onDoubleClick={(e) => onOpen(e, r)} onContextMenu={(e) => onMenu(e, r)}
+                            onDragEnd={onDragEnd} onDoubleClick={(e) => onOpen(e, r)} onClick={(e) => { if (isTouch()) onOpen(e, r); }} onContextMenu={(e) => onMenu(e, r)}
                             onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e, r); } }}
                             onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
                             title={t("exp.open")}>
