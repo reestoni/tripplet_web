@@ -21,8 +21,9 @@ function loadHidden(machine: number | null | undefined): string[] {
   }
 }
 
-export default function MachineTable({ seriesId, rowTitle, source = "machine", menus, tools }: {
+export default function MachineTable({ seriesId, rowTitle, source = "machine", menus, tools, onlyTrial = null }: {
   seriesId: number; rowTitle: (t: string) => string; source?: "machine" | "rd"; menus?: SeriesMenus;
+  onlyTrial?: number | null;  // phone: only the columns of this trial (◀ V ▶ in Show Experiment), null = all
   tools?: React.ReactNode;   // Show Experiment trial tools (labels, + Ref, vs Ref, copy, yarns) - desktop filter bar
 }) {
   const { t } = useI18n();
@@ -89,8 +90,9 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
   // "Show:" filter (desktop checkboxes) - hide columns whose label is switched off
   const visible = useMemo(() => {
     if (!data) return [];
-    return data.columns.map((c, i) => ({ c, i })).filter(({ c }) => !c.filter || !off.includes(c.filter));
-  }, [data, off]);
+    return data.columns.map((c, i) => ({ c, i }))
+      .filter(({ c }) => (!c.filter || !off.includes(c.filter)) && (onlyTrial == null || c.trial_id === onlyTrial));
+  }, [data, off, onlyTrial]);
 
   // trial label spans over its ply columns (header row 1)
   const spans = useMemo(() => {

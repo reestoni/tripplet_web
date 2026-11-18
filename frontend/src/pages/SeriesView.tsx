@@ -17,7 +17,7 @@ import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
 import { copyText, flashTrial, seriesLink } from "../links";
 import ConclusionTab, { OutcomeDot } from "../components/ConclusionTab";
-import { TABLET, useMedia } from "../media";
+import { PHONE, TABLET, useMedia } from "../media";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -360,6 +360,26 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
     return () => window.removeEventListener("tripplet:yarns", h);
   }, [onTool]);
   const trialNotes = (id: number) => data.notes.filter((n) => n.trial_note && n.trial_id === id);
+  // phone (MOBILE.md): one trial at a time, ◀ V ▶ or swipe; "All trials" shows the whole table again
+  const phone = useMedia(PHONE);
+  const [oneTrial, setOneTrial] = useState(true);
+  const [trialIdx, setTrialIdx] = useState(0);
+  const nTrials = data.trials.length;
+  const idx = Math.min(trialIdx, Math.max(0, nTrials - 1));
+  const focusId = phone && oneTrial && nTrials > 1 ? data.trials[idx]?.id ?? null : null;
+  const step = (d: number) => setTrialIdx((i) => Math.min(Math.max(0, Math.min(i, nTrials - 1) + d), nTrials - 1));
+  const pagerTab = tab === "machine" || tab === "rd" || (!!current && !current.lazy);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const swipeProps = focusId == null ? {} : {
+    onTouchStart: (e: React.TouchEvent) => { const p = e.touches[0]; swipe.current = e.touches.length === 1 ? { x: p.clientX, y: p.clientY } : null; },
+    onTouchEnd: (e: React.TouchEvent) => {
+      const a = swipe.current; swipe.current = null;
+      const p = e.changedTouches[0];
+      if (!a || !p || document.querySelector("table.pivot input, table.pivot select")) return;
+      const dx = p.clientX - a.x, dy = p.clientY - a.y;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy)) step(dx < 0 ? 1 : -1);
+    },
+  };
   const [conclDirty, setConclDirty] = useState(false);
   const [conclSeen, setConclSeen] = useState(false);       // keep the tab mounted once opened (unsaved text survives tab changes)
   useEffect(() => { if (tab === "conclusion") setConclSeen(true); }, [tab]);
@@ -413,14 +433,30 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
         ))}
       </div>
 
+      {phone && pagerTab && nTrials > 1 && (
+        <div className="se-pager">
+          {oneTrial && (
+            <>
+              <button className="btn-plain" disabled={idx === 0} onClick={() => step(-1)} aria-label={t("se.prevTrial")} title={t("se.prevTrial")}>◀</button>
+              <select value={idx} onChange={(e) => setTrialIdx(Number(e.target.value))}>
+                {data.trials.map((x, i) => <option key={x.id} value={i}>{x.label}{x.reference ? ` · ${x.reference}` : ""}</option>)}
+              </select>
+              <span className="muted se-pager-n">{idx + 1}/{nTrials}</span>
+              <button className="btn-plain" disabled={idx >= nTrials - 1} onClick={() => step(1)} aria-label={t("se.nextTrial")} title={t("se.nextTrial")}>▶</button>
+            </>
+          )}
+          <button className="btn-plain se-pager-all" onClick={() => setOneTrial((v) => !v)}>{oneTrial ? t("se.allTrials") : t("se.oneTrial")}</button>
+        </div>
+      )}
+      <div className="se-swipe" {...swipeProps}>
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
       {tab === "yarnscope" && <YarnScopeView seriesId={s.id} canWrite={accessLevel >= 2} />}
       {tab === "yarnscope_aty" && <YarnScopeAty seriesId={s.id} canWrite={accessLevel >= 2} />}
       {data.trials.length > 0 && tab === "rd" && (
-        <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} menus={menus} />
+        <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} menus={menus} onlyTrial={focusId} />
       )}
       {data.trials.length > 0 && tab === "machine" && (
-        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} tools={tools} />
+        <MachineTable seriesId={s.id} rowTitle={(x) => tr("row", x, x)} menus={menus} tools={tools} onlyTrial={focusId} />
       )}
       {data.conclusion && (conclSeen || tab === "conclusion") && (
         <div style={tab === "conclusion" ? undefined : { display: "none" }}>
@@ -464,6 +500,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
                 <tr>
                   <th className="pv-corner" />
                   {data.trials.map((tr0, c) => {
+                    if (focusId != null && tr0.id !== focusId) return null;
                     const flag = current.flags[String(c)];
                     const tip = [tr0.reference ? t("se.reference", { name: tr0.reference }) : "", flag ?? ""]
                       .filter(Boolean)
@@ -485,7 +522,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
                 {current.rows.map((row, r) => (
                   <tr key={r} className={row.info ? "info" : ""}>
                     <th scope="row" onContextMenu={(e) => { if (current.kb) menus.open(e, kbItem(t, current.kb).slice(1)); }}>{tr("row", row.title, row.title)}</th>
-                    {row.cells.map((cell, c) => (row.r == null ? (
+                    {row.cells.map((cell, c) => (focusId != null && data.trials[c]?.id !== focusId ? null : row.r == null ? (
                       <td key={c} className={(cell.alert ?? "") + (data.trials[c]?.reference ? " ref" : "")}>{cell.v}</td>
                     ) : (
                       <EditCell key={c} addr={{ tab: current.key, r: row.r, c }} text={cell.v} editable={!!cell.e}
@@ -505,6 +542,7 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
           )}
         </>
       )}
+      </div>
       {menus.dialogs}
     </>
   );

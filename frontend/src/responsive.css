@@ -45,6 +45,8 @@
 
 /* ---------- Show Experiment (phone + tablet): the table gets the screen ---------- */
 .se-mbar { display: none; }
+.se-swipe { display: contents; }   /* only catches the swipe on the phone; no box of its own (PC layout unchanged) */
+.se-pager { display: none; }
 @media (max-width: 1024px) {
   .se-compact.page { padding: 8px 8px 0; }
   .se-mbar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
@@ -69,6 +71,14 @@
   .se-compact .pivot-wrap { margin: 0 -8px; }
 }
 @media (max-width: 599px) {
+  /* ◀ V1 ▶ - one trial at a time (SeriesView) */
+  .se-compact .se-pager { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .se-pager .btn-plain { min-width: 40px; min-height: 36px; padding: 4px 10px; }
+  .se-pager select { flex: 1; min-width: 0; min-height: 36px; }
+  .se-pager-n { font-size: 12px; white-space: nowrap; }
+  .se-pager-all { margin-left: auto; white-space: nowrap; }
+  /* one trial: its columns share the width */
+  .se-compact .pivot-wrap table.pivot { min-width: 100%; }
   /* narrower row titles so more trial columns fit */
   .se-compact table.pivot .pv-corner { min-width: 0; }
   .se-compact table.pivot tbody th { white-space: normal; min-width: 96px; max-width: 128px; font-size: 12px; line-height: 1.25; padding: 4px 6px; }

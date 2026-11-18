@@ -924,6 +924,10 @@ const en = {
 
   // show experiment
   "se.back": "Back",
+  "se.allTrials": "All trials",
+  "se.oneTrial": "One trial",
+  "se.prevTrial": "Previous trial",
+  "se.nextTrial": "Next trial",
   "se.details": "Details",
   "se.refreshTip": "Refresh the screen (F5) – everything from the database again",
   "se.refreshed": "Refreshed",
@@ -3382,6 +3386,10 @@ const de: Texts = {
 
   // show experiment
   "se.back": "Zurück",
+  "se.allTrials": "Alle Versuche",
+  "se.oneTrial": "Ein Versuch",
+  "se.prevTrial": "Vorheriger Versuch",
+  "se.nextTrial": "Nächster Versuch",
   "se.details": "Details",
   "se.refreshTip": "Ansicht aktualisieren (F5) – alles neu aus der Datenbank",
   "se.refreshed": "Aktualisiert",
@@ -5838,6 +5846,10 @@ const es: Texts = {
 
   // show experiment
   "se.back": "Volver",
+  "se.allTrials": "Todos los ensayos",
+  "se.oneTrial": "Un ensayo",
+  "se.prevTrial": "Ensayo anterior",
+  "se.nextTrial": "Ensayo siguiente",
   "se.details": "Detalles",
   "se.refreshTip": "Actualizar la pantalla (F5) – todo de nuevo desde la base de datos",
   "se.refreshed": "Actualizado",
@@ -8291,6 +8303,10 @@ const zh: Texts = {
 
   // show experiment
   "se.back": "返回",
+  "se.allTrials": "全部试验",
+  "se.oneTrial": "单个试验",
+  "se.prevTrial": "上一个试验",
+  "se.nextTrial": "下一个试验",
   "se.details": "详情",
   "se.refreshTip": "刷新界面（F5）– 从数据库重新加载全部数据",
   "se.refreshed": "已刷新",
