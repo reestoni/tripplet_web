@@ -394,6 +394,7 @@ html[data-blueprint] .rq-due.overdue { color: #e26f6f; }
 html[data-blueprint] .rq-due.today { color: #eead63; }
 html[data-blueprint] .rq-due.week { color: #f1d083; }
 html[data-blueprint] tr.rq-sec td { background: var(--accent-tint, #325537); }
+html[data-blueprint] .stk-cam-frame { border: 3px solid rgba(35, 90, 149, 0.85); }
 
 /* ---- dark twins of theme-modern.css ---- */
 html[data-theme="modern"][data-blueprint] ::-webkit-scrollbar-thumb { background: #4e5a6c; }

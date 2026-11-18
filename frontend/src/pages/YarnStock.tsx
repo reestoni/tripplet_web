@@ -4,6 +4,7 @@ import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Modal, PdfSavedNotice, downloadPdf } from "../components/SeriesTools";
 import { HelpButton } from "../components/Help";
+import { PHONE, useMedia } from "../media";
 
 /* Yarn Stock (desktop ui/screen_yarn_stock.py) on backend/app/yarn_stock_api.py / db/yarn_stock.py.
    Overview yarn x batch (status per yarn), spools of the chosen batch (edit, new, discard, used in,
@@ -91,6 +92,9 @@ export default function YarnStock() {
   const [ticked, setTicked] = useState<Set<number>>(new Set());
   const [hilite, setHilite] = useState<number | null>(null);
   const [open, setOpen] = useState({ detail: true, queue: true, rack: true });
+  // phone (MOBILE.md): yarn/batch and spools as cards; editing batch/producer/min. stock of a group stays on the PC
+  const phone = useMedia(PHONE);
+  const [limit, setLimit] = useState(60);
   const [goto, setGoto] = useState("");
   const [rack, setRack] = useState("");
   const [rackRows, setRackRows] = useState<Group[]>([]);
@@ -157,7 +161,10 @@ export default function YarnStock() {
 
   const choose = (g: Group) => {
     if (sel && key(sel) === key(g)) return;
-    guard(() => { setSel({ yarn_id: g.yarn_id, charge: g.charge }); setHilite(null); loadGroup(g).catch((e) => setMsg({ kind: "err", text: errText(t, e) })); });
+    guard(() => {
+      setSel({ yarn_id: g.yarn_id, charge: g.charge }); setHilite(null); loadGroup(g).catch((e) => setMsg({ kind: "err", text: errText(t, e) }));
+      if (phone) window.setTimeout(() => document.getElementById("st-spools")?.scrollIntoView({ behavior: "smooth", block: "start" }), 250);
+    });
   };
 
   const shown = useMemo(() => {
@@ -316,6 +323,32 @@ export default function YarnStock() {
         <button className="btn-plain" onClick={() => download(`/api/yarn-stock/export/overview?search=${encodeURIComponent(search)}&status=${status}`, "yarn_stock_overview.xlsx")
           .catch((e) => setMsg({ kind: "err", text: errText(t, e) }))}>{t("st.excel")}</button>
       </div>
+      {phone ? (
+        <div className="st-m-list">
+          {shown.slice(0, limit).map((g) => {
+            const isSel = sel && key(sel) === key(g);
+            return (
+              <div key={key(g)} id={`grp-${key(g)}`} role="link" tabIndex={0} className={"st-m-card" + (isSel ? " sel" : "")}
+                style={{ borderLeftColor: data.status_colors[g.status ?? "OK"] }} onClick={() => choose(g)}>
+                <div className="st-m-top">
+                  <span className="st-m-name"><Sq css={g.css ?? data.yarns.find((y) => y.id === g.yarn_id)?.css} />{g.yarn}</span>
+                  <span className="st-m-status" style={{ background: data.status_colors[g.status ?? "OK"] }}>{t(`st.status.${g.status}`)}</span>
+                </div>
+                <div className="st-m-facts">
+                  <span><b>{t("st.c.batch")}:</b> {g.charge || "–"}</span>
+                  {g.producers && <span><b>{t("st.c.producer")}:</b> {g.producers}</span>}
+                </div>
+                <div className="st-m-facts">
+                  <span><b>{g.count}</b> {t("st.c.spools")}</span><span><b>{kg(g.total_kg)}</b> kg</span>
+                  {g.min_stock != null && <span>{t("st.c.minstock")}: {g.min_stock}</span>}
+                  {g.locations && <span>📍 {g.locations}</span>}
+                </div>
+              </div>
+            );
+          })}
+          {shown.length > limit && <button className="btn-plain atm-more" onClick={() => setLimit((l) => l + 60)}>{t("adm.more", { n: Math.min(60, shown.length - limit) })}</button>}
+        </div>
+      ) : (
       <div className="st-table st-ov">
         <table className="at st">
           <thead><tr>
@@ -326,8 +359,10 @@ export default function YarnStock() {
           <tbody>{shown.map((g) => groupRow(g, false))}</tbody>
         </table>
       </div>
+      )}
 
       {/* ---------------- spools */}
+      <div id="st-spools" />
       {section("detail", <>
         <b>{t("st.spools")}</b>
         <span className="muted">— {selGroup ? `${selGroup.yarn} / ${selGroup.charge || t("st.no_batch")}` : t("st.select_group")}</span>
@@ -355,6 +390,50 @@ export default function YarnStock() {
             }}>{t("st.discard")}</button>
             <button className="btn-green" disabled={ro || !dirty} onClick={saveSpools}>{t("mj.save")}{dirty ? ` (${Object.keys(edits).length})` : ""}</button>
           </div>
+          {phone ? (
+            <div className="st-m-list">
+              {!sel && <p className="muted">{t("st.select_group")}</p>}
+              {spools.map((s) => {
+                const e = edits[s.id] ?? {};
+                const active = s.status === "in stock" && !ro;
+                const fld = (f: "weight" | "location" | "colour", label: string, v: string) => (
+                  <label className={"st-m-fld" + (f in e ? " dirty" : "")}><span>{label}</span>
+                    {active ? <input value={(e[f] as string | undefined) ?? v} inputMode={f === "weight" ? "decimal" : undefined}
+                      onChange={(ev) => setEdit(s, f, ev.target.value)} onClick={(ev) => ev.stopPropagation()} /> : <b>{v || "–"}</b>}
+                  </label>
+                );
+                return (
+                  <div key={s.id} id={`spool-${s.id}`} className={"st-m-spool" + (hilite === s.id ? " sel" : "") + (s.status !== "in stock" ? " st-gone" : "")}
+                    onClick={() => setHilite(s.id)}>
+                    <div className="st-m-top">
+                      <label className="st-m-tick" onClick={(ev) => ev.stopPropagation()}>
+                        <input type="checkbox" disabled={!active} checked={ticked.has(s.id)}
+                          onChange={() => setTicked((x) => { const n = new Set(x); if (n.has(s.id)) n.delete(s.id); else n.add(s.id); return n; })} />
+                        <b>#{s.id}</b>
+                      </label>
+                      <span className="muted">{s.received ?? ""}</span>
+                      <span className="st-m-grow" />
+                      <span className="muted">{s.status}</span>
+                    </div>
+                    <div className="st-m-grid">
+                      {fld("weight", t("st.c.weight"), kg(s.weight))}
+                      {fld("location", t("st.c.location"), s.location)}
+                      {fld("colour", t("st.c.tube"), s.colour)}
+                      <label className={"st-m-fld" + ("producer" in e ? " dirty" : "")}><span>{t("st.c.producer")}</span>
+                        {active ? (
+                          <select value={String(("producer" in e ? e.producer : s.producer_id) ?? "")} onClick={(ev) => ev.stopPropagation()}
+                            onChange={(ev) => setEdit(s, "producer", ev.target.value === "" ? null : Number(ev.target.value))}>
+                            <option value="">— none —</option>
+                            {data.producers.map(([i, n]) => <option key={i} value={i}>{n}</option>)}
+                          </select>
+                        ) : <b>{pname(s.producer_id) || "–"}</b>}
+                      </label>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
           <div className="st-table">
             <table className="at st">
               <thead><tr><th /><th>{t("st.c.spool")}</th><th>{t("st.c.weight")}</th><th>{t("st.c.location")}</th><th>{t("st.c.tube")}</th>
@@ -396,6 +475,7 @@ export default function YarnStock() {
               </tbody>
             </table>
           </div>
+          )}
         </>
       )}
 

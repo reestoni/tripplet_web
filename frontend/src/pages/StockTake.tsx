@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PHONE, useMedia } from "../media";
 import { Link, useSearchParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
@@ -293,6 +294,65 @@ function StartRound({ onClose, onStarted }: { onClose: () => void; onStarted: (i
   );
 }
 
+/* ------------------------------------------------------------------ camera scan (phone, 2026-11-18)
+   Full-screen back camera; BarcodeDetector (Chrome on Android; not in Safari - then the button is hidden) reads
+   the QR / bar code of the spool labels continuously, every code goes through the same check as a scanner input.
+   The same code is ignored for 3 s (it stays in the frame). Needs a secure page (https or localhost). */
+type Detector = { detect: (src: CanvasImageSource) => Promise<{ rawValue: string }[]> };
+const hasDetector = () => typeof window !== "undefined" && "BarcodeDetector" in window && !!navigator.mediaDevices?.getUserMedia;
+
+function CameraScan({ onCode, onClose, feedback }: { onCode: (text: string) => void; onClose: () => void;
+  feedback: { kind: string; text: string } }) {
+  const { t } = useI18n();
+  const video = useRef<HTMLVideoElement>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const cb = useRef(onCode);
+  cb.current = onCode;
+  useEffect(() => {
+    let stream: MediaStream | null = null, timer = 0, alive = true;
+    const last = new Map<string, number>();
+    (async () => {
+      try {
+        const Ctor = (window as unknown as { BarcodeDetector: new (o: { formats: string[] }) => Detector }).BarcodeDetector;
+        const det = new Ctor({ formats: ["qr_code", "code_128", "code_39", "ean_13", "data_matrix"] });
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+        if (!alive || !video.current) return;
+        video.current.srcObject = stream;
+        await video.current.play();
+        const tick = async () => {
+          if (!alive || !video.current) return;
+          try {
+            const hits = await det.detect(video.current);
+            const now = Date.now();
+            for (const h of hits) {
+              const code = (h.rawValue || "").trim();
+              if (!code || (last.get(code) ?? 0) > now - 3000) continue;
+              last.set(code, now);
+              try { navigator.vibrate?.(60); } catch { /* not supported */ }
+              cb.current(code);
+            }
+          } catch { /* frame not ready */ }
+          timer = window.setTimeout(tick, 250);
+        };
+        tick();
+      } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    })();
+    return () => { alive = false; window.clearTimeout(timer); stream?.getTracks().forEach((tr) => tr.stop()); };
+  }, []);
+  return (
+    <div className="stk-cam">
+      <video ref={video} playsInline muted />
+      <div className="stk-cam-frame" />
+      <div className="stk-cam-bar">
+        {err ? <div className="stk-fb stk-fb-error">{t("stk.camera_err", { e: err })}</div>
+          : <div className={"stk-fb stk-fb-" + feedback.kind}>{feedback.text}</div>}
+        <div className="muted stk-cam-hint">{t("stk.camera_hint")}</div>
+        <button className="btn-green" onClick={onClose}>{t("stk.camera_close")}</button>
+      </div>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ the scan view (one location / rack) */
 type OtherScan = { id: number; code: string; detail: string; yarn: string; batch: string; registered: string; result: string };
 
@@ -313,6 +373,8 @@ function CheckView({ location, round, prefix, onDone }: { location: string; roun
   const [leaving, setLeaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const scanRef = useRef<HTMLInputElement>(null);
+  const phone = useMedia(PHONE);
+  const [camera, setCamera] = useState(false);
   const focus = () => window.setTimeout(() => scanRef.current?.focus(), 0);
   const hasProgress = found.size > 0 || others.length > 0;
 
@@ -338,9 +400,9 @@ function CheckView({ location, round, prefix, onDone }: { location: string; roun
   const addOther = (s: Spool | undefined, id: number, registered: string, result: string, code: string, detail = "") =>
     setOthers((o) => [...o, { id, code, detail, yarn: s?.yarn ?? "–", batch: s?.batch || "–", registered, result }]);
 
-  const onScan = async () => {
-    const raw = scan;
-    setScan("");
+  const onScan = async (fromCamera?: string) => {
+    const raw = fromCamera ?? scan;
+    if (fromCamera === undefined) setScan("");
     if (!raw.trim()) return;
     if (!loc) { setFb({ kind: "warn", text: t("stk.fb_load_first") }); return; }
     const sid = (await request<{ spool_id: number | null }>("GET", `/api/yarn-stock/stock-take/parse?text=${encodeURIComponent(raw)}`)).spool_id;
@@ -441,10 +503,30 @@ function CheckView({ location, round, prefix, onDone }: { location: string; roun
       <label className="stk-scan">{t("stk.scan_label")}
         <input ref={scanRef} autoFocus value={scan} placeholder={t("stk.scan_ph")} onChange={(e) => setScan(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); onScan(); } }} disabled={!spools} /></label>
+      {phone && hasDetector() && (
+        <button className="btn-green stk-cam-btn" disabled={!loc || !spools} onClick={() => setCamera(true)}>{t("stk.camera")}</button>
+      )}
       <div className={"stk-fb stk-fb-" + fb.kind}>{fb.text}</div>
       {loc && <b>{t("stk.found_n", { n: found.size, total: expected.length })}{manual.size ? " " + t("stk.by_hand_n", { n: manual.size }) : ""}{others.length ? " · " + t("stk.others_n", { n: others.length }) : ""}</b>}
 
-      <div><b>{t("stk.expected_head")}</b> <span className="muted">{t("stk.expected_hint")}</span></div>
+      <div><b>{t("stk.expected_head")}</b> <span className="muted">{phone ? t("stk.hold_hint") : t("stk.expected_hint")}</span></div>
+      {phone ? (
+        <div className="st-m-list">
+          {expected.map((sid) => {
+            const s = spools!.get(sid)!;
+            const f = found.has(sid), m = manual.has(sid);
+            return (
+              <div key={sid} className={"stk-m-spool" + (f ? (m ? " hand" : " found") : "")}
+                onContextMenu={(e) => { e.preventDefault(); if (f) undo(sid); else markHand(sid); }}>
+                <div className="st-m-top"><b>#{sid}</b><span className="muted">📍 {s.location || "–"}</span><span className="st-m-grow" />
+                  <span className="stk-m-state">{m ? t("stk.by_hand") : f ? "✓" : ""}</span></div>
+                <div className="st-m-facts"><span>{s.yarn}</span><span>{t("stk.batch_x", { b: s.batch || "–" })}</span>
+                  {s.weight !== null && <span>{s.weight.toFixed(2)} kg</span>}</div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
       <div className="st-table">
         <table className="at st">
           <thead><tr><th>{t("stk.found")}</th><th>{t("st.c.spool")}</th><th>{t("st.c.yarn")}</th><th>{t("st.c.batch")}</th><th>{t("st.c.location")}</th><th>{t("st.c.weight")}</th></tr></thead>
@@ -463,6 +545,7 @@ function CheckView({ location, round, prefix, onDone }: { location: string; roun
           </tbody>
         </table>
       </div>
+      )}
       <div><b>{t("stk.others_head")}</b></div>
       <div className="st-table st-small">
         <table className="at st">
@@ -475,6 +558,9 @@ function CheckView({ location, round, prefix, onDone }: { location: string; roun
         <button className="btn-plain" onClick={close}>{t("mj.cancel")}</button>
       </div>
 
+      {camera && !askLoc && !finishing && (
+        <CameraScan feedback={fb} onClose={() => { setCamera(false); focus(); }} onCode={(code) => { onScan(code); }} />
+      )}
       {askLoc && (
         <Modal title={t("stk.title")} onClose={() => answerLoc(null)}>
           <p className="stk-pre">{askLoc.text}</p>

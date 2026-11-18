@@ -1745,3 +1745,13 @@ table.at tr.at-spacer td { padding: 0; border: 0; background: transparent; max-w
 .rq-due.week { color: #8a6100; }
 tr.rq-sec td { background: var(--accent-tint, #eef5ef); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
+
+/* camera scan of the stock take (StockTake.tsx CameraScan) */
+.stk-cam { position: fixed; inset: 0; z-index: 120; background: #000; display: flex; flex-direction: column; }
+.stk-cam video { flex: 1; min-height: 0; width: 100%; object-fit: cover; }
+.stk-cam-frame { position: absolute; left: 12%; right: 12%; top: 22%; height: 30%; border: 3px solid rgba(255, 255, 255, .85);
+  border-radius: 14px; box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .35); pointer-events: none; }
+.stk-cam-bar { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  background: var(--card-bg); }
+.stk-cam-bar .btn-green { min-height: 48px; font-size: 16px; }
+.stk-cam-hint { font-size: 12px; }
