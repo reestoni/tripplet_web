@@ -144,11 +144,10 @@
   .modal.wn .wn-head, .wn-page .wn-head { flex-wrap: wrap; gap: 8px; }
   .modal.wn .wn-logo, .wn-page .wn-logo { height: 36px; }
   .modal.wn .wn-head .muted, .wn-page .wn-head .muted { display: none; }
-  /* phone: Fresh off the Spool is a page (/whats-new) - it scrolls as a whole, the close button at the end */
+  /* phone: Fresh off the Spool is a page (/whats-new) - it scrolls as a whole, no close button */
   .wn-page .wn-head h1 { font-size: 18px; margin: 0; }
   .wn-page .wn-body { overflow: visible; }
   .wn-page .wn-main { overflow: visible; }
-  .wn-page .modal-buttons { margin-top: 12px; }
   .wn-card { flex-direction: column; gap: 8px; }
   .wn-sketch { width: 100%; height: auto; max-height: 180px; }
 }

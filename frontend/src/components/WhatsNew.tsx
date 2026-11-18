@@ -165,7 +165,8 @@ function WhatsNewPanel({ auto, onClose, page }: { auto: boolean; onClose: () => 
             </div>
           </div>
         )}
-        <div className="modal-buttons"><button className="btn-green" onClick={onClose}>{L.CLOSE ?? "Close"}</button></div>
+        {/* the phone page has no close button - it is left like any page (menu, back) */}
+        {!page && <div className="modal-buttons"><button className="btn-green" onClick={onClose}>{L.CLOSE ?? "Close"}</button></div>}
     </>
   );
 }
