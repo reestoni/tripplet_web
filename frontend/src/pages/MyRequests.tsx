@@ -285,7 +285,17 @@ export default function MyRequests() {
                   <span className="exp-card-id">#{r.id}</span>
                   <span className="muted rq-card-proj">{r.project}</span>
                   <span className="exp-card-grow" />
-                  <span className={`rq-status s${r.status_id ?? 0}`} title={r.denial_reason ?? undefined}>{st(r.status_id, r.status_label)}</span>
+                  {r.status_editable ? (
+                    // superusers change the status right on the card (same rules/dialogs as the table)
+                    <select className={`rq-status s${r.status_id ?? 0}`} value={r.status_id ?? ""}
+                      onChange={(e) => changeStatus(r, Number(e.target.value))}>
+                      {r.status_options.map(([label, id, enabled]) => (
+                        <option key={id} value={id} disabled={!enabled}>{st(id, label)}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className={`rq-status s${r.status_id ?? 0}`} title={r.denial_reason ?? undefined}>{st(r.status_id, r.status_label)}</span>
+                  )}
                 </div>
                 <div className="exp-card-name">
                   {r.has_pending_change && <span className="rq-mark change" title={t("rq.pendingChange")}>Δ</span>}
