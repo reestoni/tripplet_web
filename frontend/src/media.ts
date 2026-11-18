@@ -6,6 +6,11 @@ export const PHONE = "(max-width: 599px)";
 export const TABLET = "(max-width: 1024px)"; // phone + tablet = sidebar becomes a drawer
 export const TOUCH = "(pointer: coarse)";
 
+/* Tools that make no sense on a phone screen (user 2026-11-18): not in the phone sidebar, and opened anyway
+   (link, bookmark) they show "open it on a PC or tablet" (PcOnly in pages/NotYet.tsx). Tablet keeps them. */
+export const PHONE_HIDDEN = ["/tools/image-compare", "/tools/canvas", "/tools/smart-chart", "/tools/label-generator",
+  "/tools/tdms-inspector"];
+
 export function useMedia(query: string): boolean {
   const [hit, setHit] = useState(() => typeof window !== "undefined" && window.matchMedia(query).matches);
   useEffect(() => {

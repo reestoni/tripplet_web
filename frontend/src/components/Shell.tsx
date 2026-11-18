@@ -10,7 +10,7 @@ import { openWhatsNew, WhatsNewHost } from "./WhatsNew";
 import { openRequestPreview, RequestPreviewHost } from "./RequestPopup";
 import { PAGE_TITLE_EVENT, pageTitleOverride } from "../pageTitle";
 import { IconBook, IconChevron, IconClock, IconGear, IconHelp, IconLogout, IconSearch, IconSpark } from "./SidebarIcons";
-import { TABLET, useMedia } from "../media";
+import { PHONE, PHONE_HIDDEN, TABLET, useMedia } from "../media";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
 const NARROW_KEY = "tripplet.sidebar.narrow";
@@ -126,6 +126,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
   const [pageLabel, setPageLabel] = useState("");
   // phone/tablet (MOBILE.md): the sidebar is a drawer behind the ☰ of the top bar; a page change closes it
   const small = useMedia(TABLET);
+  const phone = useMedia(PHONE);
   const [drawer, setDrawer] = useState(false);
   useEffect(() => { setDrawer(false); }, [location.pathname, location.search]);
   useEffect(() => {
@@ -224,6 +225,8 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
         <nav className="sb-scroll">
           {nav?.sections.map((s) => {
             const isClosed = closed.includes(s.title);
+            const items = phone ? s.items.filter((it) => !PHONE_HIDDEN.includes(it.route)) : s.items;
+            if (!items.length) return null;
             return (
               <div key={s.title} className="sb-section">
                 <button className="sb-section-head" onClick={() => toggle(s.title)}>
@@ -231,7 +234,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
                   <span>{t(`sec.${s.title}`)}</span>
                   <span className="sb-caret">{isClosed ? "▸" : "▾"}</span>
                 </button>
-                {!isClosed && s.items.map((it) => <Item key={it.key} it={it} />)}
+                {!isClosed && items.map((it) => <Item key={it.key} it={it} />)}
               </div>
             );
           })}

@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { api, ApiError, type Me } from "./api";
 import Login from "./pages/Login";
 import Shell from "./components/Shell";
-import NotYet from "./pages/NotYet";
+import NotYet, { PcOnly } from "./pages/NotYet";
 import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
 import SeriesView from "./pages/SeriesView";
@@ -102,7 +102,7 @@ export default function App() {
         <Route path="/tools/yarn-stock/stock-take" element={<StockTake />} />
         <Route path="/superuser/users" element={<ManageUsers />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/tools/smart-chart" element={<SmartChart key={"sc"} />} />
+        <Route path="/tools/smart-chart" element={<PcOnly><SmartChart key={"sc"} /></PcOnly>} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
         <Route path="/superuser/recycle-bin" element={<RecycleBin />} />
         <Route path="/admin/top-plates" element={<ManageMaster key="top_plates" kind="top_plates" />} />
@@ -114,10 +114,10 @@ export default function App() {
         <Route path="/tools/requirement-hub/quick-scan" element={<QuickScan />} />
         <Route path="/tools/process-playground" element={<ProcessPlayground />} />
         <Route path="/tools/jet-advisor" element={<JetAdvisor />} />
-        <Route path="/tools/canvas" element={<Canvas />} />
-        <Route path="/tools/tdms-inspector" element={<TdmsInspector />} />
-        <Route path="/tools/label-generator" element={<LabelGenerator />} />
-        <Route path="/tools/image-compare" element={<ImageCompare />} />
+        <Route path="/tools/canvas" element={<PcOnly><Canvas /></PcOnly>} />
+        <Route path="/tools/tdms-inspector" element={<PcOnly><TdmsInspector /></PcOnly>} />
+        <Route path="/tools/label-generator" element={<PcOnly><LabelGenerator /></PcOnly>} />
+        <Route path="/tools/image-compare" element={<PcOnly><ImageCompare /></PcOnly>} />
         <Route path="/tools/air-supply" element={<AirSupply />} />
         <Route path="/tools/jet-roi" element={<JetRoi />} />
         <Route path="/tools/yarn-count" element={<YarnCount />} />

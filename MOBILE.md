@@ -52,15 +52,18 @@ Legende: **voll** = alles wie Desktop, nur umgebaut · **abgespeckt** = Kernfunk
 | Manage User | `/superuser/users` | voll | abgespeckt | 3 | Liste → Detail; Access-Matrix Tablet+ |
 | Papierkorb | `/superuser/recycle-bin` | voll | voll | 3 | Kartenliste, Aktionen über „⋯“ mit Bestätigung |
 | Dashboards | `/tools/dashboards` | voll | lesend | 3 | Visuals untereinander (Desktop-Fläche im iframe, Breite anpassen) |
-| Smart Chart (Editor) | `/tools/smart-chart` | abgespeckt | lesend | 3 | Tablet: Bearbeiten ohne Ziehen-zum-Vergrössern (Feldliste als Blatt); Handy: gespeicherte Ansicht öffnen + Filter, kein Editor |
+| Smart Chart (Editor) | `/tools/smart-chart` | abgespeckt | **raus** | – | Handy: nicht in der Seitenleiste, Direktaufruf = Hinweis „am PC oder Tablet öffnen“ (Nutzerentscheid 2026-11-18) |
 | Jet ROI | `/tools/jet-roi` | voll | abgespeckt | 3 | Einzelrechnung voll, Mehrfach als Karten, PDF ja |
 | Process Playground | `/tools/process-playground` | voll | abgespeckt | 3 | Regler untereinander, Diagramm darüber |
 | Requirement Hub / Quick Scan | `/tools/requirement-hub…` | voll | abgespeckt | 3 | Regeln als Liste, Ergebnis als Karten; Regelsatz bearbeiten Tablet+ |
-| TDMS Inspector | `/tools/tdms-inspector` | voll | lesend | 3 | Upload ja (Datei-Auswahl), Ansicht wie YarnScope lesend |
-| Image Compare | `/tools/image-compare` | abgespeckt | lesend | 3 | Tablet: 1–2 Felder, Zeichnen mit Finger/Stift, Zoom mit zwei Fingern; Handy: Bilder nebeneinander/übereinander ansehen |
-| Canvas | `/tools/canvas` | abgespeckt | lesend | 3 | Tablet: Stift/Finger, Zwei-Finger-Zoom/Pan; Handy: Brett ansehen + zoomen |
-| Label Generator | `/tools/label-generator` | abgespeckt | lesend | 3 | Tablet: Elemente als Liste + Eigenschaften-Blatt, Drucken ja; Handy: Vorschau + Drucken eines gespeicherten Entwurfs |
+| TDMS Inspector | `/tools/tdms-inspector` | voll | **raus** | – | wie Smart Chart (Nutzerentscheid 2026-11-18) |
+| Image Compare | `/tools/image-compare` | abgespeckt | **raus** | – | Tablet: 1–2 Felder, Stift/Finger; Handy raus (Nutzerentscheid 2026-11-18) |
+| Canvas | `/tools/canvas` | abgespeckt | **raus** | – | Tablet: Stift/Finger, Zwei-Finger-Zoom; Handy raus (Nutzerentscheid 2026-11-18) |
+| Label Generator | `/tools/label-generator` | abgespeckt | **raus** | – | Tablet: Elemente als Liste + Eigenschaften-Blatt; Handy raus (Nutzerentscheid 2026-11-18) |
 | Air Supply | `/tools/air-supply` | abgespeckt | lesend | 3 | Tablet: Editor mit Touch (Ziehen, langes Drücken = Menü); Handy: gespeichertes Netz + Ergebnistabelle ansehen |
+
+**Handy ganz raus** (Nutzerentscheid 2026-11-18): Bildvergleich, Canvas, Smart Chart, Etiketten-Generator, TDMS Inspector -
+`PHONE_HIDDEN` in `src/media.ts` (Seitenleiste filtert), `PcOnly` in `pages/NotYet.tsx` (Route zeigt den Hinweis). Tablet behält sie.
 
 ## Umsetzung (Reihenfolge)
 

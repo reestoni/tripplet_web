@@ -924,6 +924,7 @@ const en = {
 
   // show experiment
   "se.back": "Back",
+  "mob.pcOnly": "This tool is not available on a phone - open it on a PC or tablet.",
   "se.allTrials": "All trials",
   "se.oneTrial": "One trial",
   "se.prevTrial": "Previous trial",
@@ -3386,6 +3387,7 @@ const de: Texts = {
 
   // show experiment
   "se.back": "Zurück",
+  "mob.pcOnly": "Dieses Werkzeug gibt es auf dem Handy nicht - bitte am PC oder Tablet öffnen.",
   "se.allTrials": "Alle Versuche",
   "se.oneTrial": "Ein Versuch",
   "se.prevTrial": "Vorheriger Versuch",
@@ -5846,6 +5848,7 @@ const es: Texts = {
 
   // show experiment
   "se.back": "Volver",
+  "mob.pcOnly": "Esta herramienta no está disponible en el móvil: ábrela en un PC o una tableta.",
   "se.allTrials": "Todos los ensayos",
   "se.oneTrial": "Un ensayo",
   "se.prevTrial": "Ensayo anterior",
@@ -8303,6 +8306,7 @@ const zh: Texts = {
 
   // show experiment
   "se.back": "返回",
+  "mob.pcOnly": "手机上不提供此工具，请在电脑或平板上打开。",
   "se.allTrials": "全部试验",
   "se.oneTrial": "单个试验",
   "se.prevTrial": "上一个试验",
