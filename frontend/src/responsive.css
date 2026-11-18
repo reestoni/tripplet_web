@@ -288,6 +288,20 @@
     cursor: pointer; z-index: 30; }
   .rq-m .exp-m-list { padding-bottom: 84px; }
 
+  /* form heads (.se-head: request form, Create Experiment / Add Series / Add Trials): the title gets the
+     whole width next to "←", the other buttons move to a row of their own below (long titles wrap
+     normally instead of one word per line) */
+  .page:not(.se-compact) > .se-head { flex-wrap: wrap; align-items: flex-start; gap: 8px; }
+  .page:not(.se-compact) > .se-head > .se-title { flex: 1 1 calc(100% - 64px); order: 0; }
+  .page:not(.se-compact) > .se-head > .btn-plain:first-child { order: -1; flex: none; }
+  .page:not(.se-compact) > .se-head > span[style] { display: none; }        /* the flex spacer */
+  .page:not(.se-compact) > .se-head > :not(.se-title):not(.btn-plain:first-child) { order: 1; }
+  .page:not(.se-compact) > .se-head > span[style] + * { margin-left: auto; }   /* buttons row: right-aligned */
+  .page:not(.se-compact) > .se-head .se-title h1 { font-size: 18px; line-height: 1.3; overflow-wrap: anywhere; }
+  .page:not(.se-compact) > .se-head .se-facts { gap: 2px 12px; }
+  /* cards (forms, panels): less inner margin, the fields get the width */
+  .page .card { padding: 12px; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }
