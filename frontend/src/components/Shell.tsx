@@ -151,7 +151,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
     const path = location.pathname;
     let label = pageTitleOverride();
     if (!label) {
-      const extra: [RegExp, string][] = [[/^\/settings/, "set.title"], [/^\/superuser\/recycle-bin/, "rb.title"],
+      const extra: [RegExp, string][] = [[/^\/settings/, "set.title"], [/^\/whats-new/, "sb.whatsNew"], [/^\/superuser\/recycle-bin/, "rb.title"],
         [/^\/series\/[^/]+\/report/, "rep.open"], [/^\/series\/[^/]+\/add-trials/, "ce.title.addtrials"],
         [/^\/experiments\/legacy/, "ce.title.legacy"]];
       const hit = extra.find(([re]) => re.test(path));

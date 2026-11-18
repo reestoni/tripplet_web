@@ -4,6 +4,7 @@ import { api, ApiError, type Me } from "./api";
 import Login from "./pages/Login";
 import Shell from "./components/Shell";
 import NotYet, { PcOnly } from "./pages/NotYet";
+import { WhatsNewPage } from "./components/WhatsNew";
 import AllExperiments from "./pages/AllExperiments";
 import Backlog from "./pages/Backlog";
 import SeriesView from "./pages/SeriesView";
@@ -102,6 +103,7 @@ export default function App() {
         <Route path="/tools/yarn-stock/stock-take" element={<StockTake />} />
         <Route path="/superuser/users" element={<ManageUsers />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/whats-new" element={<WhatsNewPage />} />
         <Route path="/tools/smart-chart" element={<PcOnly><SmartChart key={"sc"} /></PcOnly>} />
         <Route path="/tools/dashboards" element={<Dashboards />} />
         <Route path="/superuser/recycle-bin" element={<RecycleBin />} />
