@@ -222,6 +222,30 @@
   .atm-ro { font-size: 14px; padding: 4px 0; overflow-wrap: anywhere; }
   .atm-detail { margin: 6px 0 10px; }
 
+  /* Manage User - Access… on the phone (AccessPhone): by person | by tool, one list with a 3-way switch */
+  .mua { display: flex; flex-direction: column; gap: 8px; }
+  .mua-mode { display: flex; }
+  .mua-mode button { flex: 1; min-height: 38px; }
+  .mua-pick { width: 100%; min-height: 40px; font-weight: 600; }
+  .mua-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .mua-filters .mj-search { flex: 1 1 160px; min-width: 0; }
+  .mua-only { display: flex; align-items: center; gap: 6px; font-size: 13px; white-space: nowrap; }
+  .mua-list { display: flex; flex-direction: column; }
+  .mua-sec { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 12px 0 4px; }
+  .mua-row { display: flex; flex-direction: column; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .mua-row.grp .mua-name { font-weight: 700; }
+  .mua-name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+  .mua-ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+  .mua-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .mua-seg button { all: unset; cursor: pointer; padding: 6px 12px; font-size: 13px; min-height: 22px; border-right: 1px solid var(--border); }
+  .mua-seg button:last-child { border-right: 0; }
+  .mua-seg button.on { background: var(--accent-sel, #d6ecda); font-weight: 700; }
+  .mua-seg button.on.yes { background: #d6f0db; color: #1d6b32; }
+  .mua-seg button.on.no { background: #fbdcdc; color: #a12020; }
+  .mua-eff { font-size: 12px; }
+  .mua-eff.yes { color: #1d6b32; }
+  .mua-eff.no { color: #a12020; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }

@@ -3,6 +3,7 @@ import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import AdminTable, { type FkItems, type Row } from "../components/AdminTable";
 import { Modal } from "../components/SeriesTools";
+import { PHONE, useMedia } from "../media";
 
 /* Manage User (superusers; desktop ui/screen_manage_user.py + feature_access_dialog.py) on
    backend/app/user_admin_api.py. Table edit + Save, New user (with start password), Reset password,
@@ -199,6 +200,7 @@ function AccessDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
   const [g, setG] = useState<Record<string, Record<string, boolean>>>({});
   const [u, setU] = useState<Record<string, Record<string, boolean>>>({});
   const [err, setErr] = useState<string | null>(null);
+  const phone = useMedia(PHONE);
   useEffect(() => {
     request<AccessData>("GET", "/api/superuser/users/access").then((x) => { setD(x); setG(x.group_rules); setU(x.user_rules); })
       .catch((e) => setErr(errText(t, e)));
@@ -224,6 +226,27 @@ function AccessDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
     try { await request("POST", "/api/superuser/users/access", { group_rules: g, user_rules: u }); onSaved(); }
     catch (e) { setErr(errText(t, e)); }
   };
+  // phone (MOBILE.md): one list at a time - "by person" (what may X do?) or "by tool" (who may use Y?)
+  if (phone) {
+    const setRule = (kind: "g" | "u", id: number, key: string, val: boolean | undefined) => {
+      const set = kind === "g" ? setG : setU;
+      set((st) => {
+        const next = { ...(st[String(id)] ?? {}) };
+        if (val === undefined) delete next[key]; else next[key] = val;
+        return { ...st, [String(id)]: next };
+      });
+    };
+    return (
+      <Modal title={t("mu.accessTitle")} onClose={onClose} wide>
+        <AccessPhone d={d} g={g} u={u} cols={cols} decide={decide} levelOf={levelOf} setRule={setRule} />
+        {err && <div className="mj-msg err">{err}</div>}
+        <div className="modal-buttons">
+          <button className="btn-plain" title={t("mu.resetAllTip")} onClick={() => { setG({}); setU({}); }}>{t("mu.resetAll")}</button>
+          <button className="btn-green" onClick={save}>{t("mj.save")}</button>
+        </div>
+      </Modal>
+    );
+  }
   let lastSection = "";
   return (
     <Modal title={t("mu.accessTitle")} onClose={onClose} wide>
@@ -268,5 +291,101 @@ function AccessDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () =
         <button className="btn-green" onClick={save}>{t("mj.save")}</button>
       </div>
     </Modal>
+  );
+}
+
+type AccessCol = { kind: "g" | "u"; id: number; name: string; group: number | null };
+type Rules = Record<string, Record<string, boolean>>;
+
+/* Phone view of Access…: a switch "by person | by tool", a picker, then ONE list with a 3-way switch per line
+   (Default · Yes · No) and what finally applies (person > group > level, db/feature_access.decide). */
+function AccessPhone({ d, g, u, cols, decide, levelOf, setRule }: {
+  d: AccessData; g: Rules; u: Rules; cols: AccessCol[];
+  decide: (key: string, level: number, ur: Record<string, boolean>, gr: Record<string, boolean>) => boolean;
+  levelOf: Record<string, number>;
+  setRule: (kind: "g" | "u", id: number, key: string, val: boolean | undefined) => void;
+}) {
+  const { t } = useI18n();
+  const [mode, setMode] = useState<"person" | "tool">("person");
+  const [colKey, setColKey] = useState(cols[0] ? cols[0].kind + cols[0].id : "");
+  const [feat, setFeat] = useState(d.features[0]?.key ?? "");
+  const [only, setOnly] = useState(false);
+  const [q, setQ] = useState("");
+  const featName = (f: Feat) => (f.route ? t(`nav.${f.route}`) : f.label);
+  const colName = (c: AccessCol) => (c.kind === "g" ? `${t("mu.group")} ${c.name}` : c.name);
+  const own = (c: AccessCol, key: string) => (c.kind === "g" ? g : u)[String(c.id)]?.[key];
+  const groupName = (id: number | null) => d.groups.find((x) => x.id === id)?.name ?? "";
+  // what applies and why
+  const why = (c: AccessCol, key: string): { on: boolean; how: string } => {
+    const gr = c.group != null ? g[String(c.group)] ?? {} : {};
+    const o = own(c, key);
+    if (c.kind === "g") return { on: decide(key, levelOf[c.id] ?? 0, {}, gr), how: o === undefined ? t("mu.viaLevel") : "" };
+    const on = decide(key, c.group != null ? levelOf[c.group] ?? 0 : 0, u[String(c.id)] ?? {}, gr);
+    if (o !== undefined) return { on, how: "" };
+    return { on, how: key in gr ? t("mu.viaGroup", { g: groupName(c.group) }) : t("mu.viaLevel") };
+  };
+  const nOwn = (c: AccessCol) => Object.keys((c.kind === "g" ? g : u)[String(c.id)] ?? {}).length;
+  const nFeat = (key: string) => cols.filter((c) => own(c, key) !== undefined).length;
+  const ql = q.trim().toLowerCase();
+
+  const sw = (c: AccessCol, key: string) => {
+    const o = own(c, key);
+    const w = why(c, key);
+    return (
+      <div className="mua-ctl">
+        <div className="mua-seg" role="group">
+          <button type="button" className={o === undefined ? "on" : ""} onClick={() => setRule(c.kind, c.id, key, undefined)}>{t("mu.stDefault")}</button>
+          <button type="button" className={o === true ? "on yes" : ""} onClick={() => setRule(c.kind, c.id, key, true)}>{t("mu.yes")}</button>
+          <button type="button" className={o === false ? "on no" : ""} onClick={() => setRule(c.kind, c.id, key, false)}>{t("mu.no")}</button>
+        </div>
+        <span className={"mua-eff " + (w.on ? "yes" : "no")}>→ {w.on ? t("mu.allowed") : t("mu.notAllowed")}{w.how ? ` (${w.how})` : ""}</span>
+      </div>
+    );
+  };
+
+  let lastSection = "";
+  const col = cols.find((c) => c.kind + c.id === colKey) ?? cols[0];
+  const f = d.features.find((x) => x.key === feat) ?? d.features[0];
+  return (
+    <div className="mua">
+      <div className="mua-mode jr-seg">
+        <button type="button" className={mode === "person" ? "on" : ""} onClick={() => setMode("person")}>{t("mu.byPerson")}</button>
+        <button type="button" className={mode === "tool" ? "on" : ""} onClick={() => setMode("tool")}>{t("mu.byTool")}</button>
+      </div>
+      {mode === "person" ? (
+        <select className="mua-pick" value={colKey} onChange={(e) => setColKey(e.target.value)}>
+          {cols.map((c) => <option key={c.kind + c.id} value={c.kind + c.id}>{colName(c)}{nOwn(c) ? ` (${nOwn(c)})` : ""}</option>)}
+        </select>
+      ) : (
+        <select className="mua-pick" value={feat} onChange={(e) => setFeat(e.target.value)}>
+          {d.features.map((x) => <option key={x.key} value={x.key}>{featName(x)}{nFeat(x.key) ? ` (${nFeat(x.key)})` : ""}</option>)}
+        </select>
+      )}
+      <div className="mua-filters">
+        <input className="mj-search" value={q} placeholder={t("mu.accSearch")} onChange={(e) => setQ(e.target.value)} />
+        <label className="mua-only"><input type="checkbox" checked={only} onChange={(e) => setOnly(e.target.checked)} /> {t("mu.onlyOverrides")}</label>
+      </div>
+      <div className="mua-list">
+        {mode === "person" && col && d.features.flatMap((x) => {
+          if (only && own(col, x.key) === undefined) return [];
+          if (ql && !featName(x).toLowerCase().includes(ql)) return [];
+          const out = [];
+          if (x.section !== lastSection) {
+            lastSection = x.section;
+            out.push(<div key={"s" + x.section} className="mua-sec">{t(`sec.${x.section}`)}</div>);
+          }
+          out.push(<div key={x.key} className="mua-row"><div className="mua-name">{featName(x)}</div>{sw(col, x.key)}</div>);
+          return out;
+        })}
+        {mode === "tool" && f && cols.flatMap((c) => {
+          if (only && own(c, f.key) === undefined) return [];
+          if (ql && !colName(c).toLowerCase().includes(ql)) return [];
+          return [<div key={c.kind + c.id} className={"mua-row" + (c.kind === "g" ? " grp" : "")}><div className="mua-name">{colName(c)}</div>{sw(c, f.key)}</div>];
+        })}
+        {only && ((mode === "person" && col && nOwn(col) === 0) || (mode === "tool" && f && nFeat(f.key) === 0)) && (
+          <p className="muted">{t("mu.noOverrides")}</p>
+        )}
+      </div>
+    </div>
   );
 }
