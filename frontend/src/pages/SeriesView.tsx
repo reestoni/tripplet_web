@@ -17,6 +17,7 @@ import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
 import { copyText, flashTrial, seriesLink } from "../links";
 import ConclusionTab, { OutcomeDot } from "../components/ConclusionTab";
+import { TABLET, useMedia } from "../media";
 
 const TAB_KEY = "tripplet.series.tab";
 
@@ -39,6 +40,9 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<string | null>(null);
   const [showNotes, setShowNotes] = useState(false);
+  // phone/tablet (MOBILE.md): the table gets the screen - head, buttons and view bar fold away behind "Details"
+  const small = useMedia(TABLET);
+  const [headOpen, setHeadOpen] = useState(false);
   const [reload, setReload] = useState(0);
   const [fresh, setFresh] = useState(0);          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
   const [rights, setRights] = useState<SeriesRights | null>(null);
@@ -138,7 +142,15 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   };
 
   return (
-    <div className="page page-wide">
+    <div className={"page page-wide" + (small ? " se-compact" + (headOpen ? " se-head-open" : "") : "")}>
+      {small && (
+        <div className="se-mbar">
+          <button className="btn-plain" onClick={() => confirmLeave() && navigate(-1)} title={t("se.back")} aria-label={t("se.back")}>←</button>
+          <span className="se-mtitle" title={`${s.experiment_id} – ${s.name}`}>{s.name}</span>
+          <button className="btn-plain se-mmore" aria-expanded={headOpen} onClick={() => setHeadOpen((v) => !v)}>
+            {t("se.details")} {headOpen ? "▴" : "▾"}</button>
+        </div>
+      )}
       {preview && <RecycleBanner seriesId={s.id} info={preview} onDone={(action) => {
         if (action === "keep") { setToast(t("rb.kept")); setReload((x) => x + 1); } else navigate("/superuser/recycle-bin");
       }} />}

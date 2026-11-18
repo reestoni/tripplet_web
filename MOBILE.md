@@ -90,4 +90,6 @@ Neue Seiten ab jetzt: gleich mit Handy-Fall bauen (Tabelle → Karten unter 600 
 |---|---|
 | Konzept | ✅ 2026-11-18 |
 | Grundgerüst | ✅ 2026-11-18: `responsive.css`, `media.ts` (`useMedia`, `PHONE`/`TABLET`/`TOUCH`, langes Drücken = `contextmenu` für iOS), Kopfzeile ☰ + Seitentitel + Suche, Seitenleiste als Schublade (Tablet ≤ 1024 px von links; Handy < 600 px klappt sie unter der Kopfzeile nach unten auf, volle Breite, ☰ wird ✕ - Nutzerwunsch; schliesst bei Seitenwechsel/Esc/Tippen daneben), Dialoge auf dem Handy als Vollbild-Blatt mit ✕ (`.m-x` in `Modal` und Schnellsuche), Touch-Grössen. Offen daraus: Tooltips per Antippen, Speicherleiste unten |
-| Prio 1 | offen (Backlog-Spalten als Reiter, Show Experiment, Yarn Stock, Inventur) |
+| Touch-Öffnen | ✅ 2026-11-18: einmal Antippen öffnet Backlog-Karten/Archiv, All Experiments, My Requests (`isTouch`, `tapOnControl`); Backlog auf dem Handy scrollt als Seite |
+| Show Experiment | 🟡 2026-11-18 (Nutzerwunsch: Tabelle im Vordergrund, Rest wegklappbar): bis 1024 px Titelzeile ← / Serienname / „Details ▾“; zugeklappt sind Kopf, Notizen, Ansichtsleiste (Plies/Gruppen/Kompakt, Werkzeuge), Schema und Bearbeitungs-Hinweis weg, die Speicherleiste erscheint nur bei Ungespeichertem/Meldung; Reiter einzeilig zum Wischen; Handy: schmalere Zeilentitel. Zelle antippen = bearbeiten (Zahlentastatur bei Zahlen). Offen: Spalten-Wechsel ◀ V ▶, Kopf der Reiter-Tabellen |
+| Prio 1 sonst | offen (Backlog-Spalten als Reiter, Yarn Stock, Inventur) |

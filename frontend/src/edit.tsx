@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type MouseEvent as RME } from "react";
 import { request, ApiError } from "./api";
 import { useI18n } from "./i18n";
+import { isTouch } from "./media";
 
 /* Editing Show Experiment like the desktop: unsaved values are yellow, "Save (n)" / Ctrl+S writes
    them through the server (same rules as the desktop: db/series_save), Ctrl+Z undoes the last
@@ -524,6 +525,7 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
           </select>
         ) : (
           <input autoFocus value={val} onChange={(e) => setVal(e.target.value)} onBlur={() => commit(val)}
+            inputMode={/^-?\d+([.,]\d+)?$/.test(text.trim()) ? "decimal" : undefined}
             onKeyDown={(e) => {
               if (e.key === "Enter") { e.preventDefault(); commit(val, [e.shiftKey ? -1 : 1, 0]); }
               else if (e.key === "Tab") { e.preventDefault(); commit(val, [0, e.shiftKey ? -1 : 1]); }
@@ -541,6 +543,8 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
         { detail: { src: hoverImg, text: hoverTip, x: e.clientX, y: e.clientY } })) : undefined}
       onMouseLeave={hoverImg || hoverTip ? () => window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })) : undefined}
       onDoubleClick={() => { if (hoverImg || hoverTip) window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })); start(); }}
+      // touch (MOBILE.md): no keyboard to start typing and no reliable double tap - one tap opens the editor
+      onClick={(e) => { if (can && isTouch() && !e.ctrlKey && !e.shiftKey) start(); }}
       onContextMenu={onContextMenu ? (e) => onContextMenu(e, addr) : undefined}
       onKeyDown={(e) => {
         const k = e.key;

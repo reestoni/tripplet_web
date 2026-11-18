@@ -924,6 +924,7 @@ const en = {
 
   // show experiment
   "se.back": "Back",
+  "se.details": "Details",
   "se.refreshTip": "Refresh the screen (F5) – everything from the database again",
   "se.refreshed": "Refreshed",
   "se.loading": "Loading series…",
@@ -3381,6 +3382,7 @@ const de: Texts = {
 
   // show experiment
   "se.back": "Zurück",
+  "se.details": "Details",
   "se.refreshTip": "Ansicht aktualisieren (F5) – alles neu aus der Datenbank",
   "se.refreshed": "Aktualisiert",
   "se.loading": "Serie wird geladen…",
@@ -5836,6 +5838,7 @@ const es: Texts = {
 
   // show experiment
   "se.back": "Volver",
+  "se.details": "Detalles",
   "se.refreshTip": "Actualizar la pantalla (F5) – todo de nuevo desde la base de datos",
   "se.refreshed": "Actualizado",
   "se.loading": "Cargando serie…",
@@ -8288,6 +8291,7 @@ const zh: Texts = {
 
   // show experiment
   "se.back": "返回",
+  "se.details": "详情",
   "se.refreshTip": "刷新界面（F5）– 从数据库重新加载全部数据",
   "se.refreshed": "已刷新",
   "se.loading": "正在加载系列…",

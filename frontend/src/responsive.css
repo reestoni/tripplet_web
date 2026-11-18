@@ -43,6 +43,39 @@
   .bell-panel, .recent-menu { left: 8px !important; right: 8px; width: auto !important; }
 }
 
+/* ---------- Show Experiment (phone + tablet): the table gets the screen ---------- */
+.se-mbar { display: none; }
+@media (max-width: 1024px) {
+  .se-compact.page { padding: 8px 8px 0; }
+  .se-mbar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .se-mbar .btn-plain { padding: 6px 12px; min-height: 36px; }
+  .se-mtitle { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .se-mmore { white-space: nowrap; }
+  /* folded: no head, notes, view bar, edit hint; the save bar only while something is unsaved or a message shows */
+  .se-compact:not(.se-head-open) .se-head, .se-compact:not(.se-head-open) .se-notes,
+  .se-compact:not(.se-head-open) .md-bar, .se-compact:not(.se-head-open) .schema-panel,
+  .se-compact .ed-bar > .muted { display: none; }
+  .se-compact:not(.se-head-open) .ed-bar:not(:has(.btn-green:enabled, .rq-ok, .login-error)) { display: none; }
+  .se-compact .se-head { flex-wrap: wrap; }
+  .se-compact .se-head > .btn-plain { display: none; }            /* "←" is in the title bar */
+  .se-compact .se-title h1 { font-size: 16px; }
+  .se-compact .se-title { flex: 1 1 100%; }
+  .se-compact .se-actions { justify-content: flex-start; width: 100%; }
+  .se-compact .ed-bar { flex-wrap: wrap; margin-bottom: 6px; }
+  /* tabs: one line, swipe sideways */
+  .se-compact .se-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-bottom: 6px; }
+  .se-compact .se-tabs::-webkit-scrollbar { display: none; }
+  .se-compact .se-tab { flex: 0 0 auto; white-space: nowrap; }
+  .se-compact .pivot-wrap { margin: 0 -8px; }
+}
+@media (max-width: 599px) {
+  /* narrower row titles so more trial columns fit */
+  .se-compact table.pivot .pv-corner { min-width: 0; }
+  .se-compact table.pivot tbody th { white-space: normal; min-width: 96px; max-width: 128px; font-size: 12px; line-height: 1.25; padding: 4px 6px; }
+  .se-compact table.pivot th, .se-compact table.pivot td { padding: 4px 7px; }
+  .se-compact table.pivot thead th { min-width: 64px; }
+}
+
 /* ---------- phone ---------- */
 @media (max-width: 599px) {
   /* menu folds open DOWNWARDS under the top bar, over the full width (user 2026-11-18: not from the side) */
