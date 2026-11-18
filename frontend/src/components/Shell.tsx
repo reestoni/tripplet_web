@@ -129,6 +129,13 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
   const phone = useMedia(PHONE);
   const [drawer, setDrawer] = useState(false);
   useEffect(() => { setDrawer(false); }, [location.pathname, location.search]);
+  // a window opened from the menu (search, recently opened, help, Fresh off the Spool, bell, …) must not open
+  // behind / under the still open menu: those buttons close it first. The account card only opens its own menu.
+  const closeForTool = (e: React.MouseEvent) => {
+    const el = (e.target as HTMLElement).closest("button, a");
+    if (!el || !(el instanceof HTMLElement)) return;
+    if (el.closest(".sb-find, .sb-tools") || (el.closest(".sb-me-menu") && !el.closest(".sb-me-lang"))) setDrawer(false);
+  };
   useEffect(() => {
     if (!drawer) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawer(false); };
@@ -203,6 +210,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
       )}
       {small && <div className="m-scrim" onClick={() => setDrawer(false)} aria-hidden="true" />}
       <aside className={"sidebar" + (narrow ? " narrow" : "")} aria-hidden={small && !drawer ? true : undefined}
+        onClickCapture={small ? closeForTool : undefined}
         inert={small && !drawer ? true : undefined}>
         <button type="button" className="sb-brand" onClick={small ? () => setDrawer(false) : toggleNarrow}
           title={small ? t("sb.menuClose") : narrow ? t("sb.expand") : t("sb.collapse")}>

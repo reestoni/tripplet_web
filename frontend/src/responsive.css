@@ -127,6 +127,27 @@
   .kb-compact .kb-frame { border-left: 0; border-right: 0; }
 }
 
+/* ---------- Fresh off the Spool (phone + tablet): navigation at the top ---------- */
+.wn-mnav { display: none; }
+@media (max-width: 1024px) {
+  .wn-body.wn-compact { display: flex; flex-direction: column; gap: 8px; }
+  .wn-compact .wn-side { display: none; }
+  .wn-compact .wn-mnav { display: flex; flex-wrap: wrap; gap: 6px; flex: none; }
+  .wn-compact .wn-mnav select { flex: 1 1 220px; min-width: 0; min-height: 38px; }
+  .wn-compact .wn-mnav .wn-search { flex: 1 1 180px; width: auto; margin: 0; min-height: 38px; }
+  .wn-compact .wn-main { flex: 1; min-height: 0; padding-right: 0; }
+  .wn-compact .se-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .wn-compact .se-tabs::-webkit-scrollbar { display: none; }
+  .wn-compact .se-tab { flex: 0 0 auto; white-space: nowrap; }
+}
+@media (max-width: 599px) {
+  .modal.wn .wn-head { flex-wrap: wrap; gap: 8px; }
+  .modal.wn .wn-logo { height: 36px; }
+  .modal.wn .wn-head .muted { display: none; }
+  .wn-card { flex-direction: column; gap: 8px; }
+  .wn-sketch { width: 100%; height: auto; max-height: 180px; }
+}
+
 /* ---------- phone ---------- */
 @media (max-width: 599px) {
   /* menu folds open DOWNWARDS under the top bar, over the full width (user 2026-11-18: not from the side) */

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { IconBell } from "./SidebarIcons";
 import { useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { TABLET, useMedia } from "../media";
 import { request } from "../api";
 import { useI18n } from "../i18n";
 
@@ -21,6 +23,9 @@ export default function Bell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Item[] | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  const small = useMedia(TABLET);   // phone/tablet: the pop-up goes to the page body (the menu closes)
+  const portal = (el: React.ReactElement) => (small ? createPortal(el, document.body) : el);
 
   const refresh = useCallback(() => {
     request<{ unread: number }>("GET", "/api/notifications/count").then((r) => setUnread(r.unread)).catch(() => undefined);
@@ -36,7 +41,10 @@ export default function Bell() {
     if (!open) return;
     request<{ items: Item[]; unread: number }>("GET", "/api/notifications").then((r) => { setItems(r.items); setUnread(r.unread); })
       .catch(() => setItems([]));
-    const onDown = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
+    const onDown = (e: MouseEvent) => {
+      const n = e.target as Node;
+      if (box.current && !box.current.contains(n) && !panel.current?.contains(n)) setOpen(false);
+    };
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     document.addEventListener("mousedown", onDown);
     document.addEventListener("keydown", onKey);
@@ -73,8 +81,9 @@ export default function Bell() {
       <button type="button" className={"sb-tool" + (open ? " on" : "")} title={t("bell.title")} aria-label={t("bell.title")} onClick={() => setOpen(!open)}>
         <IconBell />{unread > 0 && <span className="sb-badge bell-badge">{unread > 99 ? "99+" : unread}</span>}
       </button>
-      {open && (
-        <div className="bell-panel">
+      {/* on the page body, not inside the sidebar: on phone/tablet the menu closes when the panel opens */}
+      {open && portal(
+        <div className="bell-panel" ref={panel}>
           <div className="bell-head">
             <b>{t("bell.title")}</b>
             {unread > 0 && <span className="bell-new">{t("bell.new", { n: unread })}</span>}
@@ -97,8 +106,7 @@ export default function Bell() {
                 </div>))}
           </div>
           {items && items.length > 0 && <div className="bell-foot muted">{t("bell.foot", { u: unread, n: items.length })}</div>}
-        </div>
-      )}
+        </div>)}
     </div>
   );
 }

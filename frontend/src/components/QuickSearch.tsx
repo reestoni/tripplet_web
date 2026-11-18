@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { createPortal } from "react-dom";
+import { TABLET, useMedia } from "../media";
 import { request } from "../api";
 import { useI18n } from "../i18n";
 
@@ -89,9 +91,15 @@ export function RecentMenu({ label, className, children }: { label: string; clas
   const [items, setItems] = useState<Recent[] | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   const box = useRef<HTMLDivElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
+  const small = useMedia(TABLET);   // phone/tablet: the pop-up goes to the page body (the menu closes)
+  const portal = (el: React.ReactElement) => (small ? createPortal(el, document.body) : el);
   useEffect(() => {
     if (!items) return;
-    const onDown = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setItems(null); };
+    const onDown = (e: MouseEvent) => {
+      const n = e.target as Node;
+      if (box.current && !box.current.contains(n) && !menu.current?.contains(n)) setItems(null);
+    };
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [items]);
@@ -105,8 +113,9 @@ export function RecentMenu({ label, className, children }: { label: string; clas
       }}>
         {children}
       </button>
-      {items && (
-        <div className="recent-menu" style={{ left: pos.left, top: pos.top }}>
+      {/* on the page body, not inside the sidebar: on phone/tablet the menu closes when this opens */}
+      {items && portal(
+        <div className="recent-menu" ref={menu} style={{ left: pos.left, top: pos.top }}>
           <div className="muted recent-head">{t("recent.head")}</div>
           {!items.length ? <div className="muted recent-empty">{t("recent.none")}</div> : items.map((r) => (
             <div key={r.series_id} className="recent-row" onClick={(e) => {

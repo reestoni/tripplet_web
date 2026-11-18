@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { TABLET, useMedia } from "../media";
 import { request } from "../api";
 import { HelpFlags, useHelpLang } from "./Help";
 
@@ -35,6 +36,8 @@ export function WhatsNewHost() {
   const [sel, setSel] = useState(0);
   const [tab, setTab] = useState(0);
   const [q, setQ] = useState("");
+  // phone/tablet (MOBILE.md): search + version choice as one bar at the top instead of the list beside the cards
+  const small = useMedia(TABLET);
   const [hits, setHits] = useState<Hit[] | null>(null);
   const checked = useRef(false);
 
@@ -87,7 +90,20 @@ export function WhatsNewHost() {
           <HelpFlags lang={lang} onPick={setLang} />
         </div>
         {!data ? <p className="muted">…</p> : (
-          <div className="wn-body">
+          <div className={"wn-body" + (small ? " wn-compact" : "")}>
+            {small && (
+              <div className="wn-mnav">
+                <select value={hits ? "" : sel} onChange={(e) => { setSel(Number(e.target.value)); setQ(""); }} aria-label={L.VERSIONS_TITLE}>
+                  {hits && <option value="">{(L.SEARCH_RESULTS ?? "").replace("{n}", String(hits.length)).replace("{q}", q)}</option>}
+                  {data.releases.map((r, i) => (
+                    <option key={r.index} value={i}>
+                      {L.VERSION_LABEL} {r.version} · {r.current && !r.when ? L.CURRENT_LABEL : r.when}{r.unseen ? ` · ${L.NEW_BADGE}` : ""}
+                      {hits && hitCount[r.index] ? ` · ${hitCount[r.index]} ${L.HITS_LABEL}` : ""}
+                    </option>))}
+                </select>
+                <input className="wn-search" placeholder={L.SEARCH_PLACEHOLDER} value={q} onChange={(e) => setQ(e.target.value)} />
+              </div>
+            )}
             <div className="wn-side">
               <input className="wn-search" placeholder={L.SEARCH_PLACEHOLDER} value={q} onChange={(e) => setQ(e.target.value)} />
               <div className="wn-vtitle">{L.VERSIONS_TITLE}</div>
