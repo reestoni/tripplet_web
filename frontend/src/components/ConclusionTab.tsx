@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
 import { extraLeaveGuard } from "../edit";
+import { PHONE, useMedia } from "../media";
+import { Modal } from "./SeriesTools";
 
 /* Show Experiment tab "Fazit" (desktop ui/widgets/conclusion_tab.py, logic db/series_conclusion.py).
    Written any time - "Done" only means "ready to be analysed". Goal from the experiment request (read only),
@@ -34,6 +36,11 @@ export default function ConclusionTab({ seriesId, trials, onSaved, onDirty }: {
   const [vals, setVals] = useState<Fields | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  // phone with many trials (MOBILE.md): the chosen ones as chips + a picker with search instead of 100+ buttons
+  const phone = useMedia(PHONE);
+  const compactBest = phone && trials.length > 24;
+  const [picking, setPicking] = useState(false);
+  const [pickQ, setPickQ] = useState("");
 
   useEffect(() => {
     request<Data>("GET", `/api/series/${seriesId}/conclusion`).then((d) => { setData(d); setVals(pick(d)); })
@@ -116,6 +123,16 @@ export default function ConclusionTab({ seriesId, trials, onSaved, onDirty }: {
         </div>
 
         <span className="cc-lab">{t("cc.best")}</span>
+        {compactBest ? (
+          <div className="cc-trials">
+            {!vals.best_trials.length && <span className="muted">{t("cc.noneChosen")}</span>}
+            {trials.filter((tr) => vals.best_trials.includes(tr.id)).map((tr) => (
+              <button key={tr.id} type="button" disabled={ro} className="cc-trial on" title={t("cc.removeTip")}
+                onClick={() => set({ best_trials: vals.best_trials.filter((x) => x !== tr.id) })}>{tr.label} ✕</button>
+            ))}
+            {!ro && <button type="button" className="btn-plain cc-pick" onClick={() => { setPickQ(""); setPicking(true); }}>{t("cc.pick")}</button>}
+          </div>
+        ) : (
         <div className="cc-trials">
           {trials.length === 0 && <span className="muted">–</span>}
           {trials.map((tr) => {
@@ -128,6 +145,25 @@ export default function ConclusionTab({ seriesId, trials, onSaved, onDirty }: {
             );
           })}
         </div>
+        )}
+        {picking && (
+          <Modal title={t("cc.best")} onClose={() => setPicking(false)}>
+            <input className="mj-search cc-pick-q" autoFocus value={pickQ} placeholder={t("cc.pickSearch")} onChange={(e) => setPickQ(e.target.value)} />
+            <div className="cc-pick-list">
+              {trials.filter((tr) => !pickQ.trim() || tr.label.toLowerCase().includes(pickQ.trim().toLowerCase())).map((tr) => {
+                const on = vals.best_trials.includes(tr.id);
+                return (
+                  <label key={tr.id} className={"cc-pick-row" + (on ? " on" : "")}>
+                    <input type="checkbox" checked={on}
+                      onChange={() => set({ best_trials: on ? vals.best_trials.filter((x) => x !== tr.id) : [...vals.best_trials, tr.id] })} />
+                    {tr.label}
+                  </label>
+                );
+              })}
+            </div>
+            <div className="modal-buttons"><button className="btn-green" onClick={() => setPicking(false)}>{t("adm.close")} ({vals.best_trials.length})</button></div>
+          </Modal>
+        )}
 
         <span className="cc-lab">{t("cc.findings")}</span>
         <textarea rows={8} value={vals.findings} readOnly={ro} maxLength={20000} placeholder={t("cc.findingsPh")}
