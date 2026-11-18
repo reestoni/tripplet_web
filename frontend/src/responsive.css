@@ -302,6 +302,25 @@
   /* cards (forms, panels): less inner margin, the fields get the width */
   .page .card { padding: 12px; }
 
+  /* tool pages: grids with 440-460 px minimum columns, wide tables (measured 2026-11-18: Yarn Count, Jet ROI,
+     Settings preview, Process Playground, Quick Scan stuck out on the right) */
+  .yc-grid, .jr-grid { grid-template-columns: minmax(0, 1fr); }
+  .yc-card, .jr-card { padding: 12px; min-width: 0; }
+  .jr-card { overflow-x: auto; }
+  .yc-row { flex-wrap: wrap; }
+  .yc-row > * { flex: 1 1 140px; }
+  .jr-form label { grid-template-columns: minmax(96px, 40%) minmax(0, 1fr); }
+  .jr-form label > * { min-width: 0; }
+  .yc-form label { grid-template-columns: minmax(96px, 45%) minmax(0, 1fr); gap: 6px; }
+  .yc-form label > * { min-width: 0; width: 100%; box-sizing: border-box; }
+  .yc-formulas { display: block; overflow-x: auto; }
+  table.set-preview { display: block; overflow-x: auto; max-width: 100%; }
+  .pp-combos { position: static; }
+  .qs-head { flex-wrap: wrap; }
+  .qs-head > span[style] { display: none; }
+  .qs-grid { grid-template-columns: minmax(0, 1fr); }
+  .qs-grid > * { min-width: 0; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }
