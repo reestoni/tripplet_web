@@ -449,6 +449,7 @@ const en = {
   // backlog
   "bl.title": "Backlog",
   "bl.hint": "Drag a card onto another column to change its status.",
+  "bl.hintPhone": "Tap a card to open it, long press for the menu (change status …). Swipe for the next column.",
   "bl.empty": "Empty",
   "bl.retest": "RETEST",
   "bl.retestTip": "Open retest flag:",
@@ -2945,6 +2946,7 @@ const de: Texts = {
 
   "bl.title": "Backlog",
   "bl.hint": "Karte auf eine andere Spalte ziehen, um den Status zu ändern.",
+  "bl.hintPhone": "Karte antippen = öffnen, lange drücken = Menü (Status ändern …). Wischen = nächste Spalte.",
   "bl.empty": "Leer",
   "bl.retest": "RETEST",
   "bl.retestTip": "Offene Nachtest-Markierung:",
@@ -5439,6 +5441,7 @@ const es: Texts = {
 
   "bl.title": "Backlog",
   "bl.hint": "Arrastra una tarjeta a otra columna para cambiar su estado.",
+  "bl.hintPhone": "Toca una tarjeta para abrirla, mantén pulsado para el menú (cambiar estado …). Desliza para la siguiente columna.",
   "bl.empty": "Vacío",
   "bl.retest": "REPETIR",
   "bl.retestTip": "Marca de repetición abierta:",
@@ -7931,6 +7934,7 @@ const zh: Texts = {
 
   "bl.title": "待办",
   "bl.hint": "将卡片拖到其他列即可更改状态。",
+  "bl.hintPhone": "点按卡片打开，长按显示菜单（更改状态……）。滑动切换到下一列。",
   "bl.empty": "空",
   "bl.retest": "需复测",
   "bl.retestTip": "未处理的复测标记：",

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
-import { isTouch, tapOnControl } from "../media";
+import { isTouch, PHONE, tapOnControl, useMedia } from "../media";
 import { useNavigate } from "react-router-dom";
 import { api, ApiError, request, type ArchivedRow, type BacklogCard, type Status } from "../api";
 import { SeriesIcons } from "../components/Icons";
@@ -152,6 +152,10 @@ export default function Backlog() {
   const [confirmMany, setConfirmMany] = useState<{ drag: Drag; to: number } | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  // phone (MOBILE.md): one status column at a time - tabs with counts on top, swipe between them; moving a card
+  // goes through the long-press menu ("Change status"), no dragging
+  const phone = useMedia(PHONE);
+  const swipe = useRef<{ x: number; y: number } | null>(null);
   const [colQ, setColQ] = useState<Record<number, string>>({});   // search field per column
   const [welcome, setWelcome] = useState<{ message: string; first_name: string } | null>(null);
 
@@ -326,21 +330,47 @@ export default function Backlog() {
     "bl-box" + (id === ARCHIVED ? " bl-archived" : "") + (drag && drag.from !== id ? " can-drop" : "") +
     (over === id ? " drop-over" : "");
 
+  const tabIds = [...(boxes ?? []).map((b) => b.id), ARCHIVED];
+  const shownTab = phone ? (expanded ?? (boxes?.find((b) => b.id === 2 && b.cards.length)?.id ?? boxes?.find((b) => b.cards.length)?.id ?? tabIds[0])) : expanded;
+  const stepTab = (d: number) => {
+    const i = tabIds.indexOf(shownTab ?? tabIds[0]);
+    const n = tabIds[Math.min(tabIds.length - 1, Math.max(0, i + d))];
+    if (n !== undefined) setExpanded(n);
+  };
+  const swipeProps = phone ? {
+    onTouchStart: (e: React.TouchEvent) => { const p = e.touches[0]; swipe.current = e.touches.length === 1 ? { x: p.clientX, y: p.clientY } : null; },
+    onTouchEnd: (e: React.TouchEvent) => {
+      const a = swipe.current; swipe.current = null; const p = e.changedTouches[0];
+      if (!a || !p) return;
+      const dx = p.clientX - a.x, dy = p.clientY - a.y;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy)) stepTab(dx < 0 ? 1 : -1);
+    },
+  } : {};
+
   return (
-    <div className="page page-wide">
+    <div className={"page page-wide" + (phone ? " bl-m" : "")}>
       <div className="page-head">
         <h1>{t("bl.title")}</h1>
         <HelpButton screen="backlog" />
-        <span className="muted">{busy ? t("bl.moving") : t("bl.hint")}</span>
+        <span className="muted">{busy ? t("bl.moving") : phone ? t("bl.hintPhone") : t("bl.hint")}</span>
         {welcome && <span className="bl-welcome">{welcome.message.trim()
           ? `${welcome.message.trim()}, ${welcome.first_name}`.replace(/,\s*$/, "")
           : t("bl.welcome", { name: welcome.first_name })}</span>}
       </div>
       {error && <div className="card error">{error}</div>}
       {!boxes && !error && <div className="muted">{t("app.loading")}</div>}
+      {boxes && phone && (
+        <div className="rq-tabs bl-tabs" role="tablist">
+          {tabIds.map((id) => (
+            <button key={id} role="tab" aria-selected={shownTab === id} className={"rq-tab" + (shownTab === id ? " on" : "")}
+              onClick={() => setExpanded(id)}>
+              {t(`status.${id}`)} <span className="rq-tab-n">{id === ARCHIVED ? archived.length : boxes.find((b) => b.id === id)?.cards.length ?? 0}</span>
+            </button>))}
+        </div>
+      )}
       {boxes && (
-        <div className={"board" + (expanded !== null ? " board-expanded" : "")}>
-          {boxes.filter((b) => expanded === null || expanded === b.id).map((b) => (
+        <div className={"board" + (shownTab !== null ? " board-expanded" : "")} {...swipeProps}>
+          {boxes.filter((b) => shownTab === null || shownTab === b.id).map((b) => (
             <div key={b.id} className={boxClass(b.id)} {...dropProps(b.id)}>
               <div className="bl-head">
                 <span>{t(`status.${b.id}`)}</span>
@@ -369,7 +399,7 @@ export default function Backlog() {
               </div>
             </div>
           ))}
-          {(expanded === null || expanded === ARCHIVED) && <div className={boxClass(ARCHIVED)} {...dropProps(ARCHIVED)}>
+          {(shownTab === null || shownTab === ARCHIVED) && <div className={boxClass(ARCHIVED)} {...dropProps(ARCHIVED)}>
             <div className="bl-head">
               <span>{t("status.5")}</span>
               <span>
