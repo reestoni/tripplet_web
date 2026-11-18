@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { TABLET, useMedia } from "../media";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
@@ -52,6 +53,9 @@ export default function KnowledgeBase() {
   const [error, setError] = useState<string | null>(null);
   const [closed, setClosed] = useState<string[]>(() => load(CLOSED, []));
   const frame = useRef<HTMLIFrameElement>(null);
+  // phone/tablet (MOBILE.md): the module list is a fold-out under a slim bar at the top, not beside the page
+  const small = useMedia(TABLET);
+  const [listOpen, setListOpen] = useState(false);
   const langRef = useRef(lang);
   langRef.current = lang;
   const modRef = useRef<ModInfo | null>(null);
@@ -96,7 +100,7 @@ export default function KnowledgeBase() {
     };
   }, [key, lang, routeKey, wantScene, wantStation]);
 
-  const open = (k: string) => navigate(`/knowledge-base/${k}`);
+  const open = (k: string) => { setListOpen(false); navigate(`/knowledge-base/${k}`); };
 
   const onTitle = useCallback((title: string) => {
     if (title.startsWith("scene:")) {
@@ -151,7 +155,13 @@ export default function KnowledgeBase() {
   );
 
   return (
-    <div className="kb">
+    <div className={"kb" + (small ? " kb-compact" + (listOpen || !mod ? " kb-list-open" : "") : "")}>
+      {small && (
+        <div className="kb-mbar">
+          <button className="btn-plain kb-mpick" aria-expanded={listOpen} onClick={() => setListOpen((v) => !v)}>
+            <span>📚 {mod?.title ?? cat?.ui.kicker ?? "Knowledge Base"}</span> {listOpen ? "▴" : "▾"}</button>
+        </div>
+      )}
       <aside className="kb-list">
         <div className="kb-kicker">{cat?.ui.kicker ?? "KNOWLEDGE BASE"}</div>
         {cat?.start && <div className="kb-start">{item(cat.start)}</div>}

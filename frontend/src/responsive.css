@@ -102,6 +102,31 @@
   .dsb-compact .dsb-item { padding: 9px 8px; }
 }
 
+/* ---------- Knowledge Base (phone + tablet): navigation at the top, not beside the page ---------- */
+.kb-mbar { display: none; }
+@media (max-width: 1024px) {
+  .kb.kb-compact { flex-direction: column; height: 100%; }
+  .kb-compact .kb-mbar { display: flex; padding: 8px 8px 0; }
+  .kb-mpick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 40px; font-weight: 600; text-align: left; }
+  .kb-mpick > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kb-compact .kb-list { display: none; flex: 1 1 auto; border-right: 0; margin: 6px 8px 8px; border: 1px solid #dde3de; border-radius: 8px; }
+  .kb-compact.kb-list-open .kb-list { display: block; }
+  .kb-compact.kb-list-open .kb-main { display: none; }     /* the list replaces the page while open */
+  .kb-compact .kb-item { padding-top: 9px; padding-bottom: 9px; }
+  .kb-compact .kb-main { padding: 6px 8px 8px; }
+  .kb-compact .kb-head h1 { display: none; }                /* the title is in the bar */
+  .kb-compact .kb-head { margin-bottom: 6px; font-size: 13px; }
+  .kb-compact .se-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .kb-compact .se-tabs::-webkit-scrollbar { display: none; }
+  .kb-compact .se-tab { flex: 0 0 auto; white-space: nowrap; }
+}
+@media (max-width: 599px) {
+  .kb-compact .kb-head { display: none; }                   /* phone: summary too - the page gets the room */
+  .kb-compact .kb-main { padding: 6px 0 0; }
+  .kb-compact .kb-main .se-tabs { padding: 0 8px; }
+  .kb-compact .kb-frame { border-left: 0; border-right: 0; }
+}
+
 /* ---------- phone ---------- */
 @media (max-width: 599px) {
   /* menu folds open DOWNWARDS under the top bar, over the full width (user 2026-11-18: not from the side) */
