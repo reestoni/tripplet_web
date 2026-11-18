@@ -379,6 +379,9 @@ Felder, Karten, Dialoge, Tabellenköpfe, Backlog. Schritt 2: Show Experiment (un
 feiner, Akzent bleibt) und All Experiments (Filter-Pillen); Modern etwas kleinere Schrift (Inter 13.5 px), damit Listen gleich kompakt bleiben. Schritt 3: Panels/Karten der Werkzeuge,
 Segment-Schalter (`.jr-seg`, `.ja-seg`), innere Reiter, Admin-Tabellen, Glocke/Zuletzt-Menü, Login-Karte. Symbole für Admin-/Superuser-Einträge
 (`nav.WEB_ICONS`, Bilder `sb_*.png` im Desktop-Repo) in beiden Darstellungen, nur Web (Desktop-Seitenleiste unverändert).
+**Tablet & Mobile** (Nutzerentscheid 2026-11-18, nur Web): alle Screens werden auch für Tablet/Handy gebaut, teils
+abgespeckt - Konzept, Regeln (Breiten, `responsive.css`, Touch-Ersatz für Rechtsklick/Hover/Strg+S/Ziehen) und Stand pro
+Screen in `MOBILE.md`. Neue Seiten gleich mit Handy-Fall bauen.
 **Darstellung Nacht** (2026-11-16, nur Web): dunkles Thema = Modern + dunkle Schicht (`html[data-theme="modern"][data-night]`,
 `DisplaySettings.theme = "night"`). `src/theme-night.css` wird ERZEUGT von `frontend/tools/gen_night_css.py` (dunkle Zwillinge aller
 festen hellen Farben aus `styles.css`/`theme-modern.css`) + Handteil `frontend/tools/night_hand.css` (Tokens, Leuchten des Akzents,
