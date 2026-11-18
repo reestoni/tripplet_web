@@ -45,6 +45,17 @@
 
 /* ---------- phone ---------- */
 @media (max-width: 599px) {
+  /* menu folds open DOWNWARDS under the top bar, over the full width (user 2026-11-18: not from the side) */
+  .sidebar, .sidebar.narrow {
+    top: 48px; bottom: auto; right: 0; width: 100%; height: calc(100dvh - 48px);
+    transform: none; clip-path: inset(0 0 100% 0); visibility: hidden;
+    transition: clip-path 0.22s ease, visibility 0s linear 0.22s;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+  }
+  .shell.m-open .sidebar { clip-path: inset(0 0 0 0); visibility: visible; transition: clip-path 0.22s ease; }
+  .m-scrim { top: 48px; }
+  /* the logo row is redundant under the top bar */
+  .sidebar .sb-brand { display: none; }
   .page { padding: 12px; }
   .page-head { flex-wrap: wrap; gap: 8px; }
   .page h1, .page-head h1 { font-size: 20px; }

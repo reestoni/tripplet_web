@@ -193,7 +193,8 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
     <div className={"shell" + (small && drawer ? " m-open" : "")}>
       {small && (
         <header className="m-top">
-          <button type="button" onClick={() => setDrawer(true)} title={t("sb.menu")} aria-label={t("sb.menu")} aria-expanded={drawer}>☰</button>
+          <button type="button" onClick={() => setDrawer((v) => !v)} title={drawer ? t("sb.menuClose") : t("sb.menu")}
+            aria-label={drawer ? t("sb.menuClose") : t("sb.menu")} aria-expanded={drawer}>{drawer ? "✕" : "☰"}</button>
           <span className="m-title">{pageLabel || "TrippleT"}</span>
           {me.mode === "prod" && me.instance && <span className="m-env">PROD</span>}
           <button type="button" onClick={openQuickSearch} title={t("qsr.title")} aria-label={t("qsr.title")}><IconSearch /></button>
