@@ -61,7 +61,7 @@ export function QuickSearchHost() {
         else if (e.key === "ArrowUp" && hits?.length) { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
         else if (e.key === "Enter" && hits?.[active]) go(hits[active], e.ctrlKey);
       }}>
-        <h2>🔍 {t("qsr.title")}</h2>
+        <h2>🔍 {t("qsr.title")}<button type="button" className="m-x" onClick={() => setOpen(false)} aria-label={t("cm.close")}>✕</button></h2>
         <div className="qsr-fields">
           {field("series", "e.g. Intermingling", first)}{field("jet", "e.g. P213, APh213")}
           {field("yarn", "e.g. PES 78f36")}{field("machine", "e.g. eAFK")}{field("conclusion", t("qsr.conclusionPh"))}

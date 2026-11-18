@@ -1,0 +1,81 @@
+/* Tablet & mobile (MOBILE.md). Layout and touch only - no colours, so it applies to every look
+   (classic / modern / night / blueprint) and leaves the PC view unchanged. Widths = src/media.ts. */
+
+/* ✕ in dialog titles - only on the phone (no Esc key there); the dialogs keep their own buttons */
+.m-x { display: none; }
+
+/* ---------- top bar + drawer (phone and tablet) ---------- */
+.m-top { display: none; }
+.m-scrim { display: none; }
+
+@media (max-width: 1024px) {
+  /* the old 700-px rule stacked the sidebar above the page - the drawer replaces it */
+  .shell { flex-direction: column; }
+  .sidebar, .sidebar.narrow {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 70;
+    width: min(300px, 86vw); flex: none; max-height: none;
+    transform: translateX(-105%); transition: transform 0.2s ease;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.25);
+  }
+  .shell.m-open .sidebar { transform: none; }
+  /* in the drawer always the wide sidebar (labels), never the icon-only one */
+  .sidebar.narrow .sb-brand > div, .sidebar.narrow .sb-label, .sidebar.narrow .sb-section-head span,
+  .sidebar.narrow .sb-env { display: revert; }
+  .sidebar.narrow .sb-item { justify-content: flex-start; padding: revert; }
+  .sidebar.narrow .sb-section-head { justify-content: flex-start; }
+  .sidebar.narrow .sb-account { align-items: stretch; }
+  .m-scrim { display: block; position: fixed; inset: 0; z-index: 69; background: rgba(0, 0, 0, 0.35);
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+  .shell.m-open .m-scrim { opacity: 1; pointer-events: auto; }
+
+  .m-top {
+    display: flex; align-items: center; gap: 4px; flex: 0 0 auto;
+    height: 48px; padding: 0 6px; box-sizing: border-box;
+    background: var(--card-bg); border-bottom: 1px solid var(--border); color: var(--text);
+  }
+  .m-top button { background: none; border: 0; color: inherit; width: 40px; height: 40px; border-radius: 8px;
+    display: grid; place-items: center; cursor: pointer; font-size: 20px; padding: 0; }
+  .m-top button svg { width: 20px; height: 20px; }
+  .m-title { flex: 1; min-width: 0; font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-env { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #c62828; color: #fff; }
+  .content { flex: 1; min-height: 0; }
+  /* bell / recently-opened pop-ups are anchored to the sidebar foot - on small screens centred instead */
+  .bell-panel, .recent-menu { left: 8px !important; right: 8px; width: auto !important; }
+}
+
+/* ---------- phone ---------- */
+@media (max-width: 599px) {
+  .page { padding: 12px; }
+  .page-head { flex-wrap: wrap; gap: 8px; }
+  .page h1, .page-head h1 { font-size: 20px; }
+
+  /* dialogs = full-screen sheet, buttons fixed at the bottom */
+  .modal-back { padding: 0; place-items: stretch; }
+  .modal, .modal-wide, .modal-wide:has(.cmp-wrap), .modal-wide:has(.hl-dialog), .modal-wide:has(.hl-search) {
+    width: 100%; max-width: none; height: 100%; max-height: none; border-radius: 0; box-sizing: border-box;
+    overflow: auto; padding: 14px 14px 0; display: flex; flex-direction: column;
+  }
+  .modal-buttons { position: sticky; bottom: 0; margin: auto -14px 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    background: var(--card-bg); border-top: 1px solid var(--border); flex-wrap: wrap; }
+  .modal-buttons button { flex: 1 1 auto; }
+  .modal.rqp.rqp-float { inset: 0 !important; width: 100%; height: 100%; }
+  .modal > h2 { display: flex; align-items: center; gap: 8px; }
+  .m-x { display: grid; place-items: center; margin-left: auto; flex: 0 0 40px; width: 40px; height: 40px; padding: 0;
+    border: 0; border-radius: 8px; background: none; color: inherit; font-size: 20px; cursor: pointer; }
+  .qsr-fields { grid-template-columns: 1fr; }
+  .modal.qsr { max-height: none; }
+
+  /* context menus: inside the screen, a little larger */
+  .cm { max-width: calc(100vw - 16px); }
+}
+
+/* ---------- touch (phone, tablet - also a large tablet held sideways) ---------- */
+@media (pointer: coarse) {
+  /* iOS zooms into fields with a font below 16 px */
+  input, select, textarea { font-size: 16px; }
+  .btn-green, .btn-plain, .btn-red, .tb-btn, .modal-buttons button { min-height: 40px; }
+  .sb-item, .sb-section-head { min-height: 40px; }
+  .cm button, .cm [role="menuitem"] { min-height: 40px; }
+  /* long press = context menu (media.ts) - no text selection / iOS callout on the way */
+  .bl-card, table.pivot th, table.pivot td, table.at td { -webkit-touch-callout: none; }
+}

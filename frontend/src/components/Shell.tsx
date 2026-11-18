@@ -10,6 +10,7 @@ import { openWhatsNew, WhatsNewHost } from "./WhatsNew";
 import { openRequestPreview, RequestPreviewHost } from "./RequestPopup";
 import { PAGE_TITLE_EVENT, pageTitleOverride } from "../pageTitle";
 import { IconBook, IconChevron, IconClock, IconGear, IconHelp, IconLogout, IconSearch, IconSpark } from "./SidebarIcons";
+import { TABLET, useMedia } from "../media";
 
 const COLLAPSE_KEY = "tripplet.sidebar.closed";
 const NARROW_KEY = "tripplet.sidebar.narrow";
@@ -122,6 +123,17 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
   // browser tab: "<page> – TrippleT" (nav label of the route, or what the page set with usePageTitle)
   const location = useLocation();
   const [titleTick, setTitleTick] = useState(0);
+  const [pageLabel, setPageLabel] = useState("");
+  // phone/tablet (MOBILE.md): the sidebar is a drawer behind the ☰ of the top bar; a page change closes it
+  const small = useMedia(TABLET);
+  const [drawer, setDrawer] = useState(false);
+  useEffect(() => { setDrawer(false); }, [location.pathname, location.search]);
+  useEffect(() => {
+    if (!drawer) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawer(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawer]);
   useEffect(() => {
     const bump = () => setTitleTick((x) => x + 1);
     window.addEventListener(PAGE_TITLE_EVENT, bump);
@@ -144,6 +156,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
       }
       if (best) label = t(`nav.${best.route}`) === `nav.${best.route}` ? best.label : t(`nav.${best.route}`);
     }
+    setPageLabel(label || "");
     document.title = label ? `${label} – TrippleT` : "TrippleT";
   }, [location.pathname, nav, t, titleTick]);
 
@@ -177,9 +190,20 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
   const name = [me.user.first_name, me.user.last_name].filter(Boolean).join(" ") || me.user.username;
 
   return (
-    <div className="shell">
-      <aside className={"sidebar" + (narrow ? " narrow" : "")}>
-        <button type="button" className="sb-brand" onClick={toggleNarrow} title={narrow ? t("sb.expand") : t("sb.collapse")}>
+    <div className={"shell" + (small && drawer ? " m-open" : "")}>
+      {small && (
+        <header className="m-top">
+          <button type="button" onClick={() => setDrawer(true)} title={t("sb.menu")} aria-label={t("sb.menu")} aria-expanded={drawer}>☰</button>
+          <span className="m-title">{pageLabel || "TrippleT"}</span>
+          {me.mode === "prod" && me.instance && <span className="m-env">PROD</span>}
+          <button type="button" onClick={openQuickSearch} title={t("qsr.title")} aria-label={t("qsr.title")}><IconSearch /></button>
+        </header>
+      )}
+      {small && <div className="m-scrim" onClick={() => setDrawer(false)} aria-hidden="true" />}
+      <aside className={"sidebar" + (narrow ? " narrow" : "")} aria-hidden={small && !drawer ? true : undefined}
+        inert={small && !drawer ? true : undefined}>
+        <button type="button" className="sb-brand" onClick={small ? () => setDrawer(false) : toggleNarrow}
+          title={small ? t("sb.menuClose") : narrow ? t("sb.expand") : t("sb.collapse")}>
           <img className="sb-logo sb-logo-light" src={LOGO} alt="TrippleT" />
           <img className="sb-logo sb-logo-dark" src={LOGO_BLACK} alt="" aria-hidden="true" />
           <div>

@@ -10,6 +10,7 @@ import { TrialPicker } from "../pages/CreateExperiment";
 const errText = (e: unknown) => (e instanceof ApiError ? e.message : String(e));
 
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+  const { t } = useI18n();
   useEffect(() => {
     const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", k);
@@ -18,7 +19,7 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
   return (
     <div className="modal-back" onMouseDown={onClose}>
       <div className={"modal" + (wide ? " modal-wide" : "")} onMouseDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-        <h2>{title}</h2>
+        <h2>{title}<button type="button" className="m-x" onClick={onClose} aria-label={t("cm.close")}>✕</button></h2>
         {children}
       </div>
     </div>

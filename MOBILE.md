@@ -73,9 +73,21 @@ Legende: **voll** = alles wie Desktop, nur umgebaut · **abgespeckt** = Kernfunk
 
 Neue Seiten ab jetzt: gleich mit Handy-Fall bauen (Tabelle → Karten unter 600 px, Menü „⋯“ statt nur Rechtsklick).
 
+## Testen
+
+- **Am PC (am schnellsten):** Chrome F12 → Gerätesymbol (Strg+Umschalt+M) → oben Gerät wählen (iPhone, iPad, „Responsive“).
+  Langes Drücken lässt sich dort mit gedrückter Maus nachstellen (Touch-Simulation ist an). Oder einfach das Fenster schmal ziehen:
+  unter 1024 px kommt die Schublade.
+- **Echtes Android-Handy, ohne den Server zu öffnen:** USB-Debugging am Handy einschalten, per USB an den PC, in Chrome am PC
+  `chrome://inspect` → „Port forwarding“ `8000` → `localhost:8000` (bzw. 8010) eintragen. Dann am Handy in Chrome
+  `http://localhost:8000` - der Server bleibt auf 127.0.0.1 (Regel Phase 1).
+- **iPhone/iPad oder Handy übers WLAN:** geht erst, wenn der Server im Netz erreichbar ist (Test-VM `test`, oder lokal an die
+  PC-Adresse binden) - das ist eine Freigabe-Frage (heute nur 127.0.0.1).
+
 ## Stand
 
 | Schritt | Stand |
 |---|---|
 | Konzept | ✅ 2026-11-18 |
-| Grundgerüst | offen |
+| Grundgerüst | ✅ 2026-11-18: `responsive.css`, `media.ts` (`useMedia`, `PHONE`/`TABLET`/`TOUCH`, langes Drücken = `contextmenu` für iOS), Kopfzeile ☰ + Seitentitel + Suche, Seitenleiste als Schublade (≤ 1024 px, schliesst bei Seitenwechsel/Esc/Tippen daneben), Dialoge auf dem Handy als Vollbild-Blatt mit ✕ (`.m-x` in `Modal` und Schnellsuche), Touch-Grössen. Offen daraus: Tooltips per Antippen, Speicherleiste unten |
+| Prio 1 | offen (Backlog-Spalten als Reiter, Show Experiment, Yarn Stock, Inventur) |
