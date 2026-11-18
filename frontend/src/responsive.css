@@ -246,6 +246,34 @@
   .mua-eff.yes { color: #1d6b32; }
   .mua-eff.no { color: #a12020; }
 
+  /* All Experiments on the phone: search + "Filter", cards */
+  .exp-m-bar { display: flex; gap: 6px; margin-bottom: 8px; }
+  .exp-m-bar .search { flex: 1; min-width: 0; }
+  .exp-m-bar .btn-plain { white-space: nowrap; }
+  .exp-m-bar .btn-plain.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .exp-m-filters { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; padding: 8px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--card-bg); }
+  .exp-m-filters .chips { flex-wrap: wrap; }
+  .exp-m-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .exp-m-row select { flex: 1 1 140px; min-width: 0; min-height: 36px; }
+  .exp-m-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; }
+  .exp-card { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer; -webkit-touch-callout: none; }
+  .exp-card-top, .exp-card-foot { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .exp-card-grow { flex: 1; }
+  .exp-card-id { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .exp-card-name { font-weight: 600; font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
+  .exp-card-foot img { width: 16px; height: 16px; }
+  .exp-card-concl { font-size: 12px; color: var(--muted); display: flex; align-items: baseline; gap: 4px; overflow: hidden;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .exp-card-concl b { color: var(--text); }
+  .exp-status { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: #eef1ee; color: #4c564e; white-space: nowrap; }
+  .exp-status.s1 { background: #e7eefb; color: #2a5bb8; }
+  .exp-status.s2 { background: #fff3d6; color: #8a6100; }
+  .exp-status.s3 { background: #dff3e4; color: #1d6b32; }
+  .exp-status.s4 { background: #f1e6fa; color: #6b2fa0; }
+  .exp-m-more { align-self: center; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }

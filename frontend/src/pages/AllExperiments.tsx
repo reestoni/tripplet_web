@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { isTouch, tapOnControl } from "../media";
+import { isTouch, PHONE, tapOnControl, useMedia } from "../media";
 import { useNavigate } from "react-router-dom";
 import { api, img, type ExperimentRow } from "../api";
 import { useI18n } from "../i18n";
@@ -75,6 +75,10 @@ export default function AllExperiments() {
   const [sort, setSort] = useState<{ key: SortKey; asc: boolean }>({ key: "experiment_id", asc: false });
   const [reload, setReload] = useState(0);
   const [toast, setToast] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+  // phone (MOBILE.md): cards instead of the table, one search (name or experiment ID), the rest behind "Filter"
+  const phone = useMedia(PHONE);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [limit, setLimit] = useState(100);
   const admin = useSeriesAdmin({ onChanged: () => setReload((x) => x + 1), onMessage: (kind, text) => setToast({ kind, text }) });
   useEffect(() => {
     if (!toast) return;
@@ -107,7 +111,8 @@ export default function AllExperiments() {
     const keepC = (r: ExperimentRow) => !conclFilter || (conclFilter === "any" ? !!r.conclusion
       : conclFilter === "none" ? !r.conclusion : r.conclusion?.outcome === conclFilter);
     const list = rows.filter(
-      (r) => (!sf || r.series_name.toLowerCase().includes(sf)) && (!ef || String(r.experiment_id).toLowerCase().includes(ef)) && keepC(r),
+      (r) => (!sf || r.series_name.toLowerCase().includes(sf) || (phone && String(r.experiment_id).toLowerCase().includes(sf)))
+        && (!ef || String(r.experiment_id).toLowerCase().includes(ef)) && keepC(r),
     );
     const dir = sort.asc ? 1 : -1;
     return [...list].sort((a, b) => {
@@ -115,10 +120,88 @@ export default function AllExperiments() {
       const y = sortValue(b, sort.key);
       return x < y ? -dir : x > y ? dir : 0;
     });
-  }, [rows, seriesFilter, expFilter, conclFilter, sort]);
+  }, [rows, seriesFilter, expFilter, conclFilter, sort, phone]);
 
   const clickHeader = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, asc: !s.asc } : { key, asc: true }));
+
+  if (phone) {
+    const sortKeys: SortKey[] = ["experiment_id", "series_name", "creation_date", "machine", "owner", "status_id", ...(hasConcl ? ["outcome" as SortKey] : [])];
+    const nFilters = (machine !== "All" ? 1 : 0) + (conclFilter ? 1 : 0);
+    const open = (e: React.MouseEvent, id: number) => openSeriesFrom(e, id, (x) => navigate(`/series/${x}`));
+    return (
+      <div className="page exp-m">
+        <div className="page-head">
+          <h1>{t("exp.title")}</h1>
+          <span className="muted">{rows ? t("exp.count", { shown: shown.length, total: rows.length }) : t("app.loading")}</span>
+          <HelpButton screen="all_experiments" />
+        </div>
+        <div className="exp-m-bar">
+          <input className="search" type="search" placeholder={t("exp.filterBoth")} value={seriesFilter}
+            onChange={(e) => { setSeriesFilter(e.target.value); setLimit(100); }} />
+          <button className={"btn-plain" + (nFilters ? " on" : "")} aria-expanded={filtersOpen} onClick={() => setFiltersOpen((v) => !v)}>
+            {t("exp.filters")}{nFilters ? ` (${nFilters})` : ""} {filtersOpen ? "▴" : "▾"}</button>
+        </div>
+        {filtersOpen && (
+          <div className="exp-m-filters">
+            <div className="chips">
+              {machines.map((m) => (
+                <button key={m} className={"chip" + (m === machine ? " on" : "")} onClick={() => setMachine(m)}>{m === "All" ? t("exp.all") : m}</button>
+              ))}
+            </div>
+            <div className="exp-m-row">
+              {hasConcl && (
+                <select value={conclFilter} onChange={(e) => setConclFilter(e.target.value)}>
+                  <option value="">{t("cc.filterAll")}</option>
+                  <option value="any">{t("cc.filterAny")}</option>
+                  <option value="none">{t("cc.filterNone")}</option>
+                  {OUTCOMES.map((o) => <option key={o} value={o}>{t(`cc.o.${o}`)}</option>)}
+                </select>
+              )}
+              <select value={sort.key} onChange={(e) => setSort((x) => ({ ...x, key: e.target.value as SortKey }))} aria-label={t("exp.sort")}>
+                {sortKeys.map((k) => <option key={k} value={k}>{t("exp.sort")}: {t(`exp.col.${k}`)}</option>)}
+              </select>
+              <button className="btn-plain" onClick={() => setSort((x) => ({ ...x, asc: !x.asc }))} aria-label={t("exp.sort")}>{sort.asc ? "▲" : "▼"}</button>
+            </div>
+          </div>
+        )}
+        {error && <div className="card error">{error}</div>}
+        <div className="exp-m-list">
+          {shown.slice(0, limit).map((r) => (
+            <div key={r.series_id} className="exp-card" role="link" tabIndex={0}
+              onClick={(e) => { if (!tapOnControl(e)) open(e, r.series_id); }}
+              onContextMenu={(e) => admin.open(e, { series_id: r.series_id, name: r.series_name })}>
+              <div className="exp-card-top">
+                <span className="exp-card-id">{r.experiment_id}</span>
+                <span className="muted">{r.machine}</span>
+                <span className="exp-card-grow" />
+                {r.status_id != null && <span className={"exp-status s" + r.status_id}>{t(`status.${r.status_id}`)}</span>}
+              </div>
+              <div className="exp-card-name">{r.series_name}</div>
+              <div className="exp-card-foot">
+                <span className="muted">{r.owner ?? ""}{r.owner && r.creation_date ? " · " : ""}{(r.creation_date ?? "").slice(0, 10)}</span>
+                <span className="exp-card-grow" />
+                {r.has_attach && <img src={img("attach.png")} alt="" />}
+                <RequestIcon id={r.experiment_request_id} />
+                {r.has_notes && <img src={img("notes.png")} alt="" />}
+                <ReportIcon seriesId={r.series_id} count={r.reports} />
+              </div>
+              {hasConcl && r.conclusion && (
+                <div className="exp-card-concl"><OutcomeDot outcome={r.conclusion.outcome} />
+                  {r.conclusion.outcome ? <b>{t(`cc.o.${r.conclusion.outcome}`)}</b> : null}
+                  {r.conclusion.summary ? <span> {r.conclusion.summary}</span> : null}</div>
+              )}
+            </div>
+          ))}
+          {shown.length > limit && (
+            <button className="btn-plain exp-m-more" onClick={() => setLimit((l) => l + 100)}>{t("adm.more", { n: Math.min(100, shown.length - limit) })}</button>
+          )}
+        </div>
+        {admin.dialogs}
+        {toast && <div className={"toast " + toast.kind} onClick={() => setToast(null)}>{toast.text}</div>}
+      </div>
+    );
+  }
 
   return (
     <div className="page page-wide">
