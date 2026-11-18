@@ -126,6 +126,11 @@
   .bl-box { max-height: 70vh; }
   .bl-list { min-height: 60px; }
 
+  /* Report: one slim bar above the page (the visuals stack inside the iframe - web_bridge.js) */
+  .report-bar { flex-wrap: nowrap; gap: 6px; padding: 6px 8px; }
+  .report-bar > .muted { display: none; }
+  .report-bar .btn-plain { white-space: nowrap; padding: 4px 10px; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }

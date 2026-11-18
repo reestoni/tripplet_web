@@ -86,6 +86,27 @@
     post("/api/report/js-error", { message: String(message) }).catch(function () {});
   };
 
+  // Phone / tablet (MOBILE.md, web only): the desktop page lays the visuals out 2 per row
+  // (#grid style="grid-template-columns:1fr 1fr" set by its JS) - on a narrow screen one below the other.
+  // Plotly charts follow the card width themselves (autosize); cards a bit lower so more fits.
+  (function () {
+    var css = "@media (max-width: 900px) {" +
+      " #grid { grid-template-columns: minmax(0, 1fr) !important; }" +
+      " #grid > * { grid-column: auto !important; min-width: 0; }" +
+      " .image-card.half-width { width: 100% !important; }" +
+      " .chart-card { height: 460px; } .chart-card.note-expanded { min-height: 460px; }" +
+      " #charts-wrapper { padding: 8px !important; }" +
+      " #global-toolbar { gap: 8px; padding: 6px 8px; }" +
+      "}";
+    var add = function () {
+      var st = document.createElement("style");
+      st.textContent = css;
+      document.head.appendChild(st);
+    };
+    // after the page's own <style> (it comes later in <head>), so these rules win
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", add); else add();
+  })();
+
   // what the page expects from Qt
   window.qt = { webChannelTransport: null };
   window.QWebChannel = function (_transport, callback) {
