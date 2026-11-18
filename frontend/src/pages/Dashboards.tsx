@@ -4,6 +4,7 @@ import { request } from "../api";
 import { useI18n } from "../i18n";
 import { HelpButton } from "../components/Help";
 import { newSid, useSmartFrame } from "../components/SmartFrame";
+import { TABLET, useMedia } from "../media";
 import { errText, PdfDialog, viewGroups, viewMeta, type Answer, type Summary, type ViewInfo } from "../components/SmartDialogs";
 
 /* Dashboards (desktop ui/screen_dashboards.py): LOOK at your own dashboards and the ones shared with you -
@@ -26,6 +27,9 @@ export default function Dashboards() {
   const [msg, setMsg] = useState<string | null>(null);
   const [pdfAsk, setPdfAsk] = useState(false);
   const fr = useSmartFrame(sid, true, opened);
+  // phone/tablet (MOBILE.md): nothing beside the dashboard - the list is a fold-out above it
+  const small = useMedia(TABLET);
+  const [listOpen, setListOpen] = useState(false);
 
   const loadList = (keep?: number | null) =>
     request<{ available: boolean; views: ViewInfo[]; smart_chart: boolean }>("GET", "/api/smart/views?kind=dashboard").then((d) => {
@@ -39,7 +43,7 @@ export default function Dashboards() {
   useEffect(() => { loadList(); }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const pick = (v: ViewInfo) => {
-    setCur(v); setMsg(null);
+    setCur(v); setMsg(null); setListOpen(false);
     try { localStorage.setItem(LAST, String(v.id)); } catch { /* private window */ }
     if (!opened) {
       request<{ summary: Summary; view: ViewInfo }>("POST", "/api/smart/open", { sid, read_only: true, view_id: v.id })
@@ -72,7 +76,14 @@ export default function Dashboards() {
   const empty = !available ? t("dsb.unavailable") : list && !list.length ? t("dsb.none") : null;
 
   return (
-    <div className="page smart-page">
+    <div className={"page smart-page" + (small ? " dsb-compact" + (listOpen ? " dsb-list-open" : "") : "")}>
+      {small && (
+        <div className="dsb-mbar">
+          <button className="btn-plain dsb-mpick" aria-expanded={listOpen} onClick={() => setListOpen((v) => !v)}>
+            <span>{cur && !empty ? cur.name : "Dashboards"}</span> {listOpen ? "▴" : "▾"}</button>
+          <button className="btn-green" disabled={!opened || !!empty} onClick={() => ((fr.summary?.pages || 1) > 1 ? setPdfAsk(true) : pdf(false))}>PDF</button>
+        </div>
+      )}
       <div className="page-head sc-head">
         <div className="sc-titles">
           <div className="sc-kicker">DASHBOARDS</div>

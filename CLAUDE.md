@@ -246,7 +246,7 @@ Verbesserungen (Nutzerentscheid 2026-11-13, beide Apps): Ergebnis-Cache pro Visu
 Versuchsbestände mit gleichem Katalog); Formelvorschau auch über die gefilterten Versuche; Formeln aus anderen Dashboards
 übernehmen (`calc_library`); Ordner (`folder` in ConfigJSON) und Favoriten (`DisplaySettings.smart_favs`, `group_views`);
 `ConfigJSON` MEDIUMTEXT auf dev_local per `tools/smart_chart_views_migration.py` (prod seit 2026-11-16 auch; dev hat die Tabelle nicht,
-`config_limit()` richtet sich nach der Spalte). Nur Web: ungespeicherte Änderungen (`summary.dirty`, Punkt im Titel), Entwurf
+`config_limit()` richtet sich nach der Spalte). Dashboards (Nur-lesen, beide Apps, Nutzerentscheid 2026-11-18) zeigen den Umschalter Report/Model nicht - das Modell gibt es nur in Smart Chart zum Erstellen (`.ro #views` + `setView` in `ui/smart_dashboard_html.py`). Nur Web: ungespeicherte Änderungen (`summary.dirty`, Punkt im Titel), Entwurf
 in localStorage `tripplet.smart.draft` (pro Benutzer) mit "Wiederherstellen" (`/restore`), Warnung beim Verlassen.
 
 **Werkzeuge** (ab 2026-11-13 eins nach dem anderen, Nutzerentscheid; Reihenfolge Yarn Count, Jet ROI, Air Supply, Image

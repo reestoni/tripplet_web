@@ -13,7 +13,8 @@ export function useMedia(query: string): boolean {
     const on = () => setHit(m.matches);
     on();
     m.addEventListener("change", on);
-    return () => m.removeEventListener("change", on);
+    window.addEventListener("resize", on);    // also on resize (some browsers/emulators skip the change event)
+    return () => { m.removeEventListener("change", on); window.removeEventListener("resize", on); };
   }, [query]);
   return hit;
 }

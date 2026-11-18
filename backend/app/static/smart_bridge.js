@@ -83,6 +83,90 @@
     if (e.data.type === "smart-cmds") run(e.data.cmds);
   });
 
+  // body.m-small while the web app's WHOLE window is phone/tablet size (src/media.ts TABLET, 1024 px) - on the PC
+  // this frame sits next to the sidebar and the list and is narrow itself, it must keep the desktop layout there
+  function watchSmall(cb) {
+    var w = window;
+    try { if (window.parent && window.parent !== window && window.parent.matchMedia) w = window.parent; } catch (e) { /* other origin */ }
+    var m = w.matchMedia("(max-width: 1024px)");
+    var last = null;
+    var set = function () {
+      var on = m.matches;
+      if (on === last) return;
+      last = on;
+      document.body.classList.toggle("m-small", on);
+      if (cb) cb();
+    };
+    set();
+    if (m.addEventListener) m.addEventListener("change", set);
+    w.addEventListener("resize", set);       // also on resize (some browsers/emulators skip the change event)
+  }
+
+  // Phone / tablet, read-only dashboards (MOBILE.md, web only; body.ro is set by the page itself):
+  // nothing beside the dashboard - the visuals one below the other in full width (in reading order:
+  // top-to-bottom, left-to-right of the desktop grid), the Filters pane behind a "Filters" button as a full sheet.
+  (function () {
+    var R = " body.m-small.ro ";      // read-only dashboard in a phone/tablet-size window (see watchSmall)
+    var css = "#m-filters-btn { display: none; }" +
+      "" + R + " #fpane { display: none !important; }" +
+      "" + R.replace(".ro ", ".ro.m-filters ") + " #fpane { display: block !important; position: fixed; inset: 0; z-index: 80;" +
+      "   width: auto !important; border: 0; padding: 52px 14px 14px; }" +
+      "" + R + " #fpane .strip," + R + " #fpane .grip { display: none !important; }" +
+      "" + R + " #m-filters-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; font: inherit;" +
+      "   font-weight: 600; padding: 6px 12px; min-height: 36px; border: 1px solid #C9D1C8; border-radius: 7px; background: #fff; cursor: pointer; }" +
+      "" + R.replace(".ro ", ".ro.m-filters ") + " #m-filters-btn { position: fixed; top: 8px; right: 12px; z-index: 81; }" +
+      "" + R + " #canvas { padding: 8px 8px 0; }" +
+      "" + R + " #grid { height: auto !important; display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }" +
+      "" + R + " #grid > .card { position: relative !important; left: auto !important; top: auto !important;" +
+      "   width: 100% !important; height: 340px !important; flex: none; }" +
+      "" + R + " #grid > .card.textcard { height: auto !important; min-height: 48px; }" +
+      // slicers and KPI tiles: as high as their content, charts keep the 340 px
+      "" + R + " #grid > .card:has(> .body > .sl)," + R + " #grid > .card:has(> .body > .kpi) { height: auto !important; }" +
+      "" + R + " #grid > .card:has(> .body > .kpi) { min-height: 110px; }";
+    function label() {
+      var lang = "en";
+      try { lang = localStorage.getItem("tripplet.lang") || (navigator.language || "en").slice(0, 2); } catch (e) { /* blocked */ }
+      return { en: ["Filters", "Close"], de: ["Filter", "Schliessen"], es: ["Filtros", "Cerrar"], zh: ["筛选", "关闭"] }[lang]
+        || ["Filters", "Close"];
+    }
+    function order() {
+      // stacked cards keep the reading order of the desktop grid (left/top stay in the inline style)
+      var g = document.getElementById("grid");
+      if (!g) return;
+      Array.prototype.forEach.call(g.children, function (c) {
+        var top = parseFloat(c.style.top) || 0, left = parseFloat(c.style.left) || 0;
+        var o = String(Math.round(top) * 10000 + Math.round(left));
+        if (c.style.order !== o) c.style.order = o;
+      });
+    }
+    function setup() {
+      var st = document.createElement("style");
+      st.textContent = css;
+      document.head.appendChild(st);
+      var L = label();
+      var btn = document.createElement("button");
+      btn.id = "m-filters-btn";
+      btn.type = "button";
+      var paint = function () { btn.textContent = document.body.classList.contains("m-filters") ? "✕ " + L[1] : L[0] + " ▾"; };
+      btn.onclick = function () {
+        document.body.classList.toggle("m-filters");
+        paint();
+        if (!document.body.classList.contains("m-filters")) setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 60);
+      };
+      paint();
+      var bar = document.querySelector("#canvas .bar");
+      (bar || document.body).appendChild(btn);
+      var g = document.getElementById("grid");
+      if (g && window.MutationObserver) {
+        // new cards and moved cards (their own style); order() only writes when the value changes
+        new MutationObserver(order).observe(g, { childList: true, attributes: true, subtree: true, attributeFilter: ["style"] });
+      }
+      order();
+      watchSmall(function () { setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 60); });
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", setup); else setup();
+  })();
+
   window.qt = { webChannelTransport: {} };
   window.QWebChannel = function (_transport, cb) { cb({ objects: { bridge: bridge } }); };
 })();

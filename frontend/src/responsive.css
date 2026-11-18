@@ -86,6 +86,22 @@
   .se-compact table.pivot thead th { min-width: 64px; }
 }
 
+/* ---------- Dashboards (phone + tablet): nothing beside the dashboard ---------- */
+.dsb-mbar { display: none; }
+@media (max-width: 1024px) {
+  .dsb-compact.smart-page { height: 100%; padding: 8px; box-sizing: border-box; }
+  .dsb-compact .dsb-mbar { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .dsb-mpick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 38px; font-weight: 600; text-align: left; }
+  .dsb-mpick > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dsb-compact .sc-head { display: none; }                 /* title/buttons: in the slim bar (edit/reload: PC) */
+  .dsb-compact .dsb-body { flex-direction: column; gap: 6px; }
+  .dsb-compact .dsb-list { display: none; width: auto; max-height: 55vh; }
+  .dsb-compact.dsb-list-open .dsb-list { display: block; }
+  .dsb-compact.dsb-list-open .smart-body { display: none; }  /* the list replaces the dashboard while open */
+  .dsb-compact .smart-body { min-height: 0; }
+  .dsb-compact .dsb-item { padding: 9px 8px; }
+}
+
 /* ---------- phone ---------- */
 @media (max-width: 599px) {
   /* menu folds open DOWNWARDS under the top bar, over the full width (user 2026-11-18: not from the side) */
