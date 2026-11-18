@@ -388,6 +388,12 @@ html[data-blueprint] .pi-kind.statimat { background: #224667; color: #71ade0; }
 html[data-blueprint] .pi-kind.itemat { background: #492265; color: #ad81d0; }
 html[data-blueprint] .pi-kind.unknown { background: #16385d; }
 html[data-blueprint] .rqp-float-x:hover { background: rgba(255, 255, 255, 0.096); }
+html[data-blueprint] .rq-tab-n { background: rgba(255, 255, 255, 0.096); }
+html[data-blueprint] .rq-tab.on .rq-tab-n { background: rgba(19, 50, 83, 0.25); }
+html[data-blueprint] .rq-due.overdue { color: #e26f6f; }
+html[data-blueprint] .rq-due.today { color: #eead63; }
+html[data-blueprint] .rq-due.week { color: #f1d083; }
+html[data-blueprint] tr.rq-sec td { background: var(--accent-tint, #325537); }
 
 /* ---- dark twins of theme-modern.css ---- */
 html[data-theme="modern"][data-blueprint] ::-webkit-scrollbar-thumb { background: #4e5a6c; }

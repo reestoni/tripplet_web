@@ -280,6 +280,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | List (ID, title, project, due date, owner for superusers, status, experiment ID) | `refresh` | **DONE** | `db/experiment_requests` |
 | Search / status / project / owner filters | `_build_filter_row` / `_apply_filters` | **DONE** | |
 | "Reset filters" button | `_reset_filters` | **DONE** | `MyRequests.tsx` `resetFilters` |
+| Status tabs with counts, "To review" block (superusers), due date as "n days overdue / in n days", "Urgent first" (2026-11-18, both apps) | `_build_status_tabs`, `_on_status_tab`, `refresh` | **DONE** | `MyRequests.tsx` `tabsBar`/`sectionOf`/`dueCell`; logic `db/experiment_requests.due_info/due_sort_key/needs_review` |
 | "Show details" (long free-text columns) | `_toggle_detail_columns` | **DONE** | `MyRequests.tsx` details toggle |
 | Refresh button | `refresh` | **DONE** | browser reload / reload on filter |
 | Help "?" | `show_experiment_request_help` | **DONE** | `fe/components/RequestHelp.tsx` |

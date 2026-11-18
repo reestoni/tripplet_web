@@ -274,6 +274,20 @@
   .exp-status.s4 { background: #f1e6fa; color: #6b2fa0; }
   .exp-m-more { align-self: center; }
 
+  /* My Requests on the phone: cards, tabs swipe, floating "+" */
+  .rq-m .rq-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .rq-m .rq-tabs::-webkit-scrollbar { display: none; }
+  .rq-m .rq-tab { flex: 0 0 auto; white-space: nowrap; }
+  .rq-m .rq-bydue { margin-left: 4px; }
+  .rq-m-sec { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 2px 2px; }
+  .rq-card.review { border-left: 4px solid #e0a800; }
+  .rq-card-proj { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .rq-exp-chip { font-size: 12px; font-weight: 600; }
+  .rq-fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); width: 56px; height: 56px; border-radius: 50%;
+    border: 0; background: var(--accent); color: #fff; font-size: 30px; line-height: 1; box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+    cursor: pointer; z-index: 30; }
+  .rq-m .exp-m-list { padding-bottom: 84px; }
+
   /* context menus: inside the screen, a little larger */
   .cm { max-width: calc(100vw - 16px); }
 }

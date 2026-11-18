@@ -38,7 +38,7 @@ Legende: **voll** = alles wie Desktop, nur umgebaut · **abgespeckt** = Kernfunk
 | Schnellsuche, Glocke, Zuletzt | (Shell) | voll | voll | 1 | Vollbild-Blatt |
 | Einstellungen | `/settings` | voll | voll | 1 | eine Spalte |
 | All Experiments | `/experiments` | voll | abgespeckt | ✅ | 2026-11-18: Handy = Karten (ID, Maschine, Status-Pille, Name, Besitzer · Datum, Symbole Anhang/ER/Notizen/Report, Fazit 2 Zeilen), eine Suche für Name oder Experiment-ID, „Filter ▾“ = Maschinen, Fazit, Sortieren ▲▼; Antippen = öffnen, langes Drücken = Menü (Status ändern usw.), 100 + „weitere anzeigen“ |
-| My Requests | `/requests` | voll | voll | 2 | Kartenliste, Status ändern über „⋯“ |
+| My Requests | `/requests` | voll | voll | ✅ | 2026-11-18: Handy = Karten (#ID, Projekt, Status-Pille, Titel mit NEW/Δ, Termin „n Tage überfällig“, Besitzer, → Experiment), Suche + „Filter ▾“ (Projekt, Besitzer, Aktualisieren), Status-Reiter zum Wischen, „Zu prüfen“ oben, runder Knopf „+“ = neue Anfrage. Reiter/Termin/„Zu prüfen“/„Dringende zuerst“ auch am PC und im Desktop |
 | Request-Formular | `/requests/new`, `/:id` | voll | voll | 2 | eine Spalte; Bilder per Kamera; Versionsvergleich untereinander |
 | Request-Popup | (Dialog) | voll | voll | 2 | Vollbild-Blatt |
 | Report | `/series/:id/report` | voll | lesend | 2 | Desktop-Vorlage im iframe: Diagramme untereinander, PDF-Knopf; Bearbeiten der Beobachtungen Tablet+ |
