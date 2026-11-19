@@ -57,7 +57,16 @@
   .se-compact:not(.se-head-open) .se-head, .se-compact:not(.se-head-open) .se-notes,
   .se-compact:not(.se-head-open) .md-bar, .se-compact:not(.se-head-open) .schema-panel,
   .se-compact .ed-bar > .muted { display: none; }
-  .se-compact:not(.se-head-open) .ed-bar:not(:has(.btn-green:enabled, .rq-ok, .login-error)) { display: none; }
+  .se-compact:not(.se-head-open) .ed-bar:not(.ed-bar-live) { display: none; }
+  /* something unsaved (or a message): the bar sits fixed at the bottom - Save / Undo / Discard always in reach */
+  .se-compact .ed-bar.ed-bar-live {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; margin: 0;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); gap: 8px;
+    background: var(--card-bg); border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  }
+  .se-compact .ed-bar.ed-bar-live button { min-height: 40px; }
+  .se-compact .ed-bar.ed-bar-live > span { flex: 1 1 100%; order: -1; font-size: 13px; }
+  .se-compact:has(.ed-bar-live) { padding-bottom: 76px; }
   .se-compact .se-head { flex-wrap: wrap; }
   .se-compact .se-head > .btn-plain { display: none; }            /* "←" is in the title bar */
   .se-compact .se-title h1 { font-size: 16px; }
@@ -71,6 +80,9 @@
   .se-compact .pivot-wrap { margin: 0 -8px; }
 }
 @media (max-width: 599px) {
+  /* fixed save bar: Save / Undo / Discard share the width, Redo stays on the PC/tablet */
+  .se-compact .ed-bar.ed-bar-live .ed-redo { display: none; }
+  .se-compact .ed-bar.ed-bar-live button { flex: 1 1 0; padding-left: 6px; padding-right: 6px; }
   /* ◀ V1 ▶ - one trial at a time (SeriesView) */
   .se-compact .se-pager { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
   .se-pager .btn-plain { min-width: 40px; min-height: 36px; padding: 4px 10px; }
@@ -392,4 +404,18 @@
   .cm button, .cm [role="menuitem"] { min-height: 40px; }
   /* long press = context menu (media.ts) - no text selection / iOS callout on the way */
   .bl-card, table.pivot th, table.pivot td, table.at td { -webkit-touch-callout: none; }
+}
+
+/* ---------- touch: tooltips by tap, save buttons always in reach ---------- */
+/* TapTip (components/TapTip.tsx): the hover box opened by a tap - no delay, a tap on it closes it */
+.tap-tip { pointer-events: auto; animation: none; max-width: min(420px, calc(100vw - 16px)); }
+.tap-tip .hover-tip { max-width: none; }
+.tap-tip .hover-img { max-width: 100%; }
+@media (max-width: 1024px) {
+  /* Manage Jets / Yarn / master tables / users, Yarn Stock spools: while something is unsaved the Save button
+     floats at the bottom right - on a phone the toolbar is often scrolled away */
+  .mj-save:enabled, .mj-page .toolbar .mj-save:enabled {
+    position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 60;
+    min-height: 44px; padding: 0 20px; border-radius: 22px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  }
 }

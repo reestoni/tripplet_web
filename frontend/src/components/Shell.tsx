@@ -8,6 +8,7 @@ import Bell from "./Notifications";
 import { openQuickSearch, QuickSearchHost, RecentMenu, ScreenLog } from "./QuickSearch";
 import { openWhatsNew, WhatsNewHost } from "./WhatsNew";
 import { openRequestPreview, RequestPreviewHost } from "./RequestPopup";
+import TapTip from "./TapTip";
 import { PAGE_TITLE_EVENT, pageTitleOverride } from "../pageTitle";
 import { IconBook, IconChevron, IconClock, IconGear, IconHelp, IconLogout, IconSearch, IconSpark } from "./SidebarIcons";
 import { PHONE, PHONE_HIDDEN, TABLET, useMedia } from "../media";
@@ -269,6 +270,7 @@ export default function Shell({ me, onLogout, children }: { me: Me; onLogout: ()
       <ScreenLog />
       <WhatsNewHost />
       <RequestPreviewHost />
+      <TapTip />
     </div>
   );
 }

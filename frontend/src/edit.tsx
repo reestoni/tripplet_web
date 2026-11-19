@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode, type MouseEvent as RME } from "react";
 import { request, ApiError } from "./api";
 import { useI18n } from "./i18n";
-import { isTouch } from "./media";
+import { isTouch, TABLET, useMedia } from "./media";
 
 /* Editing Show Experiment like the desktop: unsaved values are yellow, "Save (n)" / Ctrl+S writes
    them through the server (same rules as the desktop: db/series_save), Ctrl+Z undoes the last
@@ -350,6 +350,14 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
   }, [dirty.size, t]);
   useEffect(() => () => { leaveGuard.n = 0; }, []);
 
+  // phone / tablet: "Saved" disappears after a few seconds, so the fixed bottom bar does not stay (PC unchanged)
+  const small = useMedia(TABLET);
+  useEffect(() => {
+    if (!small || msg?.kind !== "ok") return;
+    const id = window.setTimeout(() => setMsg((m) => (m?.kind === "ok" ? null : m)), 4000);
+    return () => window.clearTimeout(id);
+  }, [small, msg]);
+
   // warn before leaving with unsaved values
   useEffect(() => {
     const onLeave = (e: BeforeUnloadEvent) => { if (dirtyRef.current.size) { e.preventDefault(); e.returnValue = ""; } };
@@ -376,14 +384,16 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
 
   return (
     <EditCtx.Provider value={ctx}>
-      <div className="ed-bar">
+      {/* phone / tablet: while something is unsaved (or a message shows) this bar sits fixed at the bottom
+          (responsive.css "ed-bar-live") - there is no Ctrl+S / Ctrl+Z on a touch screen */}
+      <div className={"ed-bar" + (dirty.size || msg || busy ? " ed-bar-live" : "")}>
         {canWrite && (
           <>
             <button className="btn-green" disabled={!dirty.size || busy} onClick={() => save()} title="Ctrl+S">
               {busy ? t("ed.saving") : t("ed.save", { n: dirty.size })}
             </button>
             <button className="btn-plain" disabled={!undo.length} onClick={doUndo} title="Ctrl+Z">{t("ed.undo")}</button>
-            <button className="btn-plain" disabled={!redo.length} onClick={doRedo} title="Ctrl+Y">{t("ed.redo")}</button>
+            <button className="btn-plain ed-redo" disabled={!redo.length} onClick={doRedo} title="Ctrl+Y">{t("ed.redo")}</button>
             <button className="btn-plain" disabled={!dirty.size} onClick={() => { setDirty(new Map()); setUndo([]); setRedo([]); setBad(new Set()); }}>
               {t("ed.discard")}
             </button>
@@ -538,10 +548,13 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
   }
   return (
     <td ref={tdRef} className={cls} title={title} tabIndex={0} data-k={cellKey(addr)}
+      // the same box on touch: a tap opens it (components/TapTip.tsx reads these)
+      data-tip={hoverTip || undefined} data-tip-img={hoverImg || undefined}
       onMouseDown={(e) => { if (e.button === 0 || e.button === 2) ed?.select(e.currentTarget, addr, e); }}
-      onMouseEnter={hoverImg || hoverTip ? (e) => window.dispatchEvent(new CustomEvent("tripplet:hover-img",
-        { detail: { src: hoverImg, text: hoverTip, x: e.clientX, y: e.clientY } })) : undefined}
-      onMouseLeave={hoverImg || hoverTip ? () => window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })) : undefined}
+      // hover = mouse only (a finger "enters" on every tap and never leaves)
+      onPointerEnter={hoverImg || hoverTip ? (e) => { if (e.pointerType === "mouse") window.dispatchEvent(new CustomEvent("tripplet:hover-img",
+        { detail: { src: hoverImg, text: hoverTip, x: e.clientX, y: e.clientY } })); } : undefined}
+      onPointerLeave={hoverImg || hoverTip ? () => window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })) : undefined}
       onDoubleClick={() => { if (hoverImg || hoverTip) window.dispatchEvent(new CustomEvent("tripplet:hover-img", { detail: null })); start(); }}
       // touch (MOBILE.md): no keyboard to start typing and no reliable double tap - one tap opens the editor
       onClick={(e) => { if (can && isTouch() && !e.ctrlKey && !e.shiftKey) start(); }}

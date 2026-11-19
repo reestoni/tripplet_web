@@ -388,7 +388,7 @@ export default function YarnStock() {
               const ids = [...ticked];
               guard(() => setDialog({ kind: "discard", ids }));
             }}>{t("st.discard")}</button>
-            <button className="btn-green" disabled={ro || !dirty} onClick={saveSpools}>{t("mj.save")}{dirty ? ` (${Object.keys(edits).length})` : ""}</button>
+            <button className="btn-green mj-save" disabled={ro || !dirty} onClick={saveSpools}>{t("mj.save")}{dirty ? ` (${Object.keys(edits).length})` : ""}</button>
           </div>
           {phone ? (
             <div className="st-m-list">
