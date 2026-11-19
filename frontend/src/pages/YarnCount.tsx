@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { request } from "../api";
 import { useI18n } from "../i18n";
+import { isTouch } from "../media";
 
 /* Yarn Count Converter (desktop ui/screen_yarn_count.py), computing on the server (ui/yarn_count.py).
    Left: value + unit -> all count systems (a click makes one the starting value). Right: filaments and plies
@@ -90,7 +91,7 @@ export default function YarnCount() {
         <section className="yc-card">
           <h2>{t("yc.convert")}</h2>
           <div className="yc-row">
-            <input className="yc-in" value={inp.value} placeholder={t("yc.valuePh")} autoFocus onChange={(e) => setInp({ ...inp, value: e.target.value })} />
+            <input className="yc-in" inputMode="decimal" value={inp.value} placeholder={t("yc.valuePh")} autoFocus={!isTouch()} onChange={(e) => setInp({ ...inp, value: e.target.value })} />
             <select className="yc-in" value={inp.unit} onChange={(e) => setInp({ ...inp, unit: e.target.value })}>
               {units.map((u) => <option key={u.key} value={u.key}>{u.label} – {u.desc}</option>)}
             </select>
@@ -117,8 +118,8 @@ export default function YarnCount() {
           <h2>{t("yc.filTitle")}</h2>
           <p className="muted small">{t("yc.filHint")}</p>
           <div className="yc-form">
-            <label>{t("yc.fil")}<input value={inp.fil} placeholder="48" onChange={(e) => setInp({ ...inp, fil: e.target.value })} /></label>
-            <label>{t("yc.ply")}<input value={inp.ply} placeholder="1" onChange={(e) => setInp({ ...inp, ply: e.target.value })} /></label>
+            <label>{t("yc.fil")}<input inputMode="numeric" value={inp.fil} placeholder="48" onChange={(e) => setInp({ ...inp, fil: e.target.value })} /></label>
+            <label>{t("yc.ply")}<input inputMode="numeric" value={inp.ply} placeholder="1" onChange={(e) => setInp({ ...inp, ply: e.target.value })} /></label>
             <label>{t("yc.material")}<select value={inp.rho} onChange={(e) => setInp({ ...inp, rho: Number(e.target.value) })}>
               {meta.densities.map((d) => <option key={d.name} value={d.rho}>{d.name} – {d.rho} g/cm³</option>)}</select></label>
           </div>

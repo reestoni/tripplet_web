@@ -283,11 +283,12 @@ function VersionCompare({ requestId, older, olderLabel, onClose }: { requestId: 
       {err && <div className="login-error">{err}</div>}
       <label className="rqp-check"><input type="checkbox" checked={onlyChanged} onChange={(e) => setOnlyChanged(e.target.checked)} /> {t("rqp.onlyChanged")}</label>
       <div className="rqp-body">
-        <table className="grid">
+        <table className="grid rqp-cmp">
           <thead><tr><th>{t("rq.field")}</th><th>{olderLabel}</th><th>{t("rqp.currentLive")}</th></tr></thead>
           <tbody>{rows.map((r) => (
             <tr key={r.field} className={r.changed ? "rqp-changed" : ""}>
-              <td>{label(r.field, r.field)}</td><td className="note-text">{r.left}</td><td className="note-text">{r.right}</td>
+              <td>{label(r.field, r.field)}</td><td className="note-text" data-label={olderLabel}>{r.left}</td>
+              <td className="note-text" data-label={t("rqp.currentLive")}>{r.right}</td>
             </tr>
           ))}</tbody>
         </table>

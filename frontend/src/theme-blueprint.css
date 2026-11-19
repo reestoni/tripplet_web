@@ -361,6 +361,8 @@ html[data-blueprint] .ja-res td { border-bottom: 1px solid #25609f; }
 html[data-blueprint] .ja-row:hover, html[data-blueprint] .ja-row.open { background: #15365a; }
 html[data-blueprint] .ja-num.met { color: #85e0a0; }
 html[data-blueprint] .ja-num.miss { color: #db7f76; }
+html[data-blueprint] .ja-card-vals .met b { color: #85e0a0; }
+html[data-blueprint] .ja-card-vals .miss b { color: #db7f76; }
 html[data-blueprint] .ja-prob { background: #173c63; }
 html[data-blueprint] .ja-type { background: #173a60; color: #a7bdd4; }
 html[data-blueprint] .ja-type.t1 { background: #2d6039; color: #85e0a0; }

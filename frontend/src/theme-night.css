@@ -361,6 +361,8 @@ html[data-night] .ja-res td { border-bottom: 1px solid #272e3d; }
 html[data-night] .ja-row:hover, html[data-night] .ja-row.open { background: #181d26; }
 html[data-night] .ja-num.met { color: #85e0a0; }
 html[data-night] .ja-num.miss { color: #db7f76; }
+html[data-night] .ja-card-vals .met b { color: #85e0a0; }
+html[data-night] .ja-card-vals .miss b { color: #db7f76; }
 html[data-night] .ja-prob { background: #1d222d; }
 html[data-night] .ja-type { background: #1b202b; color: #b6bbc5; }
 html[data-night] .ja-type.t1 { background: #1e3f26; color: #85e0a0; }

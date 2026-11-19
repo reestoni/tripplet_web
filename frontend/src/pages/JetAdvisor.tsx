@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
 import { seriesLink } from "../links";
 import { HelpButton } from "../components/Help";
+import { PHONE, useMedia } from "../media";
 
 /* Jet Advisor (desktop ui/screen_jet_advisor.py) - computing on the server (ui/jet_advisor.py, on the fits of the
    Process Playground). Targets + yarn + filters -> jets with recommended pressure / overfeed / speed.
@@ -104,6 +105,8 @@ export default function JetAdvisor() {
     return (opts?.yarns ?? []).filter((y) => !q || y.name.toLowerCase().includes(q) || y.material.toLowerCase().includes(q));
   }, [opts, yarnSearch]);
 
+  const phone = useMedia(PHONE);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const run = () => {
     setErr(null);
     const targets: Record<string, { lo: number | null; hi: number | null }> = {};
@@ -127,7 +130,11 @@ export default function JetAdvisor() {
     };
     setBusy(true);
     request<Answer>("POST", "/api/jet-advisor/advise", body)
-      .then((a) => { setAns(a); setOpen(null); })
+      .then((a) => {
+        setAns(a); setOpen(null);
+        // phone: the inputs fill the screen - jump down to the list
+        if (phone) window.setTimeout(() => resultsRef.current?.scrollIntoView({ block: "start" }), 50);
+      })
       .catch((e) => setErr(e instanceof ApiError && e.code ? t(`ja.err.${e.code}`) : String(e?.message || e)))
       .finally(() => setBusy(false));
   };
@@ -145,6 +152,86 @@ export default function JetAdvisor() {
       {items.map((it) => (
         <button key={it.id} type="button" className={"ja-chip" + (form[key].includes(it.id) ? " on" : "")}
           onClick={() => toggle(key, it.id)}>{it.name || t("ja.none")}</button>
+      ))}
+    </div>
+  );
+
+  const detail = (r: Result) => (
+      <div className="ja-det">
+        <div>
+          <div className="ja-lab">{t("ja.detail.jet")}</div>
+          <div className="small">{[r.maker, r.group].filter(Boolean).join(" · ") || "–"}</div>
+          <div className="small muted">{t("ja.detail.titer", { from: fmt(r.titer_from, 0), to: fmt(r.titer_to, 0) })}</div>
+        </div>
+        <div>
+          <div className="ja-lab">{t("ja.detail.why")}</div>
+          <div className="small">
+            {r.source === "measured" ? t("ja.detail.measured", { n: r.n_at_setting }) : t("ja.detail.model")}
+            {" "}{t("ja.detail.varied", { list: r.varied.map((p) => t(`pp.param.${p}`)).join(", ") || "–" })}
+          </div>
+          <div className="small muted">{r.all_met ? t("ja.detail.safety", { s: fmt(r.safety) }) : t("ja.detail.miss", { s: fmt(r.miss) })}</div>
+        </div>
+        <div>
+          <div className="ja-lab">{t("ja.detail.series")}</div>
+          <div className="ja-links">
+            {r.series.map((s) => <Link key={s.id} to={seriesLink(s.id)} target="_blank">{s.name || `#${s.id}`}</Link>)}
+          </div>
+        </div>
+        {r.trial_id != null && (
+          <div>
+            <Link className="btn-plain" to={`/tools/process-playground?trial=${r.trial_id}`} target="_blank">{t("ja.detail.playground")}</Link>
+          </div>
+        )}
+      </div>
+  );
+
+  /* phone: one card per jet instead of the wide table; tap = details */
+  const cards = (rows: Result[]) => (
+    <div className="ja-cards">
+      {rows.map((r, i) => (
+        <div key={r.jet_id} className={"ja-card" + (open === r.jet_id ? " open" : "")}>
+          <button className="ja-card-head" onClick={() => setOpen(open === r.jet_id ? null : r.jet_id)} aria-expanded={open === r.jet_id}>
+            <span className="ja-card-no muted">{i + 1}</span>
+            <span className="ja-card-name">
+              <b>{r.jet}</b>
+              <span className="small">
+                {r.type && <span className={"ja-type t" + (r.type_id ?? 0)}>{r.type}</span>}
+                {r.titer_ok === false && <span className="ja-warn">⚠ {t("ja.titerOut")}</span>}
+              </span>
+            </span>
+            <span className="ja-card-prob">
+              <span className={"ja-prob " + probClass(r.prob)}><span style={{ width: pct(r.prob) }} /></span>
+              <span className="small">{pct(r.prob)}</span>
+            </span>
+            <span className="ja-card-fold muted">{open === r.jet_id ? "▾" : "▸"}</span>
+          </button>
+          <div className="ja-card-vals">
+            {PARAMS.map((p) => {
+              const [a, b] = r.window[p] ?? [r.settings[p], r.settings[p]];
+              return (
+                <div key={p}><span className="muted small">{t(`pp.param.${p}`)}</span>
+                  <b>{fmt(r.settings[p], DEC[p])} <span className="muted small">{UNITS[p]}</span></b>
+                  {Math.abs(b - a) > 1e-6 && <span className="muted small">{fmt(a, DEC[p])}–{fmt(b, DEC[p])}</span>}
+                </div>
+              );
+            })}
+            {activeTargets.map((k) => {
+              const pr = r.preds[k];
+              return (
+                <div key={k} className={pr ? (pr.met ? "met" : "miss") : ""}><span className="muted small">{t(`pp.target.${k}`)}</span>
+                  <b>{pr ? <>{pr.met ? "✓ " : "✗ "}{fmt(pr.value)}</> : "–"} <span className="muted small">{UNITS[k]}</span></b>
+                  {pr && <span className="muted small">± {fmt(pr.sd)}</span>}
+                </div>
+              );
+            })}
+            <div><span className="muted small">{t("ja.col.air")}</span><b>{fmt(r.air_nm3h, 2)} <span className="muted small">Nm³/h</span></b></div>
+          </div>
+          <div className="ja-card-basis small">
+            <span className={"ja-src " + r.source}>{t(`ja.src.${r.source}`)}</span>{" "}
+            <span className="muted">{r.yarn}{r.distance > 0 ? ` (${r.distance.toFixed(2)})` : ""} · {t("ja.trialsSeries", { n: r.n_trials, s: r.n_series })}</span>
+          </div>
+          {open === r.jet_id && detail(r)}
+        </div>
       ))}
     </div>
   );
@@ -249,7 +336,7 @@ export default function JetAdvisor() {
           </div>
         </div>
 
-        <div className="ja-results">
+        <div className="ja-results" ref={resultsRef}>
           {!ans ? (
             <div className="ja-empty muted">{t("ja.start")}</div>
           ) : (
@@ -268,7 +355,7 @@ export default function JetAdvisor() {
               </div>
               {ans.results.length === 0 ? (
                 <div className="ja-empty muted">{ans.yarns.length === 0 ? t("ja.noYarns") : t("ja.noJets")}</div>
-              ) : (
+              ) : phone ? cards(ans.results) : (
                 <div className="ja-tablewrap">
                   <table className="ja-res">
                     <thead>
@@ -324,32 +411,7 @@ export default function JetAdvisor() {
                             <tr className="ja-detail">
                               <td></td>
                               <td colSpan={5 + activeTargets.length + 1}>
-                                <div className="ja-det">
-                                  <div>
-                                    <div className="ja-lab">{t("ja.detail.jet")}</div>
-                                    <div className="small">{[r.maker, r.group].filter(Boolean).join(" · ") || "–"}</div>
-                                    <div className="small muted">{t("ja.detail.titer", { from: fmt(r.titer_from, 0), to: fmt(r.titer_to, 0) })}</div>
-                                  </div>
-                                  <div>
-                                    <div className="ja-lab">{t("ja.detail.why")}</div>
-                                    <div className="small">
-                                      {r.source === "measured" ? t("ja.detail.measured", { n: r.n_at_setting }) : t("ja.detail.model")}
-                                      {" "}{t("ja.detail.varied", { list: r.varied.map((p) => t(`pp.param.${p}`)).join(", ") || "–" })}
-                                    </div>
-                                    <div className="small muted">{r.all_met ? t("ja.detail.safety", { s: fmt(r.safety) }) : t("ja.detail.miss", { s: fmt(r.miss) })}</div>
-                                  </div>
-                                  <div>
-                                    <div className="ja-lab">{t("ja.detail.series")}</div>
-                                    <div className="ja-links">
-                                      {r.series.map((s) => <Link key={s.id} to={seriesLink(s.id)} target="_blank">{s.name || `#${s.id}`}</Link>)}
-                                    </div>
-                                  </div>
-                                  {r.trial_id != null && (
-                                    <div>
-                                      <Link className="btn-plain" to={`/tools/process-playground?trial=${r.trial_id}`} target="_blank">{t("ja.detail.playground")}</Link>
-                                    </div>
-                                  )}
-                                </div>
+                                {detail(r)}
                               </td>
                             </tr>
                           )}

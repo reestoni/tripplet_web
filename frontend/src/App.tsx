@@ -88,7 +88,7 @@ export default function App() {
         <Route path="/experiments" element={<AllExperiments />} />
         <Route path="/backlog" element={<Backlog />} />
         <Route path="/experiments/new" element={<CreateExperiment key="create" mode="create" />} />
-        <Route path="/experiments/legacy" element={<CreateExperiment key="legacy" mode="legacy" />} />
+        <Route path="/experiments/legacy" element={<PcOnly><CreateExperiment key="legacy" mode="legacy" /></PcOnly>} />
         <Route path="/series/new" element={<CreateExperiment key="addseries" mode="addseries" />} />
         <Route path="/series/:id/add-trials" element={<CreateExperiment key="addtrials" mode="addtrials" />} />
         <Route path="/lab-machines/new" element={<CreateExperiment key="addlab" mode="addlab" />} />

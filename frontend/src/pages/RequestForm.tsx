@@ -4,6 +4,7 @@ import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { ImageViewer, VersionHistory } from "../components/RequestPopup";
 import RequestHelp from "../components/RequestHelp";
+import { isTouch } from "../media";
 
 type Field = { name: string; label: string; type: "text" | "multiline" | "date" | "fk"; choices?: [unknown, string][]; required: boolean };
 type Loaded = {
@@ -38,6 +39,7 @@ export default function RequestForm() {
   const [busy, setBusy] = useState(false);
   const [review, setReview] = useState<Compare | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
   const [initial, setInitial] = useState<Record<string, string>>({});
   const [viewer, setViewer] = useState<number | null>(null);
   const [history, setHistory] = useState(false);
@@ -174,7 +176,7 @@ export default function RequestForm() {
           <table className="grid">
             <thead><tr><th>{t("rq.field")}</th><th>{t("rq.current")}</th><th>{t("rq.proposed")}</th></tr></thead>
             <tbody>{review.rows.filter((r) => r.changed).map((r) => (
-              <tr key={r.field}><td>{r.field}</td><td className="note-text">{r.left}</td><td className="note-text rq-new">{r.right}</td></tr>
+              <tr key={r.field}><td data-label={t("rq.field")}>{r.field}</td><td className="note-text" data-label={t("rq.current")}>{r.left}</td><td className="note-text rq-new" data-label={t("rq.proposed")}>{r.right}</td></tr>
             ))}</tbody>
           </table>
           <div className="modal-buttons">
@@ -204,7 +206,7 @@ export default function RequestForm() {
             </label>
           );
         })}
-        <div className="rq-actions">
+        <div className={"rq-actions" + (dirty || busy ? " rq-actions-live" : "")}>
           <span className="muted">{t("rq.requiredHint")}</span>
           <button className="btn-green" disabled={busy} onClick={save}>{isNew ? t("rq.submit") : t("rq.save")}</button>
         </div>
@@ -216,7 +218,14 @@ export default function RequestForm() {
           <h3>{t("rq.images")}</h3>
           {reqId != null ? (
             <>
-              <input ref={fileRef} type="file" multiple accept="image/*" style={{ display: "none" }} onChange={(e) => upload(e.target.files)} />
+              <input ref={fileRef} type="file" multiple accept="image/*" style={{ display: "none" }}
+                onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+              {/* touch devices: straight to the back camera (capture), the normal picker stays for the gallery */}
+              {isTouch() && <>
+                <input ref={camRef} type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+                  onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
+                <button className="btn-plain rq-cam" onClick={() => camRef.current?.click()}>{t("rq.takePhoto")}</button>
+              </>}
               <button className="btn-plain" onClick={() => fileRef.current?.click()}>{t("rq.addImages")}</button>
             </>
           ) : <span className="muted">{t("rq.imagesAfterSave")}</span>}

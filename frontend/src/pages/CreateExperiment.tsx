@@ -2,6 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
+import { PHONE, useMedia } from "../media";
 import { Modal } from "../components/SeriesTools";
 import { RequestIcon } from "../components/RequestPopup";
 import { HelpButton } from "../components/Help";
@@ -251,11 +252,12 @@ export default function CreateExperiment({ mode }: { mode: CreateMode }) {
     }
   };
 
+  const phone = useMedia(PHONE);
   if (loadErr) return <div className="page"><div className="login-error">{loadErr}</div></div>;
   if (!setup) return <div className="page muted">{t("app.loading")}</div>;
 
   return (
-    <div className="page ce-page">
+    <div className={"page ce-page" + (phone ? " ce-phone" : "")}>
       <div className="se-head">
         <div className="se-title">
           <h1>{t(`ce.title.${mode}`)}</h1>
@@ -308,6 +310,20 @@ export default function CreateExperiment({ mode }: { mode: CreateMode }) {
           <LabTab setup={setup} mode={mode} lab={lab} setLab={setLab} trialIds={[...checked]} errText={errText} />
         )}
       </div>
+      {phone && (() => {
+        /* phone: the tabs become steps - Back / Next fixed at the bottom, Save on the last step */
+        const i = tabs.indexOf(tab);
+        const go = (k: number) => { setTab(tabs[k]); window.scrollTo(0, 0); };
+        return (
+          <div className="ce-steps">
+            <button className="btn-plain" disabled={i <= 0} onClick={() => go(i - 1)}>‹ {t("ce.stepBack")}</button>
+            <span className="ce-stepno">{t("ce.stepOf", { n: i + 1, m: tabs.length })}</span>
+            {i < tabs.length - 1
+              ? <button className="btn-green" onClick={() => go(i + 1)}>{t("ce.stepNext")} ›</button>
+              : <button className="btn-green" disabled={!canSave} onClick={save}>{busy ? t("ce.saving") : t("ce.save")}</button>}
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -767,6 +783,17 @@ function JetTab({ setup, jets, setJets }: { setup: Setup; jets: JetRow[]; setJet
     a.splice(to, 0, row);
     setJets(a); setCur(to); setDrag(null); setPicked(new Set());
   };
+  const phone = useMedia(PHONE);
+  const commitPlates = (i: number, el: HTMLInputElement) => {
+    const k = Number(el.value);
+    if (Number.isInteger(k) && k >= 1) edit(i, { plates: Array.from({ length: k }, (_, x) => String(x + 1)).join(",") });
+    else el.value = String(jets[i].plates.split(",").length);
+  };
+  const commitPressure = (i: number, el: HTMLInputElement) => {
+    const v = el.value.trim().replace(",", ".");
+    if (v !== "" && Number.isFinite(Number(v))) edit(i, { pressure: pressureText(v) }); else el.value = jets[i].pressure;
+  };
+  const removeAt = (i: number) => { setJets(jets.filter((_, k) => k !== i)); setPicked(new Set()); setCur(null); };
   const heads = [t("ce.jet"), t("ce.geo.Luftbohrung"), t("ce.geo.WinkelLuftbohrung"), t("ce.geo.GarnkanalBreite"),
     t("ce.geo.Luftverbrauch"), t("ce.geo.Entwicklungsname"), t("ce.titerRange"), t("ce.idealTiter")];
 
@@ -823,6 +850,35 @@ function JetTab({ setup, jets, setJets }: { setup: Setup; jets: JetRow[]; setJet
           {sel && <span className="muted">{sel.name}</span>}
         </div>
       </div>
+      {phone ? (
+        /* phone: one card per jet row, up/down instead of dragging, copy = the same row again at the end */
+        <div className="ce-jcards">
+          {jets.map((j, i) => (
+            <div key={i} className="ce-jcard">
+              <div className="ce-jcard-head">
+                <b className="ce-jno">{i + 1}</b>
+                <span className="ce-jname"><b>{j.jet}</b> · <span className={j.housing_id == null ? "ce-bad" : ""}>{j.housing || "—"}</span></span>
+              </div>
+              <div className="ce-jcard-fields">
+                <label>{t("ce.nPlates")}
+                  <input inputMode="numeric" defaultValue={j.plates.split(",").length} key={`n${i}-${j.plates}`} onBlur={(e) => commitPlates(i, e.target)} />
+                </label>
+                <label>{t("ce.pressure")}
+                  <input inputMode="decimal" defaultValue={j.pressure} key={`p${i}-${j.pressure}`} onBlur={(e) => commitPressure(i, e.target)} />
+                </label>
+                <span className="muted">{t("ce.plates")}: {j.plates}</span>
+              </div>
+              <div className="ce-jcard-btns">
+                <button className="btn-plain" disabled={i === 0} onClick={() => move(i, -1)} title={t("ce.up")} aria-label={t("ce.up")}>▲</button>
+                <button className="btn-plain" disabled={i >= jets.length - 1} onClick={() => move(i, 1)} title={t("ce.down")} aria-label={t("ce.down")}>▼</button>
+                <button className="btn-plain" onClick={() => setJets([...jets, { ...j }])}>{t("ce.copyRow")}</button>
+                <button className="btn-plain" onClick={() => removeAt(i)} title={t("ce.remove")} aria-label={t("ce.remove")}>✕</button>
+              </div>
+            </div>
+          ))}
+          {jets.length === 0 && <p className="muted">{t("ce.noJet")}</p>}
+        </div>
+      ) : <>
       <table className="grid ce-table">
         <thead><tr><th /><th>{t("ce.housing")}</th><th>{t("ce.jet")}</th><th>{t("ce.nPlates")}</th><th>{t("ce.pressure")}</th><th>{t("ce.plates")}</th><th /></tr></thead>
         <tbody>
@@ -834,17 +890,10 @@ function JetTab({ setup, jets, setJets }: { setup: Setup; jets: JetRow[]; setJet
               <td><input type="checkbox" checked={picked.has(i)} onChange={() => { const s = new Set(picked); if (s.has(i)) s.delete(i); else s.add(i); setPicked(s); }} /></td>
               <td className={j.housing_id == null ? "ce-bad" : ""}>{j.housing || "—"}</td>
               <td>{j.jet}</td>
-              <td><input className="ce-cellin" defaultValue={j.plates.split(",").length} key={`n${i}-${j.plates}`} onBlur={(e) => {
-                const k = Number(e.target.value);
-                if (Number.isInteger(k) && k >= 1) edit(i, { plates: Array.from({ length: k }, (_, x) => String(x + 1)).join(",") });
-                else e.target.value = String(j.plates.split(",").length);
-              }} /></td>
-              <td><input className="ce-cellin" defaultValue={j.pressure} key={`p${i}-${j.pressure}`} onBlur={(e) => {
-                const v = e.target.value.trim().replace(",", ".");
-                if (v !== "" && Number.isFinite(Number(v))) edit(i, { pressure: pressureText(v) }); else e.target.value = j.pressure;
-              }} /></td>
+              <td><input className="ce-cellin" defaultValue={j.plates.split(",").length} key={`n${i}-${j.plates}`} onBlur={(e) => commitPlates(i, e.target)} /></td>
+              <td><input className="ce-cellin" defaultValue={j.pressure} key={`p${i}-${j.pressure}`} onBlur={(e) => commitPressure(i, e.target)} /></td>
               <td>{j.plates}</td>
-              <td><button className="link-btn" title={t("ce.remove")} onClick={(e) => { e.stopPropagation(); setJets(jets.filter((_, k) => k !== i)); setPicked(new Set()); setCur(null); }}>✕</button></td>
+              <td><button className="link-btn" title={t("ce.remove")} onClick={(e) => { e.stopPropagation(); removeAt(i); }}>✕</button></td>
             </tr>
           ))}
           {jets.length === 0 && <tr><td colSpan={7} className="muted">{t("ce.noJet")}</td></tr>}
@@ -855,6 +904,7 @@ function JetTab({ setup, jets, setJets }: { setup: Setup; jets: JetRow[]; setJet
         <button className="btn-plain" disabled={cur == null || cur === 0} onClick={() => cur != null && move(cur, -1)}>{t("ce.up")}</button>
         <button className="btn-plain" disabled={cur == null || cur >= jets.length - 1} onClick={() => cur != null && move(cur, 1)}>{t("ce.down")}</button>
       </div>
+      </>}
     </div>
   );
 }
@@ -862,30 +912,44 @@ function JetTab({ setup, jets, setJets }: { setup: Setup; jets: JetRow[]; setJet
 /* ------------------------------------------------------------------ Machine */
 function MachineGrid({ fields, values, setValues }: { fields: Field[]; values: Record<string, string>; setValues: (v: Record<string, string>) => void }) {
   const set = (fno: number, v: string) => setValues({ ...values, [String(fno)]: v });
+  const phone = useMedia(PHONE);
   if (!fields.length) return null;
+  const control = (f: Field) => {
+    const v = values[String(f.fno)] ?? "";
+    const bad = !!v.trim() && !!FIELD_RE[f.kind] && !FIELD_RE[f.kind].test(v);
+    return f.kind === "dropdown" ? (
+      <select value={v} onChange={(e) => set(f.fno, e.target.value)}>
+        <option value="" />
+        {(f.options ?? []).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+      </select>
+    ) : (
+      <input value={v} className={bad ? "ce-bad" : ""}
+        onChange={(e) => set(f.fno, f.kind === "sz" ? e.target.value.toUpperCase() : e.target.value)} />
+    );
+  };
+  if (phone) {
+    /* phone: one field per line, row by row like the PC grid (a row holds what belongs together,
+       e.g. tension before / after jet); a gap only before the first field of a new block */
+    const sorted = [...fields].sort((a, b) => a.row - b.row || a.col - b.col);
+    return (
+      <div className="ce-mlist">
+        {sorted.map((f, i) => (
+          <label key={f.fno} className={"ce-mrow" + (f.gap_before && i > 0 && sorted[i - 1].row !== f.row ? " gap" : "")}>
+            <span className="ce-mlabel">{f.caption}</span>{control(f)}
+          </label>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="ce-mgrid">
       {fields.filter((f) => f.gap_before).map((f) => <div key={`g${f.fno}`} className="ce-gap" style={{ gridRow: f.row, gridColumn: "1 / -1" }} />)}
-      {fields.map((f) => {
-        const v = values[String(f.fno)] ?? "";
-        const bad = !!v.trim() && !!FIELD_RE[f.kind] && !FIELD_RE[f.kind].test(v);
-        return (
-          <Fragment key={f.fno}>
-            <span className="ce-mlabel" style={{ gridRow: f.row + 1, gridColumn: f.col * 2 + 1 }}>{f.caption}</span>
-            <span style={{ gridRow: f.row + 1, gridColumn: f.col * 2 + 2 }}>
-              {f.kind === "dropdown" ? (
-                <select value={v} onChange={(e) => set(f.fno, e.target.value)}>
-                  <option value="" />
-                  {(f.options ?? []).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-                </select>
-              ) : (
-                <input value={v} className={bad ? "ce-bad" : ""}
-                  onChange={(e) => set(f.fno, f.kind === "sz" ? e.target.value.toUpperCase() : e.target.value)} />
-              )}
-            </span>
-          </Fragment>
-        );
-      })}
+      {fields.map((f) => (
+        <Fragment key={f.fno}>
+          <span className="ce-mlabel" style={{ gridRow: f.row + 1, gridColumn: f.col * 2 + 1 }}>{f.caption}</span>
+          <span style={{ gridRow: f.row + 1, gridColumn: f.col * 2 + 2 }}>{control(f)}</span>
+        </Fragment>
+      ))}
     </div>
   );
 }

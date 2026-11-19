@@ -191,6 +191,8 @@
     background: var(--card-bg); border-top: 1px solid var(--border); flex-wrap: wrap; }
   .modal .modal-buttons button { flex: 1 1 auto; }
   .modal.rqp.rqp-float { inset: 0 !important; width: 100%; height: 100%; }
+  .modal.rqp.rqp-wide { width: 100%; }   /* request popup: 94vw on the PC - full width here */
+  .modal.rqp .rqp-body { max-height: none; flex: 1 1 auto; }   /* the sheet scrolls as a whole */
   .modal > h2 { display: flex; align-items: center; gap: 8px; }
   .m-x { display: grid; place-items: center; margin-left: auto; flex: 0 0 40px; width: 40px; height: 40px; padding: 0;
     border: 0; border-radius: 8px; background: none; color: inherit; font-size: 20px; cursor: pointer; }
@@ -418,4 +420,97 @@
     position: fixed; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 60;
     min-height: 44px; padding: 0 20px; border-radius: 22px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   }
+}
+
+/* ---------- Prio 2 (2026-11-19): request form, Create Experiment, Yarn Count, Jet Advisor ---------- */
+@media (max-width: 1024px) {
+  /* request form: while something is unsaved the Save row sticks to the bottom (like Show Experiment) */
+  .rq-actions.rq-actions-live {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; margin: 0;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); gap: 10px;
+    background: var(--card-bg); border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  }
+  .rq-actions.rq-actions-live button { min-height: 44px; padding: 0 22px; }
+  .rq-page:has(.rq-actions-live) { padding-bottom: 80px; }
+  .rq-images .at-head { flex-wrap: wrap; gap: 8px; }
+  /* Jet Advisor: inputs above the results */
+  .ja-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 599px) {
+  .rq-actions.rq-actions-live > .muted { display: none; }
+  .rq-actions.rq-actions-live button { flex: 1 1 auto; }
+  .rq-images .at-head button { flex: 1 1 auto; }
+  .rq-images .at-head h3 { flex: 1 1 100%; order: -2; }
+  .rq-cam { order: -1; }
+  /* review of a proposed change / version comparison: one block per field instead of three columns */
+  .rq-review table.grid, .rq-review table.grid tbody, .rq-review table.grid tr, .rq-review table.grid td,
+  table.rqp-cmp, table.rqp-cmp tbody, table.rqp-cmp tr, table.rqp-cmp td { display: block; }
+  .rq-review table.grid thead, table.rqp-cmp thead { display: none; }
+  .rq-review table.grid tr, table.rqp-cmp tr { border-bottom: 1px solid var(--border); padding: 6px 4px; }
+  .rq-review table.grid td, table.rqp-cmp td { border: 0; padding: 2px 0; }
+  .rq-review table.grid td:first-child, table.rqp-cmp td:first-child { font-weight: 700; }
+  .rq-review table.grid td[data-label]:not(:first-child)::before, table.rqp-cmp td[data-label]::before {
+    content: attr(data-label) ": "; color: var(--muted); font-size: 12px; }
+
+  /* Create Experiment as steps: tab bar scrolls, Back / Next fixed at the bottom */
+  .ce-phone { padding-bottom: 84px; }
+  .ce-phone .se-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .ce-phone .se-tabs::-webkit-scrollbar { display: none; }
+  .ce-phone .se-tab { flex: 0 0 auto; white-space: nowrap; }
+  .ce-phone .ce-card { border-top-left-radius: 10px; }
+  .ce-steps {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: var(--card-bg); border-top: 1px solid var(--border); box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  }
+  .ce-steps button { flex: 1 1 0; min-height: 44px; }
+  .ce-stepno { flex: none; font-size: 12px; color: var(--muted); text-align: center; }
+  .ce-general { grid-template-columns: minmax(0, 1fr); }
+  .ce-narrow { max-width: none; }
+  .ce-tree-wrap { flex-basis: 100%; }
+  .ce-addcol { min-width: 0; flex: 1 1 100%; }
+  .ce-addcol .btn-green, .ce-addcol .btn-plain { width: 100%; }
+  .ce-material .ce-table, .ce-lab .ce-table { width: 100%; }
+  /* jet list to choose from: jet, titer range, ideal titer - the geometry columns stay on the PC */
+  .ce-jettree th:nth-child(n+2):nth-child(-n+6), .ce-jettree td:nth-child(n+2):nth-child(-n+6) { display: none; }
+  .ce-jettree .ce-grouprow td { display: table-cell !important; }
+  .ce-platerow .btn-green { flex: 1 1 100%; }
+  .ce-jcards { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .ce-jcard { border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: var(--card-bg); }
+  .ce-jcard-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; min-width: 0; }
+  .ce-jno { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--accent); color: #fff; font-size: 13px; }
+  .ce-jname { min-width: 0; overflow-wrap: anywhere; }
+  .ce-jcard-fields { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+  .ce-jcard-fields label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; font-weight: 600; flex: 1 1 110px; }
+  .ce-jcard-fields input { width: 100%; box-sizing: border-box; }
+  .ce-jcard-fields .muted { flex: 1 1 100%; font-size: 12px; }
+  .ce-jcard-btns { display: flex; gap: 6px; margin-top: 8px; }
+  .ce-jcard-btns button { flex: 1 1 0; min-height: 40px; }
+  .ce-mlist { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+  .ce-mrow { display: grid; grid-template-columns: minmax(0, 45%) minmax(0, 1fr); gap: 8px; align-items: center; }
+  .ce-mrow.gap { margin-top: 10px; }
+  .ce-mrow input, .ce-mrow select { width: 100%; box-sizing: border-box; }
+  .ce-labrow > * { flex: 1 1 100%; min-width: 0; }
+  .ce-labrow input:not([type=checkbox]), .ce-labrow select { flex: 1; min-width: 0; }
+  .ce-labrow .ce-inline:has(input[type=checkbox]) { flex: 0 0 auto; }
+  .ce-trials { gap: 6px 14px; }
+
+  /* Jet Advisor: result cards */
+  .ja-tt input { width: 100%; box-sizing: border-box; }
+  .ja-actions { position: sticky; bottom: 0; z-index: 5; background: var(--card-bg); padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border); }
+  .ja-actions button { flex: 1 1 0; min-height: 44px; }
+  .ja-page .page-head { flex-wrap: wrap; }
+  .ja-cards { display: flex; flex-direction: column; gap: 8px; }
+  .ja-card { border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); padding: 10px; }
+  .ja-card-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 0; border: 0; background: none;
+    font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .ja-card-no { flex: none; width: 18px; font-size: 13px; }
+  .ja-card-name { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; overflow-wrap: anywhere; }
+  .ja-card-prob { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .ja-card-vals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 10px 0 6px; }
+  .ja-card-vals > div { display: flex; flex-direction: column; min-width: 0; }
+  .ja-card-basis { overflow-wrap: anywhere; }
+  .ja-card .ja-det { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 }
