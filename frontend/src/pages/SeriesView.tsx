@@ -175,7 +175,9 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
         </div>
         <div className="se-actions">
           {s.experiment_request_id != null && <span className="tb-icon big rqp-er"><RequestIcon id={s.experiment_request_id} big /></span>}
-          <Attachments key={fresh} seriesId={s.id} />
+          {/* keys must differ between siblings (SavedReports below), otherwise React keeps
+              the old block on refresh and shows it twice */}
+          <Attachments key={`att:${fresh}`} seriesId={s.id} />
           {data.trials.length > 0 && (
             <>
               <span className="tb-sep" />
@@ -188,7 +190,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
             <button className="tb-btn" title={t("cv.seriesBoardsTip")} onClick={() => confirmLeave() && navigate(`/tools/canvas?series=${s.id}`)}>
               🖼 {t("cv.seriesBoards")}{data.boards ? ` (${data.boards})` : ""}</button>)}
           <button className="tb-btn" title={t("lk.seriesTip")} onClick={() => copyLink(seriesLink(s.id, tab))}>🔗 {t("lk.link")}</button>
-          <SavedReports key={fresh} seriesId={s.id} />
+          <SavedReports key={`rep:${fresh}`} seriesId={s.id} />
           <button className="tb-icon big" onClick={() => confirmLeave() && navigate(`/series/${s.id}/report`)} title={t("rep.openTip")}>
             <img src="/api/img/analytics.png" alt={t("rep.open")} />
           </button>
