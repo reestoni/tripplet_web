@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
 import { Modal } from "../components/SeriesTools";
+import { PHONE, useMedia } from "../media";
 
 /* Requirement Hub (desktop ui/screen_requirement_hub.py) and Quick Scan (ui/screen_quick_scan.py) on
    db/quick_scan.py. Filters (always must) and targets (must / weighted / distance) -> trials that fulfil them,
@@ -169,6 +170,10 @@ export default function QuickScan() {
   const [filters, setFilters] = useState<Row[]>([]);
   const [targets, setTargets] = useState<Row[]>([]);
   const [res, setRes] = useState<Result | null>(null);
+  // phone: the rules fill the screen - after the search jump to the hits
+  const phone = useMedia(PHONE);
+  const resRef = useRef<HTMLElement>(null);
+  const [cardMax, setCardMax] = useState(100);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ text: string; err?: boolean } | null>(null);
   const [tab, setTab] = useState<"table" | "rank">("table");
@@ -200,8 +205,14 @@ export default function QuickScan() {
     setBusy(true);
     setMsg(null);
     request<Result>("POST", "/api/quick-scan/run", body())
-      .then((r) => { setRes(r); setSort(null); })
-      .catch((e) => setMsg({ text: errText(e), err: true }))
+      .then((r) => {
+        setRes(r); setSort(null); setCardMax(100);
+        if (phone) window.setTimeout(() => resRef.current?.scrollIntoView({ block: "start" }), 50);
+      })
+      .catch((e) => {
+        setMsg({ text: errText(e), err: true });
+        if (phone) window.setTimeout(() => document.querySelector(".qs-page .mj-msg")?.scrollIntoView({ block: "center" }), 50);
+      })
       .finally(() => setBusy(false));
   };
   const clearAll = () => { setFilters([]); setTargets([]); setRes(null); setMsg(null); };
@@ -299,13 +310,36 @@ export default function QuickScan() {
           </div>
         </section>}
         <button className="qs-toggle" onClick={() => setPanel(!panel)} title={panel ? t("qs.collapse") : t("qs.expand")}>{panel ? "◀" : "▶"}</button>
-        <section className="jr-card qs-right">
+        <section className="jr-card qs-right" ref={resRef}>
           <h2>{res ? t("qs.resultsN", { n: res.rows.length }) : t("qs.results")}</h2>
           <div className="se-tabs">
             <button className={"se-tab" + (tab === "table" ? " on" : "")} onClick={() => setTab("table")}>{t("qs.tabTable")}</button>
             <button className={"se-tab" + (tab === "rank" ? " on" : "")} onClick={() => setTab("rank")}>{t("qs.tabRank")}</button>
           </div>
-          {!res ? <p className="muted qs-empty">{t("qs.start")}</p> : !res.rows.length ? <p className="muted qs-empty">{t("qs.noHits")}</p> : tab === "table" ? (
+          {!res ? <p className="muted qs-empty">{t("qs.start")}</p> : !res.rows.length ? <p className="muted qs-empty">{t("qs.noHits")}</p> : tab === "table" && phone ? (
+            /* phone: one card per trial (same order as the table), tap = open the series */
+            <div className="qs-cards">
+              {rows.slice(0, cardMax).map((r) => (
+                <button key={r.trial_id} className="qs-card" onClick={() => navigate(`/series/${r.series_id}`)}>
+                  <span className="qs-card-top">
+                    <b>{r.experiment_id} · T{r.trial_nr}</b>
+                    {res.has_score && <b className={"qs-card-score " + scoreClass(r.score)}>{r.score == null ? "–" : `${r.score.toFixed(1)}%`}</b>}
+                  </span>
+                  <span className="qs-card-series">{r.series_name}</span>
+                  <span className="muted small">{[r.jet_name, r.yarn_name, r.titer != null ? `${fmt(r.titer)} dtex` : null, r.filamente != null ? `f${fmt(r.filamente)}` : null].filter(Boolean).join(" · ")}</span>
+                  {res.dynamic.length > 0 && (
+                    <span className="qs-card-vals">
+                      {res.dynamic.map((d) => {
+                        const v = r.values[d.key], c = r.contrib[d.key];
+                        return <span key={d.key}><span className="muted">{d.label}</span> <b>{v == null ? "–" : v.toFixed(1)}</b>{d.weighted && c != null && v != null ? <span className="muted"> (→ {c.toFixed(1)}%)</span> : null}</span>;
+                      })}
+                    </span>
+                  )}
+                </button>
+              ))}
+              {rows.length > cardMax && <button className="btn-plain" onClick={() => setCardMax(cardMax + 100)}>{t("adm.more", { n: Math.min(100, rows.length - cardMax) })}</button>}
+            </div>
+          ) : tab === "table" ? (
             <div className="qs-tablewrap">
               <table className="pp-table qs-table">
                 <thead><tr>

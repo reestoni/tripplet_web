@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
+import { PHONE, useMedia } from "../media";
 
 /* Recycle Bin (desktop ui/widgets/recycle_bin_dialog.py) on db/recycle_bin.py - superusers only. Deleted trial
    series and trials: restore, delete permanently, or open a series read only in Show Experiment to decide there
@@ -17,6 +18,7 @@ export default function RecycleBin() {
   const [sel, setSel] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ text: string; err?: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
+  const phone = useMedia(PHONE);
   const errText = (e: unknown) => (e instanceof ApiError && e.code === "superuser_only" ? t("rb.err.superuser_only")
     : e instanceof ApiError && e.code === "not_available" ? t("rb.err.not_available") : e instanceof Error ? e.message : String(e));
   const load = () => request<Data>("GET", "/api/superuser/recycle-bin").then((d) => { setData(d); setSel(null); })
@@ -56,7 +58,31 @@ export default function RecycleBin() {
         <div className="rb-banner">{t("rb.openPreviews")}{" "}
           {data.previews.map((p) => <button key={p.series_id} className="btn-plain" disabled={!p.mine}
             onClick={() => navigate(`/series/${p.series_id}`)}>{p.label}</button>)}</div>)}
-      {data && (<>
+      {data && phone && (!data.entries.length ? <p className="muted">{t("rb.empty")}</p> : (
+        /* phone: one card per entry; tapping a card opens its actions right there */
+        <div className="rb-cards">
+          {data.entries.map((e) => {
+            const on = sel === e.id;
+            return (
+              <div key={e.id} className={"rb-card" + (on ? " on" : "")}>
+                <button className="rb-card-main" aria-expanded={on} onClick={() => setSel(on ? null : e.id)}>
+                  <span className="rb-card-top"><b>{e.label || `#${e.object_id}`}</b><span className="rb-type">{typeText(e.type)}</span></span>
+                  {e.summary && <span className="muted small">{e.summary}</span>}
+                  <span className="muted small">{e.deleted_at} · {e.user}</span>
+                </button>
+                {on && (
+                  <div className="rb-card-btns">
+                    {e.type === "trial series" && <button className="btn-green" disabled={busy} onClick={() => preview(e)}>{t("rb.preview")}</button>}
+                    <button className="btn-plain" disabled={busy} onClick={restore}>{t("rb.restore")}</button>
+                    <button className="btn-plain danger" disabled={busy} onClick={remove}>{t("rb.delete")}</button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      {data && !phone && (<>
         <div className="toolbar">
           <button className="btn-green" disabled={!isSeries || busy} title={t("rb.previewTip")} onClick={() => preview()}>{t("rb.preview")}</button>
           <button className="btn-plain" disabled={!cur || busy} onClick={restore}>{t("rb.restore")}</button>

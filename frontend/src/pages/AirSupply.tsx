@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as RME } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as RME, type PointerEvent as RPE } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Modal } from "../components/SeriesTools";
 import { useContextMenu } from "../components/ContextMenu";
+import { PHONE, useMedia } from "../media";
 
 /* Air Supply Network Calculator (desktop ui/screen_air_supply.py). The browser draws and edits the network
    (same JSON as the desktop: nodes + edges); every change is solved on the server (ui/air_network.py), which
@@ -43,10 +44,12 @@ async function download(url: string, body: unknown) {
 }
 
 /* ------------------------------------------------------------------ the drawing */
-function Canvas({ graph, meta, solved, sel, onSelect, onMove, onDrop, connectFrom, onConnect, changed, readOnly, fitKey, onNodeMenu, onEdgeMenu }: {
+function Canvas({ graph, meta, solved, sel, onSelect, onMove, onDrop, connectFrom, onConnect, changed, readOnly, lockNodes, fitKey, onNodeMenu, onEdgeMenu }: {
   graph: Graph; meta: Meta; solved: Solved | null; sel: string | null; onSelect?: (id: string | null) => void;
   onMove?: (id: string, x: number, y: number) => void; onDrop?: () => void; connectFrom?: string | null; onConnect?: (id: string) => void;
-  changed?: Record<string, string>; readOnly?: boolean; fitKey: number; onNodeMenu?: (e: RME, n: NodeT) => void; onEdgeMenu?: (e: RME, a: string, b: string) => void }) {
+  changed?: Record<string, string>; readOnly?: boolean;
+  /** phone: a finger on an element pans the drawing instead of moving the element (tap still selects) */
+  lockNodes?: boolean; fitKey: number; onNodeMenu?: (e: RME, n: NodeT) => void; onEdgeMenu?: (e: RME, a: string, b: string) => void }) {
   const { t } = useI18n();
   const svg = useRef<SVGSVGElement | null>(null);
   const [vw, setVw] = useState({ x: 0, y: 0, z: 1 });
@@ -67,16 +70,39 @@ function Canvas({ graph, meta, solved, sel, onSelect, onMove, onDrop, connectFro
     const r = svg.current!.getBoundingClientRect();
     return { x: (cx - r.left - vw.x) / vw.z, y: (cy - r.top - vw.y) / vw.z };
   };
-  const down = (e: RME, n?: NodeT) => {
+  /* pointer events = mouse, finger and pen alike; two fingers = pinch zoom around their midpoint */
+  const pts = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; mx: number; my: number; vw: { x: number; y: number; z: number } } | null>(null);
+  const two = () => { const [a, b] = [...pts.current.values()]; return { dist: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 }; };
+  const down = (e: RPE, n?: NodeT) => {
     if (e.button !== 0) return;
     e.stopPropagation();
+    pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { svg.current?.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+    if (pts.current.size === 2) {           // second finger: stop dragging, start zooming
+      if (drag.current?.id && drag.current.moved) onDrop?.();
+      drag.current = null;
+      pinch.current = { ...two(), vw };
+      return;
+    }
+    if (pts.current.size > 2) return;
     if (n && connectFrom !== undefined && connectFrom !== null && onConnect) { onConnect(n.id); return; }
     if (n) { onSelect?.(n.id); if (onConnect && connectFrom === null) onConnect(n.id); }
     else onSelect?.(null);
-    drag.current = n && !readOnly ? { id: n.id, px: e.clientX, py: e.clientY, ox: n.x, oy: n.y, moved: false }
+    drag.current = n && !readOnly && !lockNodes ? { id: n.id, px: e.clientX, py: e.clientY, ox: n.x, oy: n.y, moved: false }
       : { px: e.clientX, py: e.clientY, ox: vw.x, oy: vw.y, moved: false };
   };
-  const move = (e: RME) => {
+  const move = (e: RPE) => {
+    if (pts.current.has(e.pointerId)) pts.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const pc = pinch.current;
+    if (pc && pts.current.size >= 2) {
+      const { dist, mx, my } = two();
+      const r = svg.current!.getBoundingClientRect();
+      const z = Math.min(3, Math.max(0.2, pc.vw.z * dist / pc.dist));
+      const wx = (pc.mx - r.left - pc.vw.x) / pc.vw.z, wy = (pc.my - r.top - pc.vw.y) / pc.vw.z;   // world point under the start midpoint
+      setVw({ z, x: mx - r.left - wx * z, y: my - r.top - wy * z });
+      return;
+    }
     const d = drag.current;
     if (!d) return;
     const dx = e.clientX - d.px, dy = e.clientY - d.py;
@@ -84,7 +110,12 @@ function Canvas({ graph, meta, solved, sel, onSelect, onMove, onDrop, connectFro
     if (d.id) onMove?.(d.id, snap(d.ox + dx / vw.z), snap(d.oy + dy / vw.z));
     else setVw((v) => ({ ...v, x: d.ox + dx, y: d.oy + dy }));
   };
-  const up = () => { if (drag.current?.id && drag.current.moved) onDrop?.(); drag.current = null; };
+  const up = (e?: RPE) => {
+    if (e) pts.current.delete(e.pointerId); else pts.current.clear();
+    if (pinch.current) { if (pts.current.size < 2) pinch.current = null; return; }
+    if (drag.current?.id && drag.current.moved) onDrop?.();
+    drag.current = null;
+  };
   const wheel = (e: React.WheelEvent) => {
     const p = toWorld(e.clientX, e.clientY);
     const z = Math.min(3, Math.max(0.2, vw.z * (e.deltaY < 0 ? 1.1 : 1 / 1.1)));
@@ -94,7 +125,7 @@ function Canvas({ graph, meta, solved, sel, onSelect, onMove, onDrop, connectFro
 
   return (
     <svg ref={svg} className={"as-canvas" + (connectFrom !== undefined && connectFrom !== null ? " connecting" : "")}
-      onMouseDown={(e) => down(e)} onMouseMove={move} onMouseUp={up} onMouseLeave={up} onWheel={wheel}>
+      onPointerDown={(e) => down(e)} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onWheel={wheel}>
       <defs><marker id="as-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
         <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A6460" /></marker></defs>
       <g transform={`translate(${vw.x},${vw.y}) scale(${vw.z})`}>
@@ -123,7 +154,7 @@ function Canvas({ graph, meta, solved, sel, onSelect, onMove, onDrop, connectFro
           if (n.kind === "source" && solved && (solved.source.req_p > 0 || solved.source.flow_nl_min > 0))
             stripTxt = `≥ ${f(solved.source.req_p)} bar  ${f(solved.source.flow_nl_min, 1)} Nl/min`;
           const dUse = n.kind === "segment" ? (Number(n.seg_diam) > 0 ? Number(n.seg_diam) : v?.dn_rec || 0) : 0;
-          return <g key={n.id} className="as-node" onMouseDown={(e) => down(e, n)} onContextMenu={(e) => { e.preventDefault(); onNodeMenu?.(e, n); }}>
+          return <g key={n.id} className="as-node" onPointerDown={(e) => down(e, n)} onContextMenu={(e) => { e.preventDefault(); onNodeMenu?.(e, n); }}>
             {changed?.[n.id] && <rect x={x0 - 5} y={y0 - 5} width={w + 10} height={h + 10} rx={9} fill="none" stroke="#E6A23C" strokeWidth={3} />}
             {n.kind === "reducer"
               ? <polygon points={`${x0},${y0} ${x0 + w},${y0 + 10} ${x0 + w},${y0 + h - 10} ${x0},${y0 + h}`} fill={meta.colors[n.kind]} stroke={isSel || isFrom ? "#FFC107" : "#fff"} strokeWidth={isSel || isFrom ? 3 : 1} />
@@ -193,6 +224,7 @@ export default function AirSupply() {
   const [saveDlg, setSaveDlg] = useState(false);
   const menu = useContextMenu();
   const dragStart = useRef<string | null>(null);
+  const phone = useMedia(PHONE);
 
   useEffect(() => {
     request<Meta>("GET", "/api/air-supply/meta").then((m) => { setMeta(m); setOpcost(m.opcost); }).catch((e) => setMsg(String(e)));
@@ -289,7 +321,7 @@ export default function AirSupply() {
       {(msg || (solved?.warnings.length ?? 0) > 0) && <div className="mj-msg err">{msg || t("as.warnings") + " " + solved!.warnings.join(" · ")}</div>}
       <div className="as-body">
         <div className="as-canvas-wrap">
-          <Canvas graph={graph} meta={meta} solved={solved} sel={sel} onSelect={setSel} fitKey={fitKey}
+          <Canvas graph={graph} meta={meta} solved={solved} sel={sel} onSelect={setSel} fitKey={fitKey} lockNodes={phone}
             onMove={(id, x, y) => {
               if (dragStart.current === null) dragStart.current = JSON.stringify(graph);
               setTabs((ts) => ts.map((tb, i) => (i === cur ? { ...tb, graph: { ...tb.graph, nodes: tb.graph.nodes.map((n) => (n.id === id ? { ...n, x, y } : n)) } } : tb)));

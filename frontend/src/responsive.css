@@ -514,3 +514,99 @@
   .ja-card-basis { overflow-wrap: anywhere; }
   .ja-card .ja-det { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
 }
+
+/* ---------- Prio 3 (2026-11-19): Air Supply, Recycle Bin, Process Playground, Jet ROI, Quick Scan, YarnScope ---------- */
+/* Air Supply: the drawing takes fingers (pan with one, pinch with two - AirSupply.tsx Canvas) */
+.as-canvas { touch-action: none; }
+@media (max-width: 1024px) {
+  .as-body { grid-template-columns: minmax(0, 1fr); }
+  .as-panel { max-height: none; }
+  .as-opt-body { grid-template-columns: minmax(0, 1fr); }
+  .pp-top { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 599px) {
+  /* Air Supply: toolbar = one row to swipe, drawing about half the screen, element panel below it */
+  .as-toolbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .as-toolbar::-webkit-scrollbar { display: none; }
+  .as-toolbar > * { flex: 0 0 auto; white-space: nowrap; }
+  .as-tabs { overflow-x: auto; scrollbar-width: none; }
+  .as-tabs::-webkit-scrollbar { display: none; }
+  .as-tab { flex: 0 0 auto; white-space: nowrap; }
+  .as-canvas-wrap { height: 52vh; min-height: 280px; }
+  .as-canvas .as-legend { display: none; }   /* the boxes carry their names; the legend would cover the drawing */
+  .as-canvas-wrap.small { height: 40vh; }
+  .as-field { grid-template-columns: minmax(0, 1fr) 140px; }
+  .as-cost { gap: 10px 16px; }
+  .as-table { padding: 8px; }
+
+  /* Recycle Bin: cards */
+  .rb-cards { display: flex; flex-direction: column; gap: 8px; }
+  .rb-card { border: 1px solid var(--border); border-radius: 10px; background: var(--card-bg); }
+  .rb-card.on { border-color: var(--accent); }
+  .rb-card-main { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 10px 12px; border: 0; background: none;
+    font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .rb-card-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; min-width: 0; }
+  .rb-card-top b { overflow-wrap: anywhere; }
+  .rb-type { flex: none; font-size: 12px; color: var(--muted); }
+  .rb-card-btns { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 10px; }
+  .rb-card-btns button { flex: 1 1 0; min-height: 40px; }
+
+  /* Process Playground: list of combinations shorter, result rows as small cards */
+  .pp-tablewrap { max-height: 40vh; }
+  .pp-start label { grid-template-columns: minmax(0, 1fr) auto; }
+  .pp-note { margin-left: 0; }
+  .pp-sl-head { flex-wrap: wrap; }
+  .pp-page .page-head h1 { white-space: normal; }
+  table.pp-res, table.pp-res tbody, table.pp-res tr { display: block; }
+  table.pp-res thead { display: none; }
+  table.pp-res tr { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-bottom: 1px solid var(--border); }
+  table.pp-res td, table.pp-res td.num { display: block; border: 0; padding: 3px 6px; white-space: normal !important; text-align: left; }
+  table.pp-res td:first-child { padding-top: 8px; }
+  table.pp-res td:first-child { grid-column: 1 / -1; font-weight: 700; }
+  table.pp-res td:nth-child(4), table.pp-res td:nth-child(5), table.pp-res td:last-child { grid-column: 1 / -1; }
+  table.pp-res td:nth-child(5) { font-size: 11.5px; color: var(--muted); }
+  table.pp-res td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font-size: 11.5px; font-weight: 400; }
+  table.pp-res td select { width: auto; }
+
+  /* Jet ROI: A / B below each other, comparison table as cards */
+  .jr-ab { grid-template-columns: minmax(0, 1fr); }
+  .jr-form-row label { flex: 1 1 100%; }
+  .jr-unit input { width: auto; flex: 1; min-width: 0; }
+  table.jr-mtable, table.jr-mtable tbody, table.jr-mtable tr, table.jr-mtable td { display: block; }
+  table.jr-mtable thead { display: none; }
+  table.jr-mtable tr { padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  table.jr-mtable td { border: 0; padding: 1px 0; text-align: left; }
+  table.jr-mtable td:first-child { font-weight: 700; }
+  table.jr-mtable td.jr-dash { display: none; }
+  table.jr-mtable td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font-size: 12px; font-weight: 400; }
+
+  /* Quick Scan: rules full width, hits as cards */
+  .qs-line { flex-wrap: wrap; }
+  .qs-label { width: 100%; }
+  .qs-sub { padding-left: 0; }
+  .qs-lookup { min-width: 0; flex: 1; }
+  .qs-toggle { display: none; }
+  .qs-cards { display: flex; flex-direction: column; gap: 8px; }
+  .qs-card { display: flex; flex-direction: column; gap: 2px; width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+    border-radius: 10px; background: var(--card-bg); font: inherit; color: inherit; text-align: left; cursor: pointer; }
+  .qs-card-top { display: flex; justify-content: space-between; gap: 8px; }
+  .qs-card-series { overflow-wrap: anywhere; }
+  .qs-card-vals { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12.5px; margin-top: 4px; }
+  .qs-bar-row { grid-template-columns: minmax(0, 40%) 1fr 40px; }
+
+  /* YarnScope (reading on the phone): trials as a row to swipe, everything below each other;
+     Batch, Compare and Save stay on tablet / PC */
+  .ys { flex-direction: column; flex: none; }
+  .ys-list { width: auto; flex: none; flex-direction: row; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .ys-list::-webkit-scrollbar { display: none; }
+  .ys-list .ys-trial { flex: 0 0 auto; flex-direction: column; align-items: flex-start; gap: 0; }
+  .ys-batch-btn, .ys-head .btn-green { display: none; }
+  .ys-main { overflow: visible; }
+  .ys-head h3 { font-size: 14px; overflow-wrap: anywhere; }
+  .ys-top { flex-direction: column; }
+  .ys-pie { width: 100%; flex: none; }
+  .ys-pos { margin-left: 0; flex-wrap: wrap; }
+  .ys-gap { margin-left: 0; }
+  .ys-plot, .ys-mirror { height: 300px; }
+  .ys-tcard { flex-basis: 100%; }
+}

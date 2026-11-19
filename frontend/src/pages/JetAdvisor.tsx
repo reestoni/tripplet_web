@@ -135,7 +135,11 @@ export default function JetAdvisor() {
         // phone: the inputs fill the screen - jump down to the list
         if (phone) window.setTimeout(() => resultsRef.current?.scrollIntoView({ block: "start" }), 50);
       })
-      .catch((e) => setErr(e instanceof ApiError && e.code ? t(`ja.err.${e.code}`) : String(e?.message || e)))
+      .catch((e) => {
+        setErr(e instanceof ApiError && e.code ? t(`ja.err.${e.code}`) : String(e?.message || e));
+        // phone: the message sits above the form - bring it into view
+        if (phone) window.setTimeout(() => document.querySelector(".ja-page .mj-msg")?.scrollIntoView({ block: "center" }), 50);
+      })
       .finally(() => setBusy(false));
   };
 

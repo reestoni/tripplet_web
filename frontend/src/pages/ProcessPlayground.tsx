@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ApiError, request } from "../api";
 import { useI18n } from "../i18n";
 import { HelpButton } from "../components/Help";
+import { PHONE, useMedia } from "../media";
 import { Plot } from "../components/YarnScopeView";
 
 /* Process Playground (desktop ui/screen_process_playground.py) - computing on the server
@@ -35,6 +36,8 @@ const fmt = (v: number | null | undefined, dec: number) => (v == null || Number.
 
 export default function ProcessPlayground() {
   const { t } = useI18n();
+  const phone = useMedia(PHONE);
+  const rightRef = useRef<HTMLDivElement>(null);
   const [params] = useSearchParams();
   const [data, setData] = useState<Data | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -104,7 +107,8 @@ export default function ProcessPlayground() {
         setOptIdx(start ? "" : ci.best != null ? String(ci.best) : "");
         const s = start ?? (ci.best != null ? ci.options[ci.best].start : {});
         applyStart(ci, s);
-        setTimeout(() => selRow.current?.scrollIntoView({ block: "center" }), 50);
+        // phone: the list sits above everything else - jump down to the chosen combination
+        setTimeout(() => (phone ? rightRef.current?.scrollIntoView({ block: "start" }) : selRow.current?.scrollIntoView({ block: "center" })), 50);
       })
       .catch((e) => setErr(String(e.message || e)));
   };
@@ -244,7 +248,7 @@ export default function ProcessPlayground() {
           </div>
           <div className="muted pp-hint">{t("pp.status", { n: data.combos.length, trials: data.n_trials.toLocaleString("de-CH") })}</div>
         </section>
-        <div className="pp-right">
+        <div className="pp-right" ref={rightRef}>
           {!info ? <section className="jr-card"><p className="muted">{t("pp.pickCombo")}</p></section> : (<>
             <div className="pp-top">
               <section className="jr-card">
@@ -307,10 +311,11 @@ export default function ProcessPlayground() {
                   {(ev?.rows ?? []).map((r) => (
                     <tr key={r.target} className={(VERDICT_CLASS[r.verdict] ?? "") + (selTarget === r.target ? " sel" : "") + (r.grey ? " grey" : "")}
                       onClick={() => { setSelTarget(r.target); setTab("chart"); }}>
-                      <td>{tlabel(r.target)}</td><td className="num">{r.start}</td><td className="num">{r.change}</td>
+                      <td>{tlabel(r.target)}</td><td className="num" data-label={t("pp.col.start")}>{r.start}</td>
+                      <td className="num" data-label={t("pp.col.change")}>{r.change}</td>
                       <td className={r.bold ? "b" : ""} title={r.strength}>{r.statement}</td>
                       <td title={r.based_on.split(";  ").join("\n")}>{r.based_on}</td>
-                      <td onClick={(e) => e.stopPropagation()}>
+                      <td onClick={(e) => e.stopPropagation()} data-label={t("pp.col.goal")}>
                         <select value={goals[r.target] ?? ""} title={t("pp.goalTip")} onChange={(e) => setGoals({ ...goals, [r.target]: e.target.value })}>
                           <option value="" />{["up", "down", "keep"].map((g) => <option key={g} value={g}>{t(`pp.goal.${g}`)}</option>)}</select>
                       </td>

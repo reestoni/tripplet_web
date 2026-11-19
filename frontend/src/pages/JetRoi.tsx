@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
+import { PHONE, useMedia } from "../media";
 import { Plot } from "../components/YarnScopeView";
 
 /* Jet ROI Calculator (desktop ui/screen_nozzle_calculator.py), computing + PDF on the server (ui/jet_roi.py).
@@ -68,6 +69,11 @@ export default function JetRoi() {
   const [mCost, setMCost] = useState("0.04");
   const [rows, setRows] = useState<Row[]>([newRow(0), newRow(1)]);
   const [mRes, setMRes] = useState<MultiRes | null>(null);
+  // phone: inputs fill the screen - after "Calculate" jump to the result
+  const phone = useMedia(PHONE);
+  const resRef = useRef<HTMLElement>(null);
+  const toResult = () => { if (phone) window.setTimeout(() => resRef.current?.scrollIntoView({ block: "start" }), 50); };
+  const toError = () => { if (phone) window.setTimeout(() => document.querySelector(".jr-page .mj-msg")?.scrollIntoView({ block: "center" }), 50); };
 
   useEffect(() => { request<Meta>("GET", "/api/jet-roi/meta").then(setMeta).catch((e) => setErr(String(e))); }, []);
   if (!meta) return <div className="muted">{err ?? t("app.loading")}</div>;
@@ -76,10 +82,10 @@ export default function JetRoi() {
   const errOf = (e: unknown) => (e instanceof ApiError && e.code ? t(`jr.err.${e.code}`) : String(e instanceof Error ? e.message : e));
   const set = (patch: Partial<Single>) => { setF({ ...f, ...patch }); };
   const setCurrency = (c: string) => set({ currency: c, cost_m3: meta.default_cost[c] || "0.04", nozzle_px: meta.default_price[c] || "100" });
-  const calc = () => { setErr(null); request<SingleRes>("POST", "/api/jet-roi/single", f).then(setRes).catch((e) => { setRes(null); setErr(errOf(e)); }); };
+  const calc = () => { setErr(null); request<SingleRes>("POST", "/api/jet-roi/single", f).then((x) => { setRes(x); toResult(); }).catch((e) => { setRes(null); setErr(errOf(e)); toError(); }); };
   const pdf = () => postPdf("/api/jet-roi/single/pdf", f).catch((e) => setErr(String(e.message || e)));
   const multiBody = () => ({ process: mProcess, currency: mCurrency, cost_m3: mCost, rows });
-  const calcMulti = () => { setErr(null); request<MultiRes>("POST", "/api/jet-roi/multi", multiBody()).then(setMRes).catch((e) => { setMRes(null); setErr(errOf(e)); }); };
+  const calcMulti = () => { setErr(null); request<MultiRes>("POST", "/api/jet-roi/multi", multiBody()).then((x) => { setMRes(x); toResult(); }).catch((e) => { setMRes(null); setErr(errOf(e)); toError(); }); };
   const pdfMulti = () => postPdf("/api/jet-roi/multi/pdf", multiBody()).catch((e) => setErr(String(e.message || e)));
   const setRow = (i: number, patch: Partial<Row>) => setRows(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const procOpts: [string, string][] = meta.processes.map((p) => [p, p]);
@@ -135,7 +141,7 @@ export default function JetRoi() {
               {res && <button className="btn-plain" onClick={pdf}>{t("jr.pdf")}</button>}
             </div>
           </div>
-          <section className="jr-card jr-result"><h2>{t("jr.result")}</h2>
+          <section className="jr-card jr-result" ref={resRef}><h2>{t("jr.result")}</h2>
             {!r ? <p className="muted jr-placeholder">{t("jr.placeholder")}</p> : (<>
               <div className="jr-kpis">
                 <Kpi label={t("jr.kSaveDay")} value={n2(r.saving_day)} unit={String(r.sym)} />
@@ -208,7 +214,7 @@ export default function JetRoi() {
             {mRes && <button className="btn-plain" onClick={pdfMulti}>{t("jr.pdf")}</button>}
           </div>
           {mRes && (
-            <section className="jr-card"><h2>{t("jr.compResult")}</h2>
+            <section className="jr-card" ref={resRef}><h2>{t("jr.compResult")}</h2>
               <div className="jr-kpis">
                 <Kpi label={t("jr.kSaveYr")} value={n0(mRes.totals.saving)} unit={String(mRes.totals.sym)} />
                 <Kpi label={t("jr.kInvest")} value={n0(mRes.totals.invest)} unit={String(mRes.totals.sym)} />
@@ -218,11 +224,13 @@ export default function JetRoi() {
               <table className="mj-table jr-mtable"><thead><tr>
                 <th>{t("jr.label")}</th><th>{t("jr.jetA")}</th><th>{t("jr.jetB")}</th><th>{t("jr.hours")}</th><th>{t("jr.kSaveYr")}</th><th>{t("jr.kInvest")}</th><th>{t("jr.kAmort")}</th></tr></thead>
                 <tbody>{mRes.results.map((x, i) => (
-                  <tr key={i}><td>{String(x.label)}</td><td>{String(x.a_name)}</td><td>{String(x.b_name)}</td><td>{n0(x.h_yr)} h</td>
-                    <td>{n0(x.saving_yr)} {String(x.sym)}</td><td>{typeof x.net_invest === "number" && x.net_invest > 0 ? `${n0(x.net_invest)} ${x.sym}` : "0"}</td>
-                    <td>{x.amort === undefined || (typeof x.net_invest === "number" && x.net_invest <= 0) ? "—" : x.amort == null ? "∞" : `${n2(x.amort)} ${t("jr.yr")}`}</td></tr>))}
-                  <tr className="jr-total"><td>{t("jr.total")}</td><td>—</td><td>—</td><td>{n0(mRes.totals.hours)} h</td><td>{n0(mRes.totals.saving)} {String(mRes.totals.sym)}</td>
-                    <td>{n0(mRes.totals.invest)} {String(mRes.totals.sym)}</td><td>{mRes.totals.amort == null ? "N/A" : `${n2(mRes.totals.amort)} ${t("jr.yr")}`}</td></tr>
+                  <tr key={i}><td>{String(x.label)}</td><td data-label={t("jr.jetA")}>{String(x.a_name)}</td><td data-label={t("jr.jetB")}>{String(x.b_name)}</td>
+                    <td data-label={t("jr.hours")}>{n0(x.h_yr)} h</td>
+                    <td data-label={t("jr.kSaveYr")}>{n0(x.saving_yr)} {String(x.sym)}</td><td data-label={t("jr.kInvest")}>{typeof x.net_invest === "number" && x.net_invest > 0 ? `${n0(x.net_invest)} ${x.sym}` : "0"}</td>
+                    <td data-label={t("jr.kAmort")}>{x.amort === undefined || (typeof x.net_invest === "number" && x.net_invest <= 0) ? "—" : x.amort == null ? "∞" : `${n2(x.amort)} ${t("jr.yr")}`}</td></tr>))}
+                  <tr className="jr-total"><td>{t("jr.total")}</td><td className="jr-dash">—</td><td className="jr-dash">—</td><td data-label={t("jr.hours")}>{n0(mRes.totals.hours)} h</td>
+                    <td data-label={t("jr.kSaveYr")}>{n0(mRes.totals.saving)} {String(mRes.totals.sym)}</td>
+                    <td data-label={t("jr.kInvest")}>{n0(mRes.totals.invest)} {String(mRes.totals.sym)}</td><td data-label={t("jr.kAmort")}>{mRes.totals.amort == null ? "N/A" : `${n2(mRes.totals.amort)} ${t("jr.yr")}`}</td></tr>
                 </tbody></table>
               <div className="jr-chart-title">{t("jr.mChartTitle", { n: mRes.results.length, sym: String(mRes.totals.sym) })}</div>
               <Plot data={[
