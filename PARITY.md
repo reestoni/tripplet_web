@@ -1,8 +1,7 @@
 # Feature parity: TrippleT desktop vs. web
 
-Status 2026-11-13 (snapshot of both working trees incl. uncommitted Qt-free modules in
-`tripplet_project/db/`: `series_actions`, `series_yarns`, `trial_actions`, `trial_copy`,
-`trial_labels`, `label_sheets`, `lab_pdf_import`). Read-only comparison, nothing was run.
+First written 2026-11-13 as a read-only comparison, kept up to date row by row since then;
+summary recounted 2026-11-19. Tablet/phone status per screen is in `MOBILE.md` (web only).
 
 Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something missing ·
 **MISSING** = not in the web. "Qt-free" = logic already importable from `tripplet_project`
@@ -10,27 +9,40 @@ Legend: **DONE** = in the web (file cited) · **PARTIAL** = exists, something mi
 
 ## Summary
 
-| Screen | Done | Partial | Missing | Not in web (on purpose) | Rows |
-|---|---|---|---|---|---|
-| 1. All Experiments | 22 | 0 | 0 | 0 | 22 |
-| 2. Backlog | 31 | 0 | 0 | 1 | 32 |
-| 3. Show Experiment | 94 | 3 | 1 | 1 | 99 |
-| 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 11 |
-| 5. YarnScope | 18 | 0 | 0 | 0 | 18 |
-| 6. Experiment Requests | 22 | 2 | 2 | 0 | 26 |
-| 7. Login, sidebar, account | 19 | 0 | 0 | 2 | 21 |
-| 8. Create Experiment / Add Trial Series / Add Lab Machines | 16 | 0 | 0 | 0 | 16 |
-| 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 14 |
-| 10. Manage Yarn / New Yarn | 12 | 0 | 1 | 1 | 14 |
-| 11. Yarn Stock | 16 | 0 | 0 | 0 | 16 |
-| 12. Manage User | 7 | 0 | 0 | 1 | 8 |
-| 13. Smart Chart / Dashboards | 22 | 1 | 0 | 0 | 23 |
-| 14. Tools | 9 | 0 | 0 | 0 | 9 |
-| 15. Admin master tables | 4 | 0 | 0 | 0 | 4 |
-| 16. Superuser pages | 1 | 0 | 0 | 2 | 3 |
-| **Total** | 318 | 6 | 4 | 8 | 336 |
+Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts as Done).
 
-Most important gaps (judgement, updated 2026-11-14): none blocking - jet / spool / housing tooltips are in (quick tooltip box since 2026-11-14), all tools, Admin and Superuser pages too. Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
+| Screen | Done | Partial | Missing | Not in web (on purpose) | Web only | Rows |
+|---|---|---|---|---|---|---|
+| 1. All Experiments | 22 | 0 | 0 | 0 | 1 | 23 |
+| 2. Backlog | 33 | 0 | 0 | 1 | 1 | 35 |
+| 3. Show Experiment | 98 | 2 | 0 | 1 | 1 | 102 |
+| 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 0 | 11 |
+| 5. YarnScope | 18 | 0 | 0 | 0 | 0 | 18 |
+| 6. Experiment Requests | 23 | 2 | 2 | 0 | 0 | 27 |
+| 7. Login, sidebar, account | 21 | 0 | 0 | 2 | 0 | 23 |
+| 8. Create Experiment / Add Trial Series / Add Lab Machines | 16 | 0 | 0 | 0 | 0 | 16 |
+| 9. Manage Jets / New Jet | 14 | 0 | 0 | 0 | 0 | 14 |
+| 10. Manage Yarn / New Yarn | 13 | 0 | 0 | 1 | 0 | 14 |
+| 11. Yarn Stock | 16 | 0 | 0 | 0 | 0 | 16 |
+| 12. Manage User | 7 | 0 | 0 | 1 | 0 | 8 |
+| 13. Smart Chart / Dashboards | 21 | 1 | 0 | 0 | 1 | 23 |
+| 14. Tools | 10 | 0 | 0 | 0 | 0 | 10 |
+| 15. Admin master tables | 5 | 0 | 0 | 0 | 0 | 5 |
+| 16. Superuser pages | 1 | 0 | 0 | 2 | 0 | 3 |
+| Conclusion per series | 8 | 0 | 0 | 0 | 0 | 8 |
+| Jet Advisor | 2 | 0 | 0 | 0 | 0 | 2 |
+| **Total** | 339 | 5 | 2 | 8 | 4 | 358 |
+
+Open rows (2026-11-19), none blocking:
+- PARTIAL Show Experiment: leaving with unsaved changes asks OK/Cancel instead of Save/Discard/Cancel, browser back not guarded.
+- PARTIAL Show Experiment: zoom = browser zoom (table zoom Ctrl+wheel exists via display settings).
+- PARTIAL Requests: images only after the first save (deliberate).
+- PARTIAL Requests: image batch rename missing.
+- MISSING Requests: request PDFs dialog (check first whether the desktop still uses it).
+- MISSING Requests: draft cleanup at login (not needed while the web saves before images).
+- PARTIAL Smart Chart: F5 reloads the browser page, reload of the data only via the button.
+
+Athena (AI advisor) stays out like "Ask AI" (web CLAUDE.md).
 
 Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\python\tripplet_web`
 (`fe/` = `frontend/src/`, `be/` = `backend/app/`).
@@ -322,7 +334,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Notifications bell + panel (mark read, click opens series) | `notification_panel.py`, `ui/notifications.py` | **DONE** | `fe/components/Notifications.tsx`, `be/notifications_api.py` on `ui/notifications.py` (own notifications only), 2026-11-13 |
 | Search (Ctrl+F quick search) | `main.py` `_sc_search` | **DONE** | `fe/components/QuickSearch.tsx`, `be/search_api.py` on `db/quick_search.py`, 2026-11-13 |
 | Recent series menu | `show_recent_menu` | **DONE** | same list as the desktop (`DisplaySettings.recent_series`, `push_recent`), 2026-11-13 |
-| Knowledge Base | `screen_onboarding.py` | **DONE** | `pages/KnowledgeBase.tsx`, `backend/app/kb.py` (same HTML pages, tree, scene tabs, quiz → usage log, open:/tool: links). Popup from app cells (kb_popup) still missing, see Show Experiment |
+| Knowledge Base | `screen_onboarding.py` | **DONE** | `pages/KnowledgeBase.tsx`, `backend/app/kb.py` (same HTML pages, tree, scene tabs, quiz → usage log, open:/tool: links). KB links from app cells open the KB page in a new tab (desktop: popup `kb_popup`), see Show Experiment 3d |
 | Help (F1) search | `help_search.py` | **DONE** | `fe/components/Help.tsx` (`HelpHost` in the Shell: F1 + sidebar entry), `be/help.py` on `ui/help_index`, `ui/kb_search`; same help_* usage events. KB hits navigate to the KB page (desktop: popup) |
 | Ask AI in the help search | `help_ai.py` | **NOT IN WEB** | deliberately left out (user decision 2026-11-13) |
 | Settings (text size, contrast, crosshair, start screen) | `display_prefs` / `user_settings_dialog` | **DONE** | `fe/pages/Settings.tsx` (⚙ in the sidebar footer) on `be/settings_api.py`: welcome, start screen, accent, table options; same stored values as desktop; text size = browser zoom |

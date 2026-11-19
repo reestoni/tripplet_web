@@ -1,8 +1,12 @@
 # TrippleT Web – Installation auf der VM und Entwicklungsablauf
 
-Stand 2026-11-14. Skripte in `deploy/`. Noch **nicht freigeschaltet**: Die Web-App startet nur mit
+Stand 2026-11-19. Skripte in `deploy/`. Noch **nicht freigeschaltet**: Die Web-App startet nur mit
 `dev_local` (`ALLOWED_MODES` in `backend/app/core.py`). Für den Betrieb auf der VM gegen `dev` bzw. `prod`
 wird diese Zeile auf ausdrückliche Freigabe erweitert.
+
+Einzige Ausnahme heute (Nutzerfreigabe 2026-11-16): lokale Prod-Tests auf dem PC mit `start_prod.ps1`
+(Port 8010, nur 127.0.0.1, `TRIPPLET_MODE=prod` nur zusammen mit `TRIPPLET_WEB_ALLOW_PROD=1`, eigenes Cookie,
+rotes Abzeichen „LOCAL · PROD“). Alles, was dort gespeichert wird, ist echt. `dev` bleibt gesperrt.
 
 ## Überblick
 
@@ -138,8 +142,9 @@ Drei Stufen. Erst wenn eine Stufe gut ist, geht es zur nächsten:
   deshalb wirkt auch eine Desktop-Änderung im gemeinsamen Code erst mit dem nächsten Web-Release.
 - **Git:** `main` = Stand, der ausgeliefert werden kann. Grössere Arbeiten in einem Zweig
   (`feature/<name>`, in beiden Repos gleich benannt), erst nach dem Test auf `main` zusammenführen. Releases
-  nur von `main` bauen. Empfehlung: beide Repos zusätzlich auf einen Git-Server der Firma oder als
-  Bare-Repo auf eine Freigabe pushen. Heute liegen sie nur auf deinem PC.
+  nur von `main` bauen. Beide Repos liegen seit 2026-11-14 zusätzlich auf privatem GitHub
+  (`origin`, nach jedem Commit gepusht). Der Desktop-Teil (`tripplet_project`) arbeitet heute auf dem Zweig
+  `ref-comparison` - `build_release.ps1` nimmt den committeten Stand des aktuellen Zweigs.
 - **Dringende Korrektur (Hotfix):** von `main` aus korrigieren, Release bauen, kurz auf `test`, dann `prod`.
   Ein Feature-Zweig, der noch nicht fertig ist, bleibt davon unberührt.
 - **Datenbank-Änderungen sind der heikle Teil.** Desktop, Web-Test und Web-Prod laufen eventuell gleichzeitig
