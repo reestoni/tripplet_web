@@ -195,8 +195,8 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Excel-like keys (Enter/F2/typing/arrows/Tab/Esc) | `_GridView.keyPressEvent` | **DONE** | |
 | Copy Ctrl+C (TSV) | `_enable_copy_for_table` | **DONE** | |
 | Paste Ctrl+V (block / one value into selection) | `_enable_paste_for_table` | **DONE** | |
-| Delete/Backspace clears selection | `_clear_selected_cells` | **DONE** | |
-| Range selection (Shift / Ctrl) | Qt selection | **DONE** | |
+| Delete/Backspace clears selection | `_clear_selected_cells` | **DONE** | `edit.tsx`: all selected editable cells, already empty ones skipped; Backspace on one cell opens the editor empty (2026-11-19) |
+| Range selection (mouse drag, Shift / Ctrl) | Qt selection | **DONE** | drag with the left mouse button = rectangle (2026-11-19) |
 | Groups view writes all plies of the group, orange if different | `GroupCellBinding` | **DONE** | server binding + `cell_alerts` (assumed) |
 | Change log, DY ratio, tension timestamps, multi-ply tracking on save | `_save_all` / `_stamp_trial_timestamp` / `_track_multi_ply` | **DONE** | `db/series_save.save_series_edits` |
 | Zoom Ctrl+wheel / Ctrl+± / Ctrl+0 | `FrozenFirstColumnTable` shortcuts | **PARTIAL** | browser zoom only |

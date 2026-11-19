@@ -6,8 +6,9 @@ import { isTouch, TABLET, useMedia } from "./media";
 /* Editing Show Experiment like the desktop: unsaved values are yellow, "Save (n)" / Ctrl+S writes
    them through the server (same rules as the desktop: db/series_save), Ctrl+Z undoes the last
    unsaved change, the plausibility check asks before unusual values are saved.
-   Cells can be selected (click, Shift+click = rectangle, Ctrl+click = add); Ctrl+C copies them as
-   tab-separated text (Excel), Ctrl+V pastes from the top-left selected cell, Delete clears them. */
+   Cells can be selected (click, drag with the mouse or Shift+click = rectangle, Ctrl+click = add); Ctrl+C
+   copies them as tab-separated text (Excel), Ctrl+V pastes from the top-left selected cell, Delete or
+   Backspace clears every selected cell (desktop _clear_selected_cells). */
 
 export type CellAddr = { tab: string; r: number; c: number };
 type Pending = CellAddr & { value: string | number | null; display: string; orig?: string };
@@ -32,6 +33,10 @@ type Ctx = {
   isSelected: (a: CellAddr) => boolean;
   select: (td: HTMLElement, a: CellAddr, e: SelMods) => void;
   selectedAddrs: () => CellAddr[];
+  selCount: () => number;
+  /** mouse drag selection: started by a plain left press on a cell, extended while the button is held */
+  dragStart: (td: HTMLElement) => void;
+  dragOver: (td: HTMLElement) => void;
   register: (info: CellInfo) => void;
   info: (a: CellAddr) => CellInfo | undefined;
   flash: (kind: "ok" | "err", text: string) => void;
@@ -106,6 +111,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
   const [msg, setMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [sel, setSel] = useState<Set<string>>(new Set());
   const anchor = useRef<HTMLElement | null>(null);
+  const dragging = useRef(false);
   const registry = useRef<Map<string, CellInfo>>(new Map());
   const dirtyRef = useRef(dirty);
   dirtyRef.current = dirty;
@@ -268,13 +274,20 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
         e.preventDefault(); doRedo(); return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") { e.preventDefault(); doUndo(); return; }
-      if (e.key === "Delete" && canWrite && selRef.current.size) {
+      // Delete clears the selection; Backspace too as soon as more than one cell is selected
+      // (on a single cell Backspace opens the editor empty, see EditCell - same result)
+      if ((e.key === "Delete" || (e.key === "Backspace" && selRef.current.size > 1)) && canWrite && selRef.current.size) {
+        e.preventDefault();
         const changes: Change[] = [];
         for (const k of selRef.current) {
           const info = registry.current.get(k);
-          if (info?.editable) changes.push({ ...info.addr, value: info.options ? null : "", display: "" });
+          if (!info?.editable) continue;
+          const now = dirtyRef.current.get(k);
+          const shown = now ? String(now.value ?? "") : info.options ? (info.raw ?? "") : info.text;
+          if (shown.trim() === "") continue;                 // already empty (desktop skips these too)
+          changes.push({ ...info.addr, value: info.options ? null : "", display: "" });
         }
-        if (changes.length) { e.preventDefault(); setMany(changes); }
+        setMany(changes);
       }
       if (e.key === "Escape") setSel(new Set());
     };
@@ -334,6 +347,12 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
     };
   }, [save, doUndo, doRedo, canWrite, setMany, t]);
 
+  useEffect(() => {
+    const up = () => { dragging.current = false; };
+    window.addEventListener("mouseup", up);
+    return () => window.removeEventListener("mouseup", up);
+  }, []);
+
   // leaving inside the app (sidebar, links, buttons using confirmLeave): ask first, like the desktop
   useEffect(() => {
     leaveGuard.n = dirty.size;
@@ -377,6 +396,12 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
     isSelected: (a) => sel.has(key(a)),
     select,
     selectedAddrs: () => [...selRef.current].map(parse),
+    selCount: () => selRef.current.size,
+    dragStart: () => { dragging.current = true; },
+    dragOver: (td) => {
+      if (!dragging.current || !anchor.current || !document.body.contains(anchor.current)) return;
+      setSel(new Set(rectCells(anchor.current, td).map((x) => x.dataset.k as string)));
+    },
     register: (info) => { registry.current.set(key(info.addr), info); },
     info: (a) => registry.current.get(key(a)),
     flash: (kind, text) => setMsg({ kind, text }),
@@ -550,7 +575,16 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
     <td ref={tdRef} className={cls} title={title} tabIndex={0} data-k={cellKey(addr)}
       // the same box on touch: a tap opens it (components/TapTip.tsx reads these)
       data-tip={hoverTip || undefined} data-tip-img={hoverImg || undefined}
-      onMouseDown={(e) => { if (e.button === 0 || e.button === 2) ed?.select(e.currentTarget, addr, e); }}
+      onMouseDown={(e) => {
+        if (e.button === 0 || e.button === 2) ed?.select(e.currentTarget, addr, e);
+        // plain left press: dragging over other cells selects the rectangle (like Excel / the desktop)
+        if (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();                       // no text selection while dragging
+          e.currentTarget.focus({ preventScroll: true });
+          ed?.dragStart(e.currentTarget);
+        }
+      }}
+      onMouseEnter={(e) => { if (e.buttons === 1) ed?.dragOver(e.currentTarget); }}
       // hover = mouse only (a finger "enters" on every tap and never leaves)
       onPointerEnter={hoverImg || hoverTip ? (e) => { if (e.pointerType === "mouse") window.dispatchEvent(new CustomEvent("tripplet:hover-img",
         { detail: { src: hoverImg, text: hoverTip, x: e.clientX, y: e.clientY } })); } : undefined}
@@ -567,7 +601,7 @@ export function EditCell({ addr, text, raw, editable, options, className, title,
         else if (k === "ArrowLeft") { e.preventDefault(); move(0, -1, e.shiftKey); }
         else if (k === "ArrowRight") { e.preventDefault(); move(0, 1, e.shiftKey); }
         else if (k === "Tab") { e.preventDefault(); move(0, e.shiftKey ? -1 : 1); }
-        else if (k === "Backspace" && can) { e.preventDefault(); start(""); }
+        else if (k === "Backspace" && can && (ed?.selCount() ?? 0) <= 1) { e.preventDefault(); start(""); }
         else if (k.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey && can) {
           e.preventDefault();
           if (options) start(); else start(k);     // typing replaces the value (Excel)
