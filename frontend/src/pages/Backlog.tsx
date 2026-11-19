@@ -30,10 +30,12 @@ function cardMatches(q: string | undefined, c: BacklogCard): boolean {
   return words.every((w) => hay.includes(w));
 }
 
-function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, selected, onSelect, conclusionsOn }: {
+function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, selected, onSelect, conclusionsOn, touch }: {
   c: BacklogCard; statusId: number; conclusionsOn: boolean; onOpen: (e: React.MouseEvent) => void; onDragStart: (e: DragEvent) => void;
   onDragEnd: () => void; dragging: boolean; onMenu: (e: React.MouseEvent) => void;
   selected: boolean; onSelect: (e: React.MouseEvent) => void;
+  /** phone: own finger drag (long press, then onto a status tab) instead of the browser's drag & drop */
+  touch?: { onTouchStart: (e: React.TouchEvent) => void; onTouchMove: (e: React.TouchEvent) => void; onTouchEnd: () => void };
 }) {
   const { t } = useI18n();
   // second line like the desktop card: Experiment ID • Machine • Status • Prio n • Owner
@@ -47,11 +49,12 @@ function Card({ c, statusId, onOpen, onDragStart, onDragEnd, dragging, onMenu, s
   const conclTip = c.conclusion ? `${t("cc.tab")}: ${c.conclusion.outcome ? t(`cc.o.${c.conclusion.outcome}`) + " – " : ""}${c.conclusion.summary}`
     : conclusionsOn && statusId === 3 ? t("cc.doneMissing") : undefined;
   return (
-    <div className={"bl-card" + (dragging ? " dragging" : "") + (selected ? " selected" : "")} draggable onDragStart={onDragStart} onDragEnd={onDragEnd}
+    <div className={"bl-card" + (dragging ? " dragging" : "") + (selected ? " selected" : "")} draggable={!touch} onDragStart={onDragStart} onDragEnd={onDragEnd}
+      onTouchStart={touch?.onTouchStart} onTouchMove={touch?.onTouchMove} onTouchEnd={touch?.onTouchEnd} onTouchCancel={touch?.onTouchEnd}
       style={c.owner_colour ? { borderLeftColor: c.owner_colour } : undefined}
       onClick={(e) => { if (isTouch() && !e.ctrlKey && !e.shiftKey && !tapOnControl(e)) onOpen(e); else onSelect(e); }} onDoubleClick={onOpen} onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); onOpen(e); } }}
       onMouseDown={(e) => { if (e.button === 1) e.preventDefault(); }}
-      onContextMenu={onMenu} title={[retestTip, conclTip].filter(Boolean).join("\n\n") || t("bl.cardTip")}>
+      onContextMenu={touch ? (e) => e.preventDefault() : onMenu} title={[retestTip, conclTip].filter(Boolean).join("\n\n") || t("bl.cardTip")}>
       <div className="bl-title">
         <span>{c.series_name}</span>
         {c.retest.length > 0 && <span className="bl-retest">{t("bl.retest")}</span>}
@@ -156,6 +159,12 @@ export default function Backlog() {
   // goes through the long-press menu ("Change status"), no dragging
   const phone = useMedia(PHONE);
   const swipe = useRef<{ x: number; y: number } | null>(null);
+  // phone: long press lifts a card, the finger carries it onto a status tab; let go without moving = the menu
+  type Lift = { d: Drag; x: number; y: number; sx: number; sy: number; over: number | null };
+  const [lift, setLift] = useState<Lift | null>(null);
+  const liftRef = useRef<Lift | null>(null);
+  const press = useRef<{ timer: number; x: number; y: number } | null>(null);
+  const noClickUntil = useRef(0);
   const [colQ, setColQ] = useState<Record<number, string>>({});   // search field per column
   const [welcome, setWelcome] = useState<{ message: string; first_name: string } | null>(null);
 
@@ -202,7 +211,10 @@ export default function Backlog() {
   }, [toast]);
 
   const open = (seriesId: number) => navigate(`/series/${seriesId}`);
-  const openFrom = (e: React.MouseEvent, seriesId: number) => openSeriesFrom(e, seriesId, open);
+  const openFrom = (e: React.MouseEvent, seriesId: number) => {
+    if (Date.now() < noClickUntil.current) return;     // the click that may follow a lifted card
+    openSeriesFrom(e, seriesId, open);
+  };
 
   const selectCard = (e: React.MouseEvent, box: Box, id: number) => {
     if (!(e.ctrlKey || e.metaKey || e.shiftKey)) { setSel({ box: box.id, ids: [], anchor: id }); return; }
@@ -330,6 +342,64 @@ export default function Backlog() {
     "bl-box" + (id === ARCHIVED ? " bl-archived" : "") + (drag && drag.from !== id ? " can-drop" : "") +
     (over === id ? " drop-over" : "");
 
+  const cancelPress = () => { if (press.current) window.clearTimeout(press.current.timer); press.current = null; };
+  const cardTouch = (d: Drag) => ({
+    onTouchStart: (e: React.TouchEvent) => {
+      cancelPress();
+      if (e.touches.length !== 1 || busy) return;
+      const p = e.touches[0];
+      const x = p.clientX, y = p.clientY;
+      press.current = { x, y, timer: window.setTimeout(() => {
+        press.current = null;
+        const l = { d, x, y, sx: x, sy: y, over: null };
+        liftRef.current = l;
+        setLift(l);
+        try { navigator.vibrate?.(15); } catch { /* not supported */ }
+      }, 450) };
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      const p = e.touches[0], pr = press.current;
+      if (pr && p && Math.hypot(p.clientX - pr.x, p.clientY - pr.y) > 10) cancelPress();   // scrolling, not a long press
+    },
+    onTouchEnd: () => cancelPress(),
+  });
+  // while a card is lifted: the page must not scroll, the tab under the finger is the target
+  const lifted = lift !== null;
+  useEffect(() => {
+    if (!lifted) return;
+    const move = (e: TouchEvent) => {
+      const l = liftRef.current, p = e.touches[0];
+      if (!l || !p) return;
+      e.preventDefault();
+      const tab = document.elementFromPoint(p.clientX, p.clientY)?.closest("[data-status]") as HTMLElement | null;
+      const over = tab ? Number(tab.dataset.status) : null;
+      const n = { ...l, x: p.clientX, y: p.clientY, over: over === l.d.from ? null : over };
+      liftRef.current = n;
+      setLift(n);
+    };
+    const end = (e: TouchEvent) => {
+      const l = liftRef.current;
+      liftRef.current = null;
+      setLift(null);
+      noClickUntil.current = Date.now() + 500;
+      if (!l) return;
+      if (e.type === "touchend" && l.over != null) { void doMove(l.d, l.over); return; }
+      if (e.type === "touchend" && Math.hypot(l.x - l.sx, l.y - l.sy) < 12) {
+        // let go without moving: the usual card menu (open, priority, status, rename, ...)
+        const at = { clientX: l.x, clientY: l.y, preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
+        void admin.open(at, { series_id: l.d.seriesId, name: l.d.name });
+      }
+    };
+    window.addEventListener("touchmove", move, { passive: false });
+    window.addEventListener("touchend", end);
+    window.addEventListener("touchcancel", end);
+    return () => {
+      window.removeEventListener("touchmove", move);
+      window.removeEventListener("touchend", end);
+      window.removeEventListener("touchcancel", end);
+    };
+  }, [lifted]);  // eslint-disable-line react-hooks/exhaustive-deps
+
   const tabIds = [...(boxes ?? []).map((b) => b.id), ARCHIVED];
   const shownTab = phone ? (expanded ?? (boxes?.find((b) => b.id === 2 && b.cards.length)?.id ?? boxes?.find((b) => b.cards.length)?.id ?? tabIds[0])) : expanded;
   const stepTab = (d: number) => {
@@ -341,7 +411,7 @@ export default function Backlog() {
     onTouchStart: (e: React.TouchEvent) => { const p = e.touches[0]; swipe.current = e.touches.length === 1 ? { x: p.clientX, y: p.clientY } : null; },
     onTouchEnd: (e: React.TouchEvent) => {
       const a = swipe.current; swipe.current = null; const p = e.changedTouches[0];
-      if (!a || !p) return;
+      if (!a || !p || liftRef.current) return;            // a lifted card is not a swipe
       const dx = p.clientX - a.x, dy = p.clientY - a.y;
       if (Math.abs(dx) > 70 && Math.abs(dx) > 2 * Math.abs(dy)) stepTab(dx < 0 ? 1 : -1);
     },
@@ -360,9 +430,10 @@ export default function Backlog() {
       {error && <div className="card error">{error}</div>}
       {!boxes && !error && <div className="muted">{t("app.loading")}</div>}
       {boxes && phone && (
-        <div className="rq-tabs bl-tabs" role="tablist">
+        <div className={"rq-tabs bl-tabs" + (lift ? " bl-tabs-drop" : "")} role="tablist">
           {tabIds.map((id) => (
-            <button key={id} role="tab" aria-selected={shownTab === id} className={"rq-tab" + (shownTab === id ? " on" : "")}
+            <button key={id} role="tab" aria-selected={shownTab === id} data-status={id}
+              className={"rq-tab" + (shownTab === id ? " on" : "") + (lift && lift.d.from !== id ? " drop-target" : "") + (lift?.over === id ? " drop-over" : "")}
               onClick={() => setExpanded(id)}>
               {t(`status.${id}`)} <span className="rq-tab-n">{id === ARCHIVED ? archived.length : boxes.find((b) => b.id === id)?.cards.length ?? 0}</span>
             </button>))}
@@ -391,6 +462,7 @@ export default function Backlog() {
                     dragging={!!drag && (drag.seriesId === c.series_id || !!drag.ids?.includes(c.series_id))} onDragEnd={endDrag}
                     selected={sel.box === b.id && sel.ids.includes(c.series_id)} onSelect={(e) => selectCard(e, b, c.series_id)}
                     onMenu={(e) => admin.open(e, { series_id: c.series_id, name: c.series_name })}
+                    touch={phone ? cardTouch({ seriesId: c.series_id, from: b.id, name: c.series_name }) : undefined}
                     onDragStart={(e) => startDrag(e, { seriesId: c.series_id, from: b.id, name: c.series_name,
                       ids: sel.box === b.id && sel.ids.includes(c.series_id) && sel.ids.length > 1 ? sel.ids : undefined })} />
                 ))}
@@ -416,6 +488,13 @@ export default function Backlog() {
         </div>
       )}
 
+      {lift && (
+        /* the lifted card follows the finger (phone) */
+        <div className="bl-ghost" style={{ left: `clamp(36vw, ${lift.x}px, 64vw)`, top: lift.y }} aria-hidden="true">
+          <b>{lift.d.name}</b>
+          <span>{lift.over != null ? `→ ${t(`status.${lift.over}`)}` : t("bl.dragToTab")}</span>
+        </div>
+      )}
       {admin.dialogs}
       {toast && <div className={"toast " + toast.kind} onClick={() => setToast(null)}>{toast.text}</div>}
 

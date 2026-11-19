@@ -453,7 +453,8 @@ const en = {
   // backlog
   "bl.title": "Backlog",
   "bl.hint": "Drag a card onto another column to change its status.",
-  "bl.hintPhone": "Tap a card to open it, long press for the menu (change status …). Swipe for the next column.",
+  "bl.hintPhone": "Tap a card to open it. Long press: drag it onto a status tab to move it, or let go for the menu. Swipe for the next column.",
+  "bl.dragToTab": "Drag onto a status tab above",
   "bl.empty": "Empty",
   "bl.retest": "RETEST",
   "bl.retestTip": "Open retest flag:",
@@ -2959,7 +2960,8 @@ const de: Texts = {
 
   "bl.title": "Backlog",
   "bl.hint": "Karte auf eine andere Spalte ziehen, um den Status zu ändern.",
-  "bl.hintPhone": "Karte antippen = öffnen, lange drücken = Menü (Status ändern …). Wischen = nächste Spalte.",
+  "bl.hintPhone": "Karte antippen = öffnen. Lange drücken: auf einen Status-Reiter ziehen = verschieben, loslassen = Menü. Wischen = nächste Spalte.",
+  "bl.dragToTab": "Auf einen Status-Reiter oben ziehen",
   "bl.empty": "Leer",
   "bl.retest": "RETEST",
   "bl.retestTip": "Offene Nachtest-Markierung:",
@@ -5463,7 +5465,8 @@ const es: Texts = {
 
   "bl.title": "Backlog",
   "bl.hint": "Arrastra una tarjeta a otra columna para cambiar su estado.",
-  "bl.hintPhone": "Toca una tarjeta para abrirla, mantén pulsado para el menú (cambiar estado …). Desliza para la siguiente columna.",
+  "bl.hintPhone": "Toca una tarjeta para abrirla. Mantén pulsado: arrástrala a una pestaña de estado para moverla, o suelta para el menú. Desliza para la siguiente columna.",
+  "bl.dragToTab": "Arrastra a una pestaña de estado arriba",
   "bl.empty": "Vacío",
   "bl.retest": "REPETIR",
   "bl.retestTip": "Marca de repetición abierta:",
@@ -7965,7 +7968,8 @@ const zh: Texts = {
 
   "bl.title": "待办",
   "bl.hint": "将卡片拖到其他列即可更改状态。",
-  "bl.hintPhone": "点按卡片打开，长按显示菜单（更改状态……）。滑动切换到下一列。",
+  "bl.hintPhone": "点按卡片打开。长按：拖到上方的状态标签即可移动，直接松开则显示菜单。滑动切换到下一列。",
+  "bl.dragToTab": "拖到上方的状态标签",
   "bl.empty": "空",
   "bl.retest": "需复测",
   "bl.retestTip": "未处理的复测标记：",

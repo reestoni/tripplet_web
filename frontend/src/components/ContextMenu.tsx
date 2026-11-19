@@ -62,8 +62,14 @@ function MenuList({ items, x, y, close }: { items: MenuItem[]; x: number; y: num
                 setSub({ i, x: r.right - 2, y: r.top - 4 });
               } else setSub(null);
             }}
-            onClick={() => {
-              if (it.sub) return;
+            onClick={(e) => {
+              // touch has no hover: a tap on an entry with a sub menu opens (or closes) it
+              if (it.sub) {
+                if (it.disabled) return;
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSub((cur) => (cur?.i === i ? null : { i, x: r.right - 2, y: r.top - 4 }));
+                return;
+              }
               close();
               it.onClick?.();
             }}>
