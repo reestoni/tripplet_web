@@ -13,6 +13,7 @@ import YarnScopeAty from "../components/YarnScopeAty";
 import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
+import { SensorMeasureDialog } from "../components/SensorMeasure";
 import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
 import { copyText, flashTrial, seriesLink } from "../links";
@@ -47,6 +48,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const [fresh, setFresh] = useState(0);          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
   const [rights, setRights] = useState<SeriesRights | null>(null);
   const [tool, setTool] = useState<Tool | null>(null);
+  const measured = useRef(false);                 // "📏 Messen" saved a file -> rebuild the tables on close
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
     if (!toast) return;
@@ -185,6 +187,8 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
               <span className="tb-sep" />
               <button className="tb-btn" disabled={!canWrite} title={canWrite ? t("tl.pdfTip") : t("tl.writeNeeded")}
                 onClick={() => openTool({ kind: "import" })}>{t("tl.pdfImport")}</button>
+              <button className="tb-btn" disabled={!canWrite} title={canWrite ? t("ms.btnTip") : t("tl.writeNeeded")}
+                onClick={() => setTool({ kind: "measure" })}>{t("ms.btn")}</button>
             </>
           )}
           <span className="tb-sep" />
@@ -243,7 +247,16 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       {tool?.kind === "yarns" && <YarnsDialog seriesId={s.id} onClose={() => setTool(null)} onDone={() => reloadAll(t("tl.yarnsSaved"))} />}
       {tool?.kind === "import" && <PdfImportDialog seriesId={s.id} onClose={() => setTool(null)}
         onDone={() => { setFresh((x) => x + 1); setReload((x) => x + 1); }} />}
-      {tool?.kind === "ref-add" && <RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
+      {/* new TDMS files: the YarnScope tabs appear / show them after closing (reload of the series data) */}
+      {tool?.kind === "measure" && <SensorMeasureDialog seriesId={s.id}
+        onClose={() => {
+          setTool(null);
+          if (measured.current && confirmLeave()) setFresh((x) => x + 1);     // YarnScope tabs list the new files
+          measured.current = false;
+          setReload((x) => x + 1);
+        }}
+        onMeasured={() => { measured.current = true; }} />}
+      {tool?.kind === "ref-add" &&<RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
         onOk={(name) => refAction(`/api/series/${s.id}/references`, { name }, t("tl.refAdded"))} />}
       {tool?.kind === "ref-mark" && <RefNameDialog title={t("tl.markRefTitle", { trial: tool.trial.label })} initial="" onClose={() => setTool(null)}
         onOk={(name) => refAction(`/api/series/${s.id}/references/${tool.trial.id}/flag`, { make_reference: true, name }, t("sa.saved"))} />}
@@ -315,7 +328,7 @@ function SeriesNotes({ seriesId, initial, canWrite, onSaved }: {
 type Tool =
   | { kind: "labels" } | { kind: "yarns" } | { kind: "copy"; ids: number[] } | { kind: "ref-add" }
   | { kind: "ref-mark"; trial: Trial } | { kind: "ref-rename"; trial: Trial; name: string }
-  | { kind: "import" } | { kind: "compare"; ref: number | null };
+  | { kind: "import" } | { kind: "compare"; ref: number | null } | { kind: "measure" };
 
 function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools, copyLink }: {
   data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;

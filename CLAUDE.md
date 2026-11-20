@@ -415,6 +415,19 @@ alten `Timestamp` mehr.
 /api/series/{id}/pdf-import/start` -> Hintergrund-Job (ein Import gleichzeitig, wartende zeigen "Wartet…") über dieselben Hooks wie
 der Desktop (`on_pdf_start`/`on_pdf_end` Statimat, `progress_for` = OCR-Seite Itemat); `GET …/pdf-import/job/<id>` (nur für den
 Starter), Dialog pollt alle 0.7 s (`ImportProgress` in `SeriesTools.tsx`). Das alte direkte `POST …/pdf-import` bleibt.
+**YarnScope messen statt Sensoft** (2026-11-20, beide Apps, Machbarkeit für F&E - Validierung mit Garn steht noch aus): Knopf "📏 Messen"
+in Show Experiment. Logik `ui/yarnscope/sensor_measure.py` (Desktop-Repo): NI USB-6211 ("Dev1"/"Dev2", eine pro Laptop) über `nidaqmx`
+(nur beim Messen importiert; `pip nidaqmx` + NI-DAQmx-Treiber), Anschlüsse C1 = ai1/ai9, C2 = ai4/ai12, RSE ±10 V, Frequenz = Geschwindigkeit
+/ 0.25 mm (Box rundet: 20 MHz / ganzzahlig), Kalibrierung der Sensoptic-`.dat` (µm = a + b·V), TDMS genau wie Sensoft (Gruppe "Rohdaten",
+x/y-Achse, Parameter-Tabelle, Name `<Serie>_<Versuch>_<TTMMJJ_HHMM>.tdms`) + Eigenschaften `TrippleT.*` (echte Frequenz, Kopf, Box-Seriennr.,
+Versuch, Leerwert) -> automatische Analyse nimmt sie. Sensoren = Köpfe aus den Sensoft-Konfigurationen des Benutzers
+(`…\LabVIEW Data\Sensoft\Config Data\Configurations ATY\*.ini`, zuletzt geänderte zuerst). Probelauf 2026-11-20 ohne Garn = Sensoft (X −53.3/−53.8 µm,
+Y 521.6/521.6 µm); Sensofts "Nullen" ändert die gespeicherten Werte nicht -> hier nur "Leerwert prüfen". Vorhandene Datei: 409 `exists`, "Neu messen"
+verschiebt die alte nach `_replaced\` (nie löschen). Geschwindigkeit = vorerst `SpeedShaft2` (Regel des Nutzers folgt, `default_speed`).
+Web `app/sensor_api.py` (`/api/series/{id}/sensor/setup|zero|measure|job/<id>[/cancel]`, ein Job gleichzeitig, Browser schickt nur Versuchs-ID,
+Sensor-Schlüssel, Box-Name): **der Server misst** - geht nur, solange er auf dem Laptop mit der Box läuft (auf der VM: später ein Helfer).
+Frontend `components/SensorMeasure.tsx`. Desktop `ui/widgets/sensor_measure_dialog.py`. Tests: Desktop `test_sensor_measure.py`, Web
+`test_sensor_api.py` (simulierte Box, tmp-Ordner).
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

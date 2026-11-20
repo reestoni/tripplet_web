@@ -15,7 +15,7 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 |---|---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 1 | 23 |
 | 2. Backlog | 33 | 0 | 0 | 1 | 1 | 35 |
-| 3. Show Experiment | 98 | 2 | 0 | 1 | 1 | 102 |
+| 3. Show Experiment | 99 | 2 | 0 | 1 | 1 | 103 |
 | 4. Report from Show Experiment | 12 | 0 | 0 | 0 | 0 | 12 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 23 | 2 | 2 | 0 | 0 | 27 |
@@ -31,7 +31,7 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 | 16. Superuser pages | 1 | 0 | 0 | 2 | 0 | 3 |
 | Conclusion per series | 8 | 0 | 0 | 0 | 0 | 8 |
 | Jet Advisor | 2 | 0 | 0 | 0 | 0 | 2 |
-| **Total** | 340 | 5 | 2 | 8 | 4 | 359 |
+| **Total** | 341 | 5 | 2 | 8 | 4 | 360 |
 
 Open rows (2026-11-19), none blocking:
 - PARTIAL Show Experiment: leaving with unsaved changes asks OK/Cancel instead of Save/Discard/Cancel, browser back not guarded.
@@ -144,6 +144,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Statimat import (from attached PDFs, preview, write, change log) | `_statimat_import` (`screen_show_experiment_pdf_import.py`) | **DONE** | `fe/components/SeriesTools.tsx` PdfImportDialog, `be/series_tools.pdf_import` (write access like the desktop buttons) |
 | Itemat import | `_itemat_import` | **DONE** | same as Statimat |
 | One "PDF import" for both: kind recognised per PDF (text "STATIMAT" / scan without text, file name as hint) | `_pdf_import` / `pdf_import_impl` | **DONE** | `lab_pdf_import.detect_kind` + `import_auto` (2026-11-16, both apps), `GET …/pdf-import/kinds` |
+| "📏 Measure": YarnScope TDMS straight from the NI box instead of Sensoft (box, sensor from the Sensoft configs, empty value, trial, speed, length; existing file -> _replaced) | `_open_sensor_measure` / `sensor_measure_dialog.py` | **DONE** | `sensor_measure.py` (2026-11-20, both apps, feasibility); web measures on the server = only with the box on the server PC |
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
 | Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **DONE** | `SavedReports` in the header (only with saved reports; Ctrl+click = new tab) |
 | Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **DONE** | LabelsDialog (range, start cell, template, save template) → PDF in new tab |

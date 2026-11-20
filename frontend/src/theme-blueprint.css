@@ -33,6 +33,9 @@ html[data-blueprint] .rq-status.s2 { background: #652222; }
 html[data-blueprint] .rq-status.s3 { background: #246534; }
 html[data-blueprint] .rq-status.s4 { background: #223665; }
 html[data-blueprint] .imp-bar { background: #183f68; }
+html[data-blueprint] .ms-step { border-top: 1px solid #2662a2; border-bottom: 1px solid #2662a2; }
+html[data-blueprint] .ms-warn { color: #db7f76; }
+html[data-blueprint] .ms-ask { border: 1px solid #77622d; background: #665622; }
 html[data-blueprint] .ys-bar { background: #19406a; }
 html[data-blueprint] .ysb-st.ok { color: #75e090; }
 html[data-blueprint] table.pivot td.invalid { background: #6a2323 !important; }

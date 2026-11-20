@@ -1,0 +1,116 @@
+"""Show Experiment "📏 Messen" (app/sensor_api.py) with a fake NI box: rights, the browser picks only a trial /
+sensor key / box, the job measures and writes the TDMS into a tmp folder (never H:), existing file -> 409 exists,
+replace moves it to _replaced. Reads trials of a small dev_local series, writes nothing to the DB."""
+from __future__ import annotations
+
+import time
+
+import numpy as np
+import pytest
+from fastapi.testclient import TestClient
+
+from app import auth
+from app.main import app
+
+from db.connection import fetch_all
+from ui.yarnscope import aty_service, dty_service
+from ui.yarnscope import sensor_measure as sm
+
+CAL = "* PROFILE SENSOR PXL\n16.12.2022\nDCX_COEFF\t10267.73\t-1458.12\nDCY_COEFF\t10424.72\t-1480.20\n"
+CONFIG = ('Boxes 0.Heads 0.Name = "PXL_3_121_W"\nBoxes 0.Heads 0.Channel inputs 0 = "Dev2/ai1"\n')
+
+
+class FakeDaq(sm.Daq):
+    def boxes(self):
+        return [{"name": "Dev2", "product": "USB-6211", "serial": "1A6A875", "simulated": True}]
+
+    def actual_rate(self, box, channels, rate):
+        return 20e6 / (20e6 // rate)
+
+    def read(self, box, channels, rate, n, progress=None, cancel=None):
+        if progress:
+            progress(n // 2, n)
+            progress(n, n)
+        return self.actual_rate(box, channels, rate), np.full((len(channels), n), 7.0)
+
+
+def _client(min_level=2, max_level=9):
+    rows = fetch_all("SELECT u.Username FROM tblUser u JOIN tblAccessRight ar ON u.AccessRights = ar.ID "
+                     "WHERE ar.AccessLevel BETWEEN ? AND ? AND COALESCE(u.Active, 1) <> 0 ORDER BY ar.AccessLevel DESC, u.ID",
+                     [min_level, max_level])
+    if not rows:
+        pytest.skip("no matching user on dev_local")
+    c = TestClient(app)
+    c.cookies.set(auth.COOKIE_NAME, auth.make_cookie(rows[0]["Username"]))
+    return c
+
+
+@pytest.fixture
+def env(tmp_path, monkeypatch):
+    (tmp_path / "cal").mkdir()
+    (tmp_path / "cal" / "PXL_3_121_W.dat").write_text(CAL, encoding="latin-1")
+    cfg = tmp_path / "Sensoft" / "Config Data" / "Configurations ATY"
+    cfg.mkdir(parents=True)
+    (cfg / "Default config.ini").write_text(CONFIG, encoding="latin-1")
+    (tmp_path / "dty").mkdir()
+    (tmp_path / "aty").mkdir()
+    monkeypatch.setenv(sm.ENV_CAL_DIR, str(tmp_path / "cal"))
+    monkeypatch.setenv(sm.ENV_SENSOFT_DIR, str(tmp_path / "Sensoft"))
+    monkeypatch.setenv(dty_service.ENV_TDMS_DIR, str(tmp_path / "dty"))
+    monkeypatch.setenv(aty_service.ENV_TDMS_DIR, str(tmp_path / "aty"))
+    sm.set_daq(FakeDaq())
+    rows = fetch_all("SELECT s.ID FROM tblTrialSeries s WHERE (SELECT COUNT(*) FROM tblTrial t WHERE "
+                     "t.TrialSeriesID = s.ID) BETWEEN 2 AND 6 ORDER BY s.ID DESC LIMIT 1")
+    if not rows:
+        pytest.skip("no small series")
+    yield type("E", (), {"sid": int(rows[0]["ID"]), "dty": tmp_path / "dty"})
+    sm.set_daq(None)
+
+
+def _wait(c, sid, job_id):
+    for _ in range(200):
+        j = c.get(f"/api/series/{sid}/sensor/job/{job_id}").json()
+        if j["finished"]:
+            return j
+        time.sleep(0.05)
+    raise AssertionError("job did not finish")
+
+
+def test_setup_zero_measure_replace(env):
+    c = _client()
+    s = c.get(f"/api/series/{env.sid}/sensor/setup").json()
+    assert s["boxes"][0]["serial"] == "1A6A875" and s["box_error"] is None
+    assert [x["key"] for x in s["sensors"]] == ["PXL_3_121_W@C1"]
+    trial = s["trials"][0]
+    assert trial["dty"] is None
+
+    z = c.post(f"/api/series/{env.sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).json()
+    assert [a["axis"] for a in z["axes"]] == ["x", "y"]
+
+    body = {"box": "Dev2", "sensor": "PXL_3_121_W@C1", "trial_id": trial["trial_id"], "speed": 600, "length": 3}
+    assert c.post(f"/api/series/{env.sid}/sensor/measure", json={**body, "sensor": "..\\x@C1"}).json()["code"] == "head_missing"
+    assert c.post(f"/api/series/{env.sid}/sensor/measure", json={**body, "trial_id": -5}).status_code == 404
+    r = c.post(f"/api/series/{env.sid}/sensor/measure", json={**body, "speed": 0})
+    assert r.status_code == 400 and r.json()["code"] == "bad_speed"
+
+    j = _wait(c, env.sid, c.post(f"/api/series/{env.sid}/sensor/measure", json=body).json()["job_id"])
+    assert j["error"] is None and j["done"] == j["total"] > 0
+    first = j["result"]["file"]
+    assert first.startswith(f"{env.sid}_{trial['vno']}_") and (env.dty / first).is_file()
+
+    r = c.post(f"/api/series/{env.sid}/sensor/measure", json=body)
+    assert r.status_code == 409 and r.json()["code"] == "exists" and r.json()["vars"]["file"] == first
+    j = _wait(c, env.sid, c.post(f"/api/series/{env.sid}/sensor/measure", json={**body, "replace": True}).json()["job_id"])
+    assert j["result"]["replaced"] == first and (env.dty / sm.REPLACED_DIR / first).is_file()
+
+
+def test_read_only_and_no_box(env):
+    c = _client(0, 1)
+    assert c.post(f"/api/series/{env.sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).status_code == 403
+
+    class NoDriver(sm.Daq):
+        def boxes(self):
+            raise sm.MeasureError("no_driver", "driver missing")
+    sm.set_daq(NoDriver())
+    s = _client().get(f"/api/series/{env.sid}/sensor/setup").json()
+    assert s["boxes"] == [] and s["box_error"]["code"] == "no_driver"
