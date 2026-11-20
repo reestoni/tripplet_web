@@ -446,6 +446,10 @@ button.sb-brand { background: none; border: none; cursor: pointer; font: inherit
 .ys-batch-btn { margin-bottom: 6px; }
 .ys-batch { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
 .ys-progress { display: flex; align-items: center; gap: 10px; }
+/* copy trials: which lab machines (SeriesTools.tsx CopyTrialsDialog) */
+.tl-labs { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 4px 0 4px; }
+.tl-lab { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; cursor: pointer; }
+@media (pointer: coarse) { .tl-lab { min-height: 40px; } }
 /* PDF import progress (SeriesTools.tsx ImportProgress) */
 .imp-progress { margin: 10px 0 4px; }
 .imp-bar { position: relative; height: 10px; border-radius: 5px; background: #e4e7eb; overflow: hidden; }

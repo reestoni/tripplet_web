@@ -397,6 +397,20 @@ grüner Linie, Akzent fest #1D983A (die persönliche Akzentfarbe gilt hier bewus
 Glober Book/xBold per `local()` (auf Firmen-PCs installiert, Kauf-Schrift - nie mitliefern; sonst Inter). Modern + Schicht
 `html[data-heberlein]`, `DisplaySettings.theme = "heberlein"`, `src/theme-heberlein.css` **von Hand** (hell, nicht im Generator);
 Tablet/Handy-Teil am Ende der Datei (Kopfzeile, Schublade, feste Leisten, Vollbild-Blätter mit dunkelblauer Titelzeile).
+**Automatische YarnScope-Analyse** (2026-11-20, Nutzerwunsch, nur Server - der Desktop sieht die Ergebnisse, seine Glocke kennt die
+Meldung): `app/yarnscope_auto.py`, Thread beim Start (`main.py` startup), alle `TRIPPLET_AUTO_ANALYSE_MIN` (10) Min. Ordner DTY+ATY lesen;
+eine Datei zählt, wenn sie höchstens `…_DAYS` (14) alt und seit `…_SETTLE_MIN` (5) unverändert ist und ihr Versuch (Zuordnung wie der Reiter:
+`trial_files`/`find_tdms`, nie Referenzmuster) noch KEINE Analyse hat (`ANALYSED_SQL`) - nie überschreiben. Dann gleiche Analyse + Speichern
+wie "In DB speichern" (DTY `analyse_trial`+`save_analysis`, ATY `analyse_core_file`+`save_db_row`) auf dem Batch-Executor (eins nach dem
+anderen), gespeichert als Backlog-Besitzer der Serie (sonst erster Superuser), Glocke `yarnscope_auto_dty`/`_aty` an ihn (Klick = Reiter).
+Fehlgeschlagene Datei erst wieder, wenn sie sich ändert. **Sicherheit:** nur mit `TRIPPLET_WEB_AUTO_ANALYSE=1` UND (Modus prod ODER beide
+`TRIPPLET_YARNSCOPE_*_DIR` gesetzt) - die TDMS auf H: gehören zu prod (Test-Instanz gegen dev würde fremde Serien treffen). An in
+`start_prod.ps1`; auf der VM nur in der prod-`web.env`. Status für Superuser: `GET /api/yarnscope/auto-status`. Durchlauf ~1 s (erst die
+analysierten Versuche per Abfrage, Dateisuche nur für den Rest). Tests `tests/test_yarnscope_auto.py` (tmp-Ordner, nichts in der DB).
+**Versuche kopieren: Labormaschinen wählen** (2026-11-20, beide Apps): Schritt 3 im Kopier-Dialog, nur Maschinen der gewählten Versuche, alle
+angehakt = wie bisher; `trial_actions.lab_tables_of_trials`, `copy_trials(..., lab_tables=)` -> `clone_lab_rows_for_trial(tables=)`; Web schickt
+`labs` nur bei Abwahl, Server prüft gegen die Liste (nie freie Tabellennamen). Dabei korrigiert (beide): Kopien bekommen in Labor-Tabellen keinen
+alten `Timestamp` mehr.
 **PDF-Import mit Fortschritt** (2026-11-20, nur Web, Nutzerwunsch; der Desktop hat schon einen Fortschrittsdialog): `POST
 /api/series/{id}/pdf-import/start` -> Hintergrund-Job (ein Import gleichzeitig, wartende zeigen "Wartet…") über dieselben Hooks wie
 der Desktop (`on_pdf_start`/`on_pdf_end` Statimat, `progress_for` = OCR-Seite Itemat); `GET …/pdf-import/job/<id>` (nur für den

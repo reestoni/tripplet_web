@@ -29,6 +29,22 @@ app.include_router(series_view.router)
 app.include_router(report.router)
 app.include_router(yarnscope.router)
 app.include_router(yarnscope_aty.router)
+
+# automatic YarnScope analysis of new TDMS files (yarnscope_auto.py; only with TRIPPLET_WEB_AUTO_ANALYSE=1 and prod)
+from . import yarnscope_auto  # noqa: E402
+
+
+@app.on_event("startup")
+def _start_yarnscope_auto() -> None:
+    yarnscope_auto.start()
+
+
+@app.get("/api/yarnscope/auto-status")
+def yarnscope_auto_status(user: Dict[str, Any] = Depends(current_user)):
+    """For superusers: is the automatic analysis on, when did it last run, what did it do."""
+    if int(user.get("access_level") or 0) < 4:
+        return JSONResponse(status_code=403, content={"code": "superuser_only", "detail": "Superusers only."})
+    return yarnscope_auto.status()
 app.include_router(requests_api.router)
 app.include_router(requests_api.links_router)
 app.include_router(create_api.router)

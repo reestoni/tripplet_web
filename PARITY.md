@@ -150,7 +150,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Add empty trial (→ Create Experiment "add trials") | `_add_empty_trial` | **DONE** | "+T" button in the Machine Data tool bar (2026-11-13) |
 | "+ Ref" add reference sample | `_add_reference_sample` | **DONE** | header button + trial menu |
 | "vs Ref / Target" compare dialog (criteria, tolerances, own targets, saved sets, only-passing filter) | `_open_ref_compare` (`ui/ref_compare_dialog.py`) | **DONE** | RefCompareDialog, `be/series_tools.ref_compare` (same `ui/ref_compare.py`); "Only trials that meet all criteria" filter |
-| "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **DONE** | CopyTrialsDialog, `be/series_tools.copy_trials_ep` |
+| "Copy trials" button / dialog (block/row repeat, field overrides) | `_on_copy_trials_button` (`ui/copy_trials_dialog.py`) | **DONE** | CopyTrialsDialog, `be/series_tools.copy_trials_ep`; step 3 "which lab machines?" in both (2026-11-20, `trial_actions.lab_tables_of_trials` / `copy_trials(lab_tables=)`) |
 | "Yarns…" dialog (plies of the series: add ply, trial output, change yarn, ends, remove) | `_open_series_yarns` (`ui/series_yarns_dialog.py`) | **DONE** | YarnsDialog, `be/series_tools.yarns_apply`; "+ Trial output" = `/yarns/trial-search` + `/yarns/trial-output` (`get_or_create_shadow_yarn`) |
 | Help button (EN/DE/ES) | `_open_help` | **DONE** | `HelpButton screen="show_experiment"` |
 | Read-only for access level ≤ 1 | `_get_access_level` / `_sync_save_button_access` | **DONE** | `canWrite = accessLevel >= 2` |
@@ -271,6 +271,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | DTY: metric cards (FP/m, CV, KL, OL, A/B/C) + A/B/C pie | `_ys_update_metrics` | **DONE** | |
 | DTY: Save to DB (level ≥ 2) | `_ys_on_save` | **DONE** | `dty_service.save_analysis` |
 | DTY: ⚡ Batch (only pending, save, stop, progress, result table) | `_ys_open_batch` | **DONE** | `YarnScopeBatch.tsx` |
+| Automatic analysis + save of new DTY/ATY TDMS (server, every 10 min) | – (server only; desktop bell shows the message) | **WEB ONLY** | `be/yarnscope_auto.py` (2026-11-20) |
 | DTY: Segmentmittel plot (open/knot segments, thresholds) | `_ys_draw_plots` | **DONE** | `dty_service.segment_view_json` |
 | DTY: Signal plot | `_ys_draw_signal` | **DONE** | |
 | DTY: Garnspiegel | `_ys_draw_garnspiegel` | **DONE** | canvas |

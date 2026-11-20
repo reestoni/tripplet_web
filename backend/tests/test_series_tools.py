@@ -79,6 +79,29 @@ def test_copy_trials_with_changed_value(monkeypatch):
     assert _trial_ids(sid) == before
 
 
+def test_copy_trials_lab_machine_choice():
+    """Nutzerwunsch 2026-11-20: the copy gets only the ticked lab machines; unknown tables are refused."""
+    c = _client()
+    sid = _series()
+    setup = c.get(f"/api/series/{sid}/copy-setup").json()
+    src = setup["trials"][0]["id"]
+    labs = [l for l in setup["labs"] if src in l["trials"]]
+    if len(labs) < 1:
+        pytest.skip("source trial has no lab rows")
+    assert c.post(f"/api/series/{sid}/copy", json={"plan": [{"source": src}], "labs": ["tbluser"]}).status_code == 400
+    keep = labs[0]["table"]
+    new = []
+    try:
+        r = c.post(f"/api/series/{sid}/copy", json={"plan": [{"source": src}], "labs": [keep]})
+        assert r.status_code == 200, r.text
+        new = r.json()["new_ids"]
+        from db import trial_actions as ta
+        got = ta.lab_tables_of_trials(new)
+        assert [g["table"] for g in got] == [keep]
+    finally:
+        _remove(sid, new)
+
+
 def test_read_only_users_cannot_write():
     c = _client(0, 1)
     sid = _series()

@@ -132,7 +132,9 @@ export function LabelsDialog({ seriesId, onClose }: { seriesId: number; onClose:
 /* ------------------------------------------------------------------ Copy trials */
 type CField = { key: string; label: string; rule: string | null; default: boolean; choices: [number | string, string][] | null };
 type CVal = { v?: string | number | null; text?: string; na?: boolean; varies?: boolean };
-type CSetup = { trials: { id: number; label: string; summary: string }[]; next_no: number; fields: CField[]; source: Record<string, Record<string, CVal>> };
+type CLab = { table: string; tab: string; title: string; trials: number[] };
+type CSetup = { trials: { id: number; label: string; summary: string }[]; next_no: number; fields: CField[]; source: Record<string, Record<string, CVal>>;
+  labs: CLab[] };
 
 export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
   seriesId: number; preselected: number[]; onClose: () => void; onDone: (n: number) => void;
@@ -147,6 +149,7 @@ export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
   const [edits, setEdits] = useState<Record<string, Record<string, string | number | null>>>({});
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [noLab, setNoLab] = useState<string[]>([]);      // unticked lab machines (default: all ticked = as before)
   useEffect(() => {
     request<CSetup>("GET", `/api/series/${seriesId}/copy-setup`).then(setS).catch((e) => setErr(errText(e)));
   }, [seriesId]);
@@ -154,6 +157,7 @@ export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
   const sources = block ? Array.from({ length: n }, () => selected).flat() : selected.flatMap((x) => Array.from({ length: n }, () => x));
   const keys = (() => { const occ: Record<number, number> = {}; return sources.map((x) => `${x.id}:${(occ[x.id] = (occ[x.id] ?? -1) + 1)}`); })();
   const fields = s ? s.fields.filter((f) => allFields || f.default) : [];
+  const labs = s ? s.labs.filter((l) => l.trials.some((id) => sel.includes(id))) : [];
   const toggle = (id: number, i: number, shift: boolean) => {
     if (!s) return;
     if (shift && lastClick !== null) {
@@ -168,7 +172,9 @@ export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
     setBusy(true); setErr(null);
     try {
       const plan = sources.map((x, i) => ({ source: x.id, values: edits[keys[i]] ?? {} }));
-      const r = await request<{ new_ids: number[] }>("POST", `/api/series/${seriesId}/copy`, { plan });
+      const body: { plan: typeof plan; labs?: string[] } = { plan };
+      if (s && noLab.length) body.labs = s.labs.map((l) => l.table).filter((x) => !noLab.includes(x));
+      const r = await request<{ new_ids: number[] }>("POST", `/api/series/${seriesId}/copy`, body);
       onDone(r.new_ids.length);
     } catch (e) { setErr(errText(e)); setBusy(false); }
   };
@@ -194,7 +200,26 @@ export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
             <label className="md-radio"><input type="radio" checked={block} onChange={() => setBlock(true)} /> {t("tl.repeatBlock")}</label>
             <label className="md-radio"><input type="radio" checked={!block} onChange={() => setBlock(false)} /> {t("tl.eachInRow")}</label>
           </div>
-          <div className="tl-step"><b>3</b> {t("tl.result")}
+          <div className="tl-step"><b>3</b> {t("tl.whichLabs")}</div>
+          {selected.length === 0 ? null : labs.length === 0 ? <div className="muted">{t("tl.noLabs")}</div> : (
+            <>
+              <div className="tl-labs">
+                {labs.map((l) => {
+                  const n = l.trials.filter((id) => sel.includes(id)).length;
+                  return (
+                    <label key={l.table} className="tl-lab">
+                      <input type="checkbox" checked={!noLab.includes(l.table)}
+                        onChange={(e) => setNoLab((cur) => (e.target.checked ? cur.filter((x) => x !== l.table) : [...cur, l.table]))} />
+                      <span>{t(`tab.${l.tab}`)}</span>
+                      {n < selected.length && <span className="muted small">{t("tl.labTrials", { n, total: selected.length })}</span>}
+                    </label>
+                  );
+                })}
+              </div>
+              <div className="muted small">{t("tl.labsHint")}</div>
+            </>
+          )}
+          <div className="tl-step"><b>4</b> {t("tl.result")}
             <label className="md-radio"><input type="checkbox" checked={allFields} onChange={(e) => setAllFields(e.target.checked)} /> {t("tl.allFields")}</label>
           </div>
           <div className="table-wrap tl-result">

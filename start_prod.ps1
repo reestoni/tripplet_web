@@ -8,6 +8,8 @@ $root = $PSScriptRoot
 $env:TRIPPLET_MODE = "prod"
 $env:TRIPPLET_WEB_ALLOW_PROD = "1"
 $env:TRIPPLET_WEB_INSTANCE = "local"
+# new TDMS files are analysed + saved by the server itself (backend/app/yarnscope_auto.py, user's go 2026-11-20)
+$env:TRIPPLET_WEB_AUTO_ANALYSE = "1"
 Push-Location "$root\frontend"; npm.cmd run build; Pop-Location
 Start-Job { Start-Sleep -Seconds 3; Start-Process "http://127.0.0.1:8010" } | Out-Null
 Set-Location "$root\backend"

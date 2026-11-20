@@ -61,6 +61,8 @@ def copy_setup(series_id: int, _user: Dict[str, Any] = Depends(current_user)):
                        "summary": "  ·  ".join(p for p in parts if p)})
     return {
         "trials": trials, "next_no": s["next_no"],
+        # lab machines the copies can get (ticked by default = all, like before) - Nutzerwunsch 2026-11-20
+        "labs": [{"table": l["table"], "tab": l["tab"], "title": l["title"], "trials": l["trials"]} for l in s["labs"]],
         "fields": [{"key": f.key, "label": f.label, "rule": f.rule, "default": f.default,
                     "choices": [[k, n] for k, n in (f.choices or [])] or None} for f in fields],
         "source": {str(tid): {k: _val_json(next(f for f in fields if f.key == k), v) for k, v in vals.items()}
@@ -75,6 +77,7 @@ class CopyItem(BaseModel):
 
 class CopyBody(BaseModel):
     plan: List[CopyItem]
+    labs: Optional[List[str]] = None     # lab tables the copies get (None = all, as before)
 
 
 @router.post("/{series_id}/copy")
@@ -110,7 +113,13 @@ def copy_trials_ep(series_id: int, body: CopyBody, user: Dict[str, Any] = Depend
                 val = norm if norm != "" else None
             over[k] = val
         plan.append((item.source, over))
-    new_ids, err = ta.copy_trials(series_id, plan, fields, user)
+    labs = None
+    if body.labs is not None:            # only lab machines of this series' trials (allow-list, never free table names)
+        allowed = {l["table"] for l in s["labs"]}
+        labs = [str(x).lower() for x in body.labs]
+        if any(x not in allowed for x in labs):
+            return _err(400, "bad_lab", "Unknown lab machine.")
+    new_ids, err = ta.copy_trials(series_id, plan, fields, user, lab_tables=labs)
     n_changed = sum(1 for _s, o in plan if o)
     log_usage_event("feature", "copy_trials", f"web {len(new_ids)} copies, {n_changed} with changed values")
     if err is not None:
