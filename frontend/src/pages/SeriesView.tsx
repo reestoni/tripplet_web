@@ -125,7 +125,9 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const accessLevel = preview ? 1 : userLevel;
   const canWrite = accessLevel >= 2;
   const copyLink = async (url: string) => setToast(t(await copyText(url) ? "lk.copied" : "lk.failed"));
-  const reloadAll = (msg?: string) => { setTool(null); setReload((x) => x + 1); if (msg) setToast(msg); };
+  // after copying trials, Yarns…, reference samples: series data AND every table again (fresh), so new trials /
+  // changed plies show at once - like the desktop's reload after a copy (user 2026-11-20: copies did not appear)
+  const reloadAll = (msg?: string) => { setTool(null); setFresh((x) => x + 1); setReload((x) => x + 1); if (msg) setToast(msg); };
   // tools that add/change trials reload the page - unsaved values would be lost (desktop asks the same)
   const openTool = (x: Tool) => { if (confirmLeave()) setTool(x); };
   // desktop "↻ Screen aktualisieren (F5)": everything from the database again, same tab; unsaved values -> ask first
@@ -240,7 +242,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
         onDone={(n) => reloadAll(t("tl.copied", { n }))} />}
       {tool?.kind === "yarns" && <YarnsDialog seriesId={s.id} onClose={() => setTool(null)} onDone={() => reloadAll(t("tl.yarnsSaved"))} />}
       {tool?.kind === "import" && <PdfImportDialog seriesId={s.id} onClose={() => setTool(null)}
-        onDone={() => setReload((x) => x + 1)} />}
+        onDone={() => { setFresh((x) => x + 1); setReload((x) => x + 1); }} />}
       {tool?.kind === "ref-add" && <RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
         onOk={(name) => refAction(`/api/series/${s.id}/references`, { name }, t("tl.refAdded"))} />}
       {tool?.kind === "ref-mark" && <RefNameDialog title={t("tl.markRefTitle", { trial: tool.trial.label })} initial="" onClose={() => setTool(null)}
