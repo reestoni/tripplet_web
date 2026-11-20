@@ -32,6 +32,7 @@ html[data-blueprint] .rq-status.s1 { background: #665422; }
 html[data-blueprint] .rq-status.s2 { background: #652222; }
 html[data-blueprint] .rq-status.s3 { background: #246534; }
 html[data-blueprint] .rq-status.s4 { background: #223665; }
+html[data-blueprint] .imp-bar { background: #183f68; }
 html[data-blueprint] .ys-bar { background: #19406a; }
 html[data-blueprint] .ysb-st.ok { color: #75e090; }
 html[data-blueprint] table.pivot td.invalid { background: #6a2323 !important; }

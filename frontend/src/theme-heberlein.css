@@ -1,0 +1,220 @@
+/* TrippleT web - "Heberlein" look (2026-11-20, nur Web, Nutzerwunsch: Heberlein-Auftritt als weitere Darstellung).
+   Modern + a light brand layer under html[data-heberlein] (display.tsx; DisplaySettings.theme = "heberlein").
+   House colours: navy #1B232C, green #1D983A, grey #666666, light green #E7EFE8; house font Glober Book / xBold
+   (installed on company PCs - used via local(); elsewhere Inter, which ships with the app).
+   Hand-written (light, so not part of tools/gen_night_css.py). Only appearance - layout comes from styles.css /
+   theme-modern.css / responsive.css, so tablet and phone keep working; the phone/tablet parts at the end only colour
+   the pieces that exist there (top bar, drawer, fixed bars, sheets). Selectors start with
+   html[data-heberlein][data-theme] so they win over the modern look. */
+
+@font-face { font-family: "HB Glober"; font-weight: 300 500; font-display: swap;
+  src: local("Glober Book"), local("GloberBook"), local("Glober Regular"), local("Glober"); }
+@font-face { font-family: "HB Glober"; font-weight: 600 700; font-display: swap;
+  src: local("Glober Bold"), local("GloberBold"), local("Glober xBold"); }
+@font-face { font-family: "HB Glober"; font-weight: 800 900; font-display: swap;
+  src: local("Glober xBold"), local("GloberxBold"), local("Glober Bold"); }
+
+/* ---------- tokens ---------- */
+html[data-heberlein][data-theme] {
+  --hb-navy: #1b232c;
+  --hb-navy-2: #26313d;        /* raised surfaces on navy */
+  --hb-navy-line: #34404d;
+  --hb-green: #1d983a;
+  --hb-green-dark: #167a2e;
+  --hb-grey: #666666;
+  --hb-wash: #e7efe8;
+  --hb-wash-2: #f3f7f4;
+  --hb-font: "HB Glober", "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  /* the house green is the accent here (the personal accent colour applies to the other looks) */
+  --accent: #1d983a !important;
+  --accent-tint: #e7efe8;
+  --accent-sel: #d3e6d7;
+  --accent-grid: #f1f6f2;
+  --accent-line: #d6e2d8;
+  --accent-soft: #f7faf8;
+  --page-bg: #f4f6f5;
+  --card-bg: #ffffff;
+  --text: #1b232c;
+  --muted: #666666;
+  --border: #dbe3dd;
+  --sidebar-bg: #1b232c;
+  --m-sidebar: #1b232c;
+  --m-border-strong: #c3cdc6;
+  --m-hover: #eef3ef;
+  --m-accent-ink: #1b232c;
+  --m-accent-wash: #e7efe8;
+  --m-ring: 0 0 0 3px rgba(29, 152, 58, 0.30);
+  --m-shadow-sm: 0 1px 2px rgba(27, 35, 44, 0.06);
+  --m-shadow-md: 0 6px 16px rgba(27, 35, 44, 0.10);
+  --m-shadow-lg: 0 22px 50px rgba(27, 35, 44, 0.22);
+  font-family: var(--hb-font);
+  color: var(--text);
+}
+html[data-heberlein][data-theme] body { background: var(--page-bg); }
+html[data-heberlein][data-theme] :is(button, input, select, textarea) { font-family: inherit; }
+html[data-heberlein][data-theme] ::selection { background: rgba(29, 152, 58, 0.22); }
+html[data-heberlein][data-theme] ::-webkit-scrollbar-thumb { background: #c3cdc6; background-clip: content-box; }
+html[data-heberlein][data-theme] ::-webkit-scrollbar-thumb:hover { background: var(--hb-grey); background-clip: content-box; }
+
+/* ---------- sidebar: navy, green marker on the open page ---------- */
+html[data-heberlein][data-theme] .sidebar { background: var(--hb-navy); color: #d5dbe1; border-right: 0; }
+html[data-heberlein][data-theme] .sb-logo-light { display: block; }
+html[data-heberlein][data-theme] .sb-logo-dark { display: none; }
+html[data-heberlein][data-theme] .sb-brand { color: #fff; }
+html[data-heberlein][data-theme] .sb-brand-title { font-weight: 800; letter-spacing: 0.01em; }
+html[data-heberlein][data-theme] .sb-brand-sub { color: #8e9aa6; letter-spacing: 0.14em; }
+html[data-heberlein][data-theme] .sb-search,
+html[data-heberlein][data-theme] .sb-recent { background: var(--hb-navy-2); border-color: var(--hb-navy-line); color: #aeb8c2; border-radius: 4px; }
+html[data-heberlein][data-theme] .sb-search:hover { background: #2d3946; color: #fff; }
+html[data-heberlein][data-theme] .sb-search kbd { background: var(--hb-navy); border-color: var(--hb-navy-line); color: #aeb8c2; }
+html[data-heberlein][data-theme] .sb-section-head { color: #7f8c99; font-weight: 700; letter-spacing: 0.12em; }
+html[data-heberlein][data-theme] .sb-section-head:hover { color: #fff; }
+html[data-heberlein][data-theme] .sb-section-head img { filter: brightness(0) invert(0.62); }
+html[data-heberlein][data-theme] .sb-item {
+  color: #d5dbe1; font-weight: 500; border: 0; border-left: 3px solid transparent; border-radius: 0 4px 4px 0;
+}
+html[data-heberlein][data-theme] .sb-item:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+html[data-heberlein][data-theme] .sb-item.active {
+  background: rgba(29, 152, 58, 0.16); color: #fff; border-left-color: var(--hb-green); font-weight: 700;
+}
+html[data-heberlein][data-theme] .sb-badge { background: var(--hb-green); box-shadow: 0 0 0 2px var(--hb-navy); }
+html[data-heberlein][data-theme] .sb-tools { border-bottom-color: var(--hb-navy-line); }
+html[data-heberlein][data-theme] .sb-tool { color: #aeb8c2; border-radius: 4px; }
+html[data-heberlein][data-theme] .sb-tool:hover,
+html[data-heberlein][data-theme] .sb-tool.on { background: rgba(255, 255, 255, 0.08); color: #fff; border-color: transparent; }
+html[data-heberlein][data-theme] .sidebar .sb-account { border-top-color: var(--hb-navy-line); }
+html[data-heberlein][data-theme] .sb-me-btn { color: #fff; border-radius: 4px; }
+html[data-heberlein][data-theme] .sb-me-btn:hover,
+html[data-heberlein][data-theme] .sb-me-btn.on { background: rgba(255, 255, 255, 0.07); }
+html[data-heberlein][data-theme] .sb-me-role,
+html[data-heberlein][data-theme] .sb-me-caret { color: #8e9aa6; }
+html[data-heberlein][data-theme] .sb-me-menu { border-radius: 6px; color: var(--text); }
+
+/* ---------- pages: navy headings with the green bar of the house style ---------- */
+html[data-heberlein][data-theme] :is(.page h1, .page-head h1) { color: var(--hb-navy); font-weight: 800; letter-spacing: -0.005em; }
+html[data-heberlein][data-theme] :is(.page > h1, .page-head h1)::after {
+  content: ""; display: block; width: 40px; height: 3px; margin-top: 6px; background: var(--hb-green);
+}
+html[data-heberlein][data-theme] :is(h2, h3) { color: var(--hb-navy); }
+html[data-heberlein][data-theme] :is(.set-box, .yc-card, .jr-card, .modal) h2 { font-weight: 800; }
+html[data-heberlein][data-theme] .muted { color: var(--hb-grey); }
+html[data-heberlein][data-theme] a { color: var(--hb-green-dark); }
+html[data-heberlein][data-theme] .card,
+html[data-heberlein][data-theme] :is(.set-box, .yc-card, .jr-card, .as-panel, .as-opt, .as-table, .ic-list, .lg-props, .dsb-list,
+  .ys-card, .ce-tree, .sc-list, .st-table, .rb-wrap, .at-wrap, .wn-card) { border-radius: 6px; border-color: var(--border); }
+html[data-heberlein][data-theme] .yc-head { color: var(--hb-green); font-weight: 800; letter-spacing: 0.12em; }
+
+/* ---------- buttons: green = do it, navy outline = everything else ---------- */
+html[data-heberlein][data-theme] .btn-green {
+  background: var(--hb-green); color: #fff; border-radius: 4px; font-weight: 700; letter-spacing: 0.01em; box-shadow: none;
+}
+html[data-heberlein][data-theme] .btn-green:hover:not(:disabled) { background: var(--hb-green-dark); filter: none; }
+html[data-heberlein][data-theme] :is(.btn-plain, .tb-btn) {
+  background: #fff; border: 1px solid var(--hb-navy); color: var(--hb-navy); border-radius: 4px; box-shadow: none; font-weight: 600;
+}
+html[data-heberlein][data-theme] :is(.btn-plain, .tb-btn):hover:not(:disabled) { background: var(--hb-navy); border-color: var(--hb-navy); color: #fff; }
+html[data-heberlein][data-theme] :is(.btn-plain, .tb-btn):hover:not(:disabled) img { filter: brightness(0) invert(1); }
+html[data-heberlein][data-theme] .tb-icon { border-radius: 4px; }
+html[data-heberlein][data-theme] .tb-icon:hover:not(:disabled) { background: var(--hb-wash); }
+
+/* ---------- fields ---------- */
+html[data-heberlein][data-theme] :is(input[type="text"], input[type="search"], input[type="number"], input[type="password"], input:not([type]), select, textarea, .search) {
+  border-radius: 4px; border-color: var(--m-border-strong);
+}
+html[data-heberlein][data-theme] :is(input, select, textarea, .search):focus { border-color: var(--hb-green); box-shadow: var(--m-ring); }
+html[data-heberlein][data-theme] input[type="checkbox"],
+html[data-heberlein][data-theme] input[type="radio"] { accent-color: var(--hb-green); }
+
+/* ---------- tabs: navy text, green underline ---------- */
+html[data-heberlein][data-theme] .se-tabs { border-bottom: 1px solid var(--border); }
+html[data-heberlein][data-theme] .se-tab { color: var(--hb-grey); font-weight: 600; border-radius: 0; border-bottom-width: 3px; }
+html[data-heberlein][data-theme] .se-tab:hover { background: var(--hb-wash-2); color: var(--hb-navy); }
+html[data-heberlein][data-theme] .se-tab.on { color: var(--hb-navy); border-bottom-color: var(--hb-green); font-weight: 800; background: transparent; }
+html[data-heberlein][data-theme] .as-tab.on { color: var(--hb-navy); border-bottom-color: var(--hb-green); }
+html[data-heberlein][data-theme] :is(.jr-seg, .ja-seg) { background: var(--hb-wash); border-color: transparent; border-radius: 4px; }
+html[data-heberlein][data-theme] :is(.jr-seg, .ja-seg) button { border-radius: 3px; color: var(--hb-navy); }
+html[data-heberlein][data-theme] :is(.jr-seg, .ja-seg) button.on { background: var(--hb-navy); color: #fff; box-shadow: none; }
+
+/* ---------- filter chips ---------- */
+html[data-heberlein][data-theme] .chip { border-radius: 4px; border-color: var(--m-border-strong); color: var(--hb-navy); box-shadow: none; }
+html[data-heberlein][data-theme] .chip:hover { border-color: var(--hb-navy); background: #fff; }
+html[data-heberlein][data-theme] .chip.on { background: var(--hb-navy); border-color: var(--hb-navy); color: #fff; }
+
+/* ---------- lists and tables: light green heads, navy text ---------- */
+html[data-heberlein][data-theme] .table-wrap { border-radius: 6px; border-color: var(--border); }
+html[data-heberlein][data-theme] :is(table.grid th, table.at thead th, .pp-table th) {
+  background: var(--hb-wash); color: var(--hb-navy); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  font-size: 11px; border-bottom: 2px solid var(--hb-green);
+}
+html[data-heberlein][data-theme] table.at thead tr.at-filters th { background: #fff; text-transform: none; border-bottom-width: 1px; }
+html[data-heberlein][data-theme] table.grid tbody tr:hover td { background: var(--hb-wash-2); }
+html[data-heberlein][data-theme] table.pivot thead th { color: var(--hb-navy); font-weight: 700; }
+html[data-heberlein][data-theme] table.pivot tbody th { color: var(--hb-navy); }
+html[data-heberlein][data-theme] :is(.pivot-wrap, .pivot-wrap.table-wrap) { border-radius: 6px; }
+
+/* ---------- backlog ---------- */
+html[data-heberlein][data-theme] .bl-box { background: #e9eeea; border-radius: 6px; }
+html[data-heberlein][data-theme] .bl-head { color: var(--hb-navy); font-weight: 800; }
+html[data-heberlein][data-theme] .bl-count { background: var(--hb-navy); color: #fff; border-color: var(--hb-navy); }
+html[data-heberlein][data-theme] .bl-card { border-radius: 4px; }
+html[data-heberlein][data-theme] .bl-title { color: var(--hb-navy); font-weight: 700; }
+
+/* ---------- dialogs and pop-ups: green line on top ---------- */
+html[data-heberlein][data-theme] .modal-back { background: rgba(27, 35, 44, 0.55); }
+html[data-heberlein][data-theme] .modal { border-radius: 6px; border: 0; border-top: 4px solid var(--hb-green); }
+html[data-heberlein][data-theme] :is(.bell-panel, .recent-menu) { border-radius: 6px; border-top: 3px solid var(--hb-green); }
+html[data-heberlein][data-theme] .toast { border-radius: 4px; }
+html[data-heberlein][data-theme] .imp-bar { background: var(--hb-wash); border-radius: 2px; }
+html[data-heberlein][data-theme] .imp-fill { border-radius: 2px; }
+
+/* ---------- login: navy page, white card with the green bar ---------- */
+html[data-heberlein][data-theme] .login-page {
+  background:
+    linear-gradient(115deg, transparent 0 62%, rgba(29, 152, 58, 0.16) 62% 63%, transparent 63%),
+    linear-gradient(160deg, #1b232c 0%, #222c37 100%);
+}
+html[data-heberlein][data-theme] .login-card { border-radius: 6px; border: 0; border-top: 5px solid var(--hb-green); }
+html[data-heberlein][data-theme] .login-brand-title { font-weight: 800; color: var(--hb-navy); }
+html[data-heberlein][data-theme] .login-brand-sub { color: var(--hb-green); letter-spacing: 0.18em; }
+html[data-heberlein][data-theme] .login-card h1 { color: var(--hb-navy); font-weight: 800; }
+
+/* ---------- settings: the look picker ---------- */
+.set-theme-swatch.heberlein i { background: #1b232c; box-shadow: inset -3px 0 0 #1d983a; }
+.set-theme-swatch.heberlein b { background: linear-gradient(#fff 0 64%, #e7efe8 64%); }
+
+/* ======================= tablet + phone (layout: responsive.css) ======================= */
+@media (max-width: 1024px) {
+  /* top bar = the navy band of the house style, green line under it */
+  html[data-heberlein][data-theme] .m-top { background: var(--hb-navy); color: #fff; border-bottom: 3px solid var(--hb-green); }
+  html[data-heberlein][data-theme] .m-top button:active { background: rgba(255, 255, 255, 0.12); }
+  html[data-heberlein][data-theme] .m-title { font-weight: 800; letter-spacing: 0.01em; }
+  html[data-heberlein][data-theme] .m-scrim { background: rgba(27, 35, 44, 0.55); }
+  /* fixed save bars and step bars at the bottom: white with the green line on top */
+  html[data-heberlein][data-theme] :is(.se-compact .ed-bar.ed-bar-live, .rq-actions-live, .ce-steps) {
+    border-top: 3px solid var(--hb-green); border-radius: 0;
+  }
+  html[data-heberlein][data-theme] :is(.se-mbar, .kb-mbar, .dsb-mbar) .btn-plain { border-radius: 4px; }
+  html[data-heberlein][data-theme] .se-compact .se-tab { border-bottom-width: 3px; }
+}
+@media (max-width: 599px) {
+  /* menu folds down under the top bar: navy over the full width */
+  html[data-heberlein][data-theme] .sidebar { box-shadow: 0 14px 28px rgba(27, 35, 44, 0.35); }
+  html[data-heberlein][data-theme] .sb-item { min-height: 44px; }
+  /* dialogs are full-screen sheets: title in a navy band (the ✕ stays reachable), green line instead of the round top */
+  html[data-heberlein][data-theme] .modal { border-top-width: 0; }
+  html[data-heberlein][data-theme] .modal > h2 {
+    margin: -14px -14px 12px; padding: 10px 14px; background: var(--hb-navy); color: #fff;
+    border-bottom: 3px solid var(--hb-green); position: sticky; top: -14px; z-index: 3;
+  }
+  html[data-heberlein][data-theme] .modal > h2 .m-x { color: #fff; }
+  html[data-heberlein][data-theme] .modal .modal-buttons { border-top: 1px solid var(--border); }
+  /* cards of the phone lists (All Experiments, Yarn Stock, admin tables, ...): flat with the green edge on touch */
+  html[data-heberlein][data-theme] .page h1::after { margin-top: 4px; width: 32px; }
+  html[data-heberlein][data-theme] .login-page { background: linear-gradient(180deg, #1b232c 0 38%, #f4f6f5 38%); }
+}
+@media (pointer: coarse) {
+  html[data-heberlein][data-theme] :is(.btn-plain, .tb-btn):hover:not(:disabled) { background: #fff; color: var(--hb-navy); }
+  html[data-heberlein][data-theme] :is(.btn-plain, .tb-btn):hover:not(:disabled) img { filter: none; }
+  html[data-heberlein][data-theme] :is(.btn-plain, .tb-btn):active:not(:disabled) { background: var(--hb-navy); color: #fff; }
+  html[data-heberlein][data-theme] .btn-green:active:not(:disabled) { background: var(--hb-green-dark); }
+}

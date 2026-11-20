@@ -392,6 +392,15 @@ Bleiben hell: Smart-Chart-Fläche und Report (Desktop-Vorlagen im iframe), Bilde
 doppelte Rahmen, Beschriftungen in Grossbuchstaben; Akzentfarbe wirkt hier kaum, Linien sind weiss). Gleicher Weg wie Nacht:
 `html[data-blueprint]`, `DisplaySettings.theme = "blueprint"`, `src/theme-blueprint.css` vom selben Generator (`PROFILES` in
 `gen_night_css.py`) + Handteil `frontend/tools/blueprint_hand.css`; Diagramm-Farben `DARK_PLOT` in `YarnScopeView.tsx`.
+**Darstellung Heberlein** (2026-11-20, nur Web, Nutzerwunsch): Hausstil hell - Seitenleiste/Handy-Kopfzeile Dunkelblau #1B232C mit
+grüner Linie, Akzent fest #1D983A (die persönliche Akzentfarbe gilt hier bewusst nicht), Tabellenköpfe #E7EFE8, Text #666666, Schrift
+Glober Book/xBold per `local()` (auf Firmen-PCs installiert, Kauf-Schrift - nie mitliefern; sonst Inter). Modern + Schicht
+`html[data-heberlein]`, `DisplaySettings.theme = "heberlein"`, `src/theme-heberlein.css` **von Hand** (hell, nicht im Generator);
+Tablet/Handy-Teil am Ende der Datei (Kopfzeile, Schublade, feste Leisten, Vollbild-Blätter mit dunkelblauer Titelzeile).
+**PDF-Import mit Fortschritt** (2026-11-20, nur Web, Nutzerwunsch; der Desktop hat schon einen Fortschrittsdialog): `POST
+/api/series/{id}/pdf-import/start` -> Hintergrund-Job (ein Import gleichzeitig, wartende zeigen "Wartet…") über dieselben Hooks wie
+der Desktop (`on_pdf_start`/`on_pdf_end` Statimat, `progress_for` = OCR-Seite Itemat); `GET …/pdf-import/job/<id>` (nur für den
+Starter), Dialog pollt alle 0.7 s (`ImportProgress` in `SeriesTools.tsx`). Das alte direkte `POST …/pdf-import` bleibt.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

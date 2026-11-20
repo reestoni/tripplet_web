@@ -149,6 +149,45 @@ def test_labels_pdf_and_pdf_import_allow_list():
     assert c.post(f"/api/series/{sid}/pdf-import", json={"kind": "statimat", "ids": [999999999]}).status_code == 404
 
 
+def test_pdf_import_job_reports_progress(monkeypatch, tmp_path):
+    """Background import: rights + allow-list like the direct import; the job reports PDF n/total, the OCR pages
+    of an Itemat PDF and the final message (shared import replaced - no DB writes)."""
+    import time
+    sid = _series()
+    assert _client(0, 1).post(f"/api/series/{sid}/pdf-import/start", json={"ids": [1]}).status_code == 403
+    c = _client()
+    assert c.post(f"/api/series/{sid}/pdf-import/start", json={"ids": [999999999]}).status_code == 404
+
+    a, b = tmp_path / "a.pdf", tmp_path / "b.pdf"
+    monkeypatch.setattr(series_tools.sat, "file_for_download", lambda kind, s, aid: str(a if aid == 1 else b))
+    monkeypatch.setattr(series_tools.sat, "list_pdfs", lambda s: [{"ID": 1, "OriginalFilename": "stat.pdf"},
+                                                                {"ID": 2, "OriginalFilename": "item.pdf"}])
+    monkeypatch.setattr(series_tools.lpi, "detect_kind",
+                        lambda p, name="": "statimat" if name == "stat.pdf" else "itemat")
+    seen = []
+
+    def fake_auto(series_id, paths, user, kinds, on_pdf_start, on_pdf_end, progress_for):
+        on_pdf_start(0, paths[0]); on_pdf_end(0)
+        cb, done = progress_for(paths[1])
+        cb(2, 5)
+        seen.append(dict(series_tools._pdf_jobs[job_id]))
+        done()
+        return {"statimat": {"imported": 3}, "itemat": {"imported": 1}, "unknown": [], "message": "done text"}
+    monkeypatch.setattr(series_tools.lpi, "import_auto", fake_auto)
+
+    job_id = c.post(f"/api/series/{sid}/pdf-import/start", json={"ids": [1, 2]}).json()["job_id"]
+    for _ in range(100):
+        j = c.get(f"/api/series/{sid}/pdf-import/job/{job_id}").json()
+        if j["finished"]:
+            break
+        time.sleep(0.05)
+    assert j["finished"] and j["error"] is None and j["total"] == 2
+    assert j["result"] == {"imported": 4, "message": "done text", "unknown": []}
+    assert seen[0]["done"] == 1 and seen[0]["current"] == "item.pdf" and (seen[0]["page"], seen[0]["pages"]) == (2, 5)
+    # only the user who started it sees the job
+    assert _client(0, 1).get(f"/api/series/{sid}/pdf-import/job/{job_id}").status_code == 404
+
+
 def test_ref_compare_and_criteria_sets():
     c = _client()
     rows = fetch_all("SELECT TrialSeriesID AS S, ID FROM tblTrial WHERE IsReference = 1 LIMIT 1")

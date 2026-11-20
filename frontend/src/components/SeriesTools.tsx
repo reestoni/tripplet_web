@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { TrialPicker } from "../pages/CreateExperiment";
@@ -414,6 +414,37 @@ export function RefNameDialog({ title, initial, onClose, onOk }: {
 }
 
 /* ------------------------------------------------------------------ PDF import (Statimat + Itemat in one) */
+type ImportJob = { id: string; total: number; done: number; current: string | null; page: number; pages: number;
+  queued: boolean; finished: boolean; result: { imported: number; message: string } | null; error: string | null };
+
+/** Progress of the running import: bar = finished PDFs + share of the OCR pages of the current one; a moving
+ *  stripe while nothing measurable happens (detecting kinds, Statimat parse), so it always looks alive. */
+function ImportProgress({ job }: { job: ImportJob | null }) {
+  const { t } = useI18n();
+  const total = job?.total || 0;
+  const part = job && job.pages > 0 ? Math.min(1, job.page / job.pages) : 0;
+  const pct = job && total > 0 ? Math.min(100, Math.round(((job.done + (job.done < total ? part : 0)) / total) * 100)) : 0;
+  const measurable = !!job && !job.queued && total > 0;
+  return (
+    <div className="imp-progress" role="status" aria-live="polite">
+      <div className={"imp-bar" + (measurable ? "" : " indet")}
+        role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={measurable ? pct : undefined}>
+        <div className="imp-fill" style={measurable ? { width: `${Math.max(pct, 3)}%` } : undefined} />
+      </div>
+      <div className="imp-lines small">
+        {!job || job.queued ? <span>{job?.queued ? t("tl.impQueued") : t("tl.importing")}</span> : (
+          <>
+            <span><b>{measurable ? `${pct} %` : ""}</b> {total > 0 && t("tl.impPdf", { n: Math.min(job.done + 1, total), total })}
+              {job.current ? <> · <span className="imp-file">{job.current}</span></> : null}</span>
+            {job.pages > 0 && <span className="muted">{t("tl.impPage", { p: job.page, pages: job.pages })}</span>}
+          </>
+        )}
+        <span className="muted">{t("tl.impWait")}</span>
+      </div>
+    </div>
+  );
+}
+
 /** One import for Statimat and Itemat PDFs (Nutzerwunsch 2026-11-16, both apps): the kind of every attached PDF
  *  is recognised by the server (db/lab_pdf_import.detect_kind), the chosen ones are imported by their kind. */
 export function PdfImportDialog({ seriesId, onClose, onDone }: { seriesId: number; onClose: () => void; onDone: () => void }) {
@@ -424,18 +455,33 @@ export function PdfImportDialog({ seriesId, onClose, onDone }: { seriesId: numbe
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [job, setJob] = useState<ImportJob | null>(null);
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
   useEffect(() => {
     request<{ pdfs: { id: number; name: string }[] }>("GET", `/api/series/${seriesId}/attachments`).then((r) => setPdfs(r.pdfs))
       .catch((e) => setErr(errText(e)));
     request<{ kinds: Record<string, string | null> }>("GET", `/api/series/${seriesId}/pdf-import/kinds`).then((r) => setKinds(r.kinds))
       .catch(() => setKinds({}));
   }, [seriesId]);
+  // background job + polling, so the dialog can show which PDF / OCR page is being read (Nutzerwunsch 2026-11-20)
   const go = async () => {
-    setBusy(true); setErr(null);
+    setBusy(true); setErr(null); setJob(null);
     try {
-      const r = await request<{ message: string }>("POST", `/api/series/${seriesId}/pdf-import`, { kind: "auto", ids: sel });
-      setResult(r.message); onDone();
-    } catch (e) { setErr(errText(e)); } finally { setBusy(false); }
+      const { job_id } = await request<{ job_id: string }>("POST", `/api/series/${seriesId}/pdf-import/start`, { kind: "auto", ids: sel });
+      for (;;) {
+        await new Promise((res) => setTimeout(res, 700));
+        if (!alive.current) return;
+        const j = await request<ImportJob>("GET", `/api/series/${seriesId}/pdf-import/job/${job_id}`);
+        if (!alive.current) return;
+        setJob(j);
+        if (j.finished) {
+          if (j.error) setErr(j.error);
+          else if (j.result) { setResult(j.result.message); onDone(); }
+          break;
+        }
+      }
+    } catch (e) { if (alive.current) setErr(errText(e)); } finally { if (alive.current) setBusy(false); }
   };
   const kindOf = (id: number) => (kinds ? kinds[String(id)] ?? null : undefined);
   const badge = (k: string | null | undefined) =>
@@ -459,7 +505,7 @@ export function PdfImportDialog({ seriesId, onClose, onDone }: { seriesId: numbe
         <p className="muted small">{t("tl.pdfChosen", { s: chosen.filter((k) => k === "statimat").length,
           i: chosen.filter((k) => k === "itemat").length, u: chosen.filter((k) => k === null).length })}</p>
       )}
-      {busy && <p className="muted">{t("tl.importing")}</p>}
+      {busy && <ImportProgress job={job} />}
       {result && <pre className="tl-result-text">{result}</pre>}
       {err && <div className="login-error">{err}</div>}
       <div className="modal-buttons">

@@ -32,6 +32,7 @@ html[data-night] .rq-status.s1 { background: #423616; }
 html[data-night] .rq-status.s2 { background: #401515; }
 html[data-night] .rq-status.s3 { background: #174122; }
 html[data-night] .rq-status.s4 { background: #152240; }
+html[data-night] .imp-bar { background: #1f2530; }
 html[data-night] .ys-bar { background: #202632; }
 html[data-night] .ysb-st.ok { color: #75e090; }
 html[data-night] table.pivot td.invalid { background: #461717 !important; }

@@ -356,6 +356,104 @@ def pdf_import(series_id: int, body: PdfImport, user: Dict[str, Any] = Depends(c
     return {"imported": res["imported"], "skipped": res["skipped"], "errors": res["errors"], "message": msg}
 
 
+# Import as a background job with progress (Nutzerwunsch 2026-11-20: the dialog only said "Importing…" - an Itemat
+# OCR of several PDFs takes minutes). Same shared import (import_auto); the hooks the desktop progress dialog uses
+# fill the job: PDF n of total, current file, OCR page cur/total of an Itemat PDF.
+import threading as _threading  # noqa: E402
+import time as _time  # noqa: E402
+import uuid as _uuid  # noqa: E402
+from concurrent.futures import ThreadPoolExecutor  # noqa: E402
+
+_pdf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="pdf-import")   # one import at a time
+_pdf_jobs: Dict[str, Dict[str, Any]] = {}
+_pdf_lock = _threading.Lock()
+_PDF_JOB_KEEP_S = 3600
+
+
+def _pdf_job_view(job: Dict[str, Any]) -> Dict[str, Any]:
+    return {k: job[k] for k in ("id", "total", "done", "current", "page", "pages", "queued", "finished", "result",
+                                "error")}
+
+
+def _run_pdf_import(job: Dict[str, Any], series_id: int, paths: List[str], kinds: Dict[str, Any],
+                    names: Dict[str, str], user: Dict[str, Any]) -> None:
+    from .user_context import reset, set_user
+    import os as _os
+    token = set_user(user)                       # change history / usage log see the right user
+    job["queued"] = False
+
+    def _start(path: str) -> None:
+        job["current"] = names.get(path) or _os.path.basename(path)
+        job["page"], job["pages"] = 0, 0
+
+    def on_pdf_start(_idx: int, path: str) -> bool:       # Statimat
+        _start(path)
+        return True
+
+    def on_pdf_end(_idx: int) -> None:
+        job["done"] += 1
+
+    def progress_for(path: str):                          # Itemat: OCR page by page
+        _start(path)
+
+        def cb(cur: Any, total: Any) -> None:
+            job["page"], job["pages"] = int(cur or 0), int(total or 0)
+
+        def done() -> None:
+            job["done"] += 1
+        return cb, done
+
+    try:
+        res = lpi.import_auto(series_id, paths, user, kinds=kinds, on_pdf_start=on_pdf_start, on_pdf_end=on_pdf_end,
+                              progress_for=progress_for)
+        imported = sum((r or {}).get("imported", 0) for r in (res["statimat"], res["itemat"]))
+        job["result"] = {"imported": imported, "message": res["message"], "unknown": res["unknown"]}
+    except Exception as e:
+        job["error"] = str(e)[:500]
+    finally:
+        job["done"], job["current"], job["finished"] = job["total"], None, True
+        job["ended"] = _time.time()
+        reset(token)
+
+
+@router.post("/{series_id}/pdf-import/start")
+def pdf_import_start(series_id: int, body: PdfImport, user: Dict[str, Any] = Depends(current_user)):
+    """Starts the auto import of the chosen attached PDFs in the background -> {job_id}; poll /pdf-import/job/<id>."""
+    if not lpi.can_import(user):
+        return _err(403, "read_only", "Write access required.")
+    if not body.ids:
+        return _err(400, "bad_request", "Choose at least one PDF.")
+    paths = []
+    for aid in body.ids:
+        p = sat.file_for_download("pdf", series_id, aid)
+        if not p:
+            return _err(404, "not_found", "A chosen PDF is not attached to this series.")
+        paths.append(p)
+    orig = {str(x.get("ID")): str(x.get("OriginalFilename") or "") for x in sat.list_pdfs(series_id)}
+    names = {p: orig.get(str(aid), "") for aid, p in zip(body.ids, paths)}
+    kinds = {p: lpi.detect_kind(p, name=names[p]) for p in paths}
+    now = _time.time()
+    with _pdf_lock:
+        for k in [k for k, j in _pdf_jobs.items() if j["finished"] and now - (j["ended"] or now) > _PDF_JOB_KEEP_S]:
+            del _pdf_jobs[k]
+        # only PDFs that are really imported count (unknown ones are just listed)
+        total = sum(1 for p in paths if kinds[p] in (lpi.KIND_STATIMAT, lpi.KIND_ITEMAT))
+        job = {"id": _uuid.uuid4().hex[:12], "series_id": series_id, "user_id": user.get("id"), "total": total,
+               "done": 0, "current": None, "page": 0, "pages": 0, "queued": True, "finished": False,
+               "result": None, "error": None, "ended": None}
+        _pdf_jobs[job["id"]] = job
+    _pdf_executor.submit(_run_pdf_import, job, series_id, paths, kinds, names, dict(user))
+    return {"job_id": job["id"]}
+
+
+@router.get("/{series_id}/pdf-import/job/{job_id}")
+def pdf_import_job(series_id: int, job_id: str, user: Dict[str, Any] = Depends(current_user)):
+    job = _pdf_jobs.get(job_id)
+    if not job or job["series_id"] != series_id or job["user_id"] != user.get("id"):
+        return _err(404, "not_found", "Unknown import.")
+    return _pdf_job_view(job)
+
+
 @router.get("/{series_id}/pdf-import/kinds")
 def pdf_import_kinds(series_id: int, user: Dict[str, Any] = Depends(current_user)):
     """Recognised kind of every attached PDF (db/lab_pdf_import.detect_kind): {attachment id: kind | null}."""

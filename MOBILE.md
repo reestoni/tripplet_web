@@ -7,7 +7,7 @@ Nur Web (keine Desktop-Entsprechung, wie das Tempo-Kapitel). Voraussetzung im Be
 
 - **Breiten:** Handy `< 600 px`, Tablet `600–1024 px`, darüber Desktop wie heute. Touch zusätzlich über
   `@media (pointer: coarse)` (Tablet quer kann breiter als 1024 sein und ist trotzdem Touch).
-- **Eine Datei** `src/responsive.css` für Layout + Touch, gilt in allen Darstellungen (Klassisch/Modern/Nacht/Blaupause).
+- **Eine Datei** `src/responsive.css` für Layout + Touch, gilt in allen Darstellungen (Klassisch/Modern/Nacht/Blaupause/Heberlein; Heberlein färbt Kopfzeile, Schublade, feste Leisten und Vollbild-Blätter selbst ein, `theme-heberlein.css`).
   Nur Aufbau (Spalten, Abstände, Grössen), keine Farben → Klassisch bleibt optisch gleich, Nacht-Generator unberührt.
   Komponenten, die auf dem Handy anders *funktionieren*, fragen `useMedia()` (neuer Hook in `src/media.ts`).
 - **Shell:** unter 1024 px Seitenleiste als Schublade (☰ oben links, Wischen/Klick daneben schliesst), Kopfzeile mit

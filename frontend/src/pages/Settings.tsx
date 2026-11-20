@@ -144,7 +144,7 @@ export default function Settings() {
       <section className="set-box">
         <h2>{t("set.theme")}</h2>
         <div className="set-themes">
-          {(["classic", "modern", "night", "blueprint"] as const).map((k) => (
+          {(["classic", "modern", "night", "blueprint", "heberlein"] as const).map((k) => (
             <label key={k} className={"set-theme" + ((p.theme ?? "classic") === k ? " on" : "")}>
               <input type="radio" name="theme" checked={(p.theme ?? "classic") === k} onChange={() => disp.set({ theme: k })} />
               <span className={"set-theme-swatch " + k} aria-hidden="true"><i /><b /></span>

@@ -9,7 +9,7 @@ import { useI18n } from "./i18n";
    (event "tripplet:cell-focus" from edit.tsx). */
 
 export type DisplayPrefs = { contrast: boolean; crosshair: boolean; readbar: boolean; alert_marks: boolean;
-  cb_colours: boolean; app_scale: number; scale: number; start?: string; theme?: "classic" | "modern" | "night" | "blueprint" };
+  cb_colours: boolean; app_scale: number; scale: number; start?: string; theme?: "classic" | "modern" | "night" | "blueprint" | "heberlein" };
 
 type Read = { where: string; value: string; warn: "red" | "orange" | null };
 type Ctx = { prefs: DisplayPrefs; set: (p: Partial<DisplayPrefs>, persist?: boolean) => void; read: Read | null };
@@ -84,6 +84,9 @@ export function DisplayProvider({ initial, children }: { initial: DisplayPrefs; 
     else delete root.dataset.night;
     if (th === "blueprint") root.dataset.blueprint = "1";
     else delete root.dataset.blueprint;
+    // heberlein = modern + the light house-style layer (theme-heberlein.css under html[data-heberlein], hand-written)
+    if (th === "heberlein") root.dataset.heberlein = "1";
+    else delete root.dataset.heberlein;
     document.documentElement.style.setProperty("--tscale", String((prefs.scale || 100) / 100));
   }, [prefs]);
 
