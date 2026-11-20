@@ -423,7 +423,9 @@ x/y-Achse, Parameter-Tabelle, Name `<Serie>_<Versuch>_<TTMMJJ_HHMM>.tdms`) + Eig
 Versuch, Leerwert) -> automatische Analyse nimmt sie. Sensoren = Köpfe aus den Sensoft-Konfigurationen des Benutzers
 (`…\LabVIEW Data\Sensoft\Config Data\Configurations ATY\*.ini`, zuletzt geänderte zuerst). Probelauf 2026-11-20 ohne Garn = Sensoft (X −53.3/−53.8 µm,
 Y 521.6/521.6 µm); Sensofts "Nullen" ändert die gespeicherten Werte nicht -> hier nur "Leerwert prüfen". Vorhandene Datei: 409 `exists`, "Neu messen"
-verschiebt die alte nach `_replaced\` (nie löschen). Geschwindigkeit = vorerst `SpeedShaft2` (Regel des Nutzers folgt, `default_speed`).
+verschiebt die alte nach `_replaced\` (nie löschen). Geschwindigkeit = Winder-Geschwindigkeit des Versuchs (Nutzerangabe 2026-11-20,
+`default_speed`: Speed Shaft 2 × (1 − Winder % / 100) wie das Prozess-Schema; prod 466 V70: 800 m/min, 4.5 % -> 764 = Sensoft-Dateien; ATY ohne
+Vorschlag). Nach einer Messung ist der nächste Versuch gewählt, der Knopf heisst dann "2. V002 messen" (wie Sensofts Hochzählen).
 Web `app/sensor_api.py` (`/api/series/{id}/sensor/setup|zero|measure|job/<id>[/cancel]`, ein Job gleichzeitig, Browser schickt nur Versuchs-ID,
 Sensor-Schlüssel, Box-Name): **der Server misst** - geht nur, solange er auf dem Laptop mit der Box läuft (auf der VM: später ein Helfer).
 Frontend `components/SensorMeasure.tsx`. Desktop `ui/widgets/sensor_measure_dialog.py`. Tests: Desktop `test_sensor_measure.py`, Web
