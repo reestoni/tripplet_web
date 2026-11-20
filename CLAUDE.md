@@ -474,6 +474,11 @@ zeigt die Fazits aller Serien der Seite (Haupt- + Vergleichsserien) über den Di
 `series_conclusion.for_report()` (Desktop `screen_report.py` @Slot, Web `web_bridge.js` + Prüfung in `report.py`: nur Liste von
 höchstens 20 Ganzzahlen). Ein/aus wird in `queryConfig.showConclusion` des Reports gespeichert (keine DB-Änderung). PDF: die Seite
 schickt nur `conclusionSeries` (IDs), `build_report_pdf` liest die Fazits frisch aus der DB (`report_text`), Abschnitt nach "Observations".
+**Effektive Knoten im Report** (2026-11-20, beide Apps über `ui/report_queries.py`): Y-Achsen "FPm effective@0.3/0.6/1.0/1.3cN/dtex" (FP/m,
+Schlüssel `fpm_eff_03…13`) = FP/m bei 0 × Stability(t) / 100, beim Lesen gerechnet (`effective_fpm_values`, virtuelles Feld
+`FPmEffective`, Itemat Lab, sonst Plus) - auch wo das gespeicherte FPm der Kraft-Zeile fehlt (~870 Lab-Messungen 2026). Keine Zeilen in
+`tblSmartChartAxis`: `with_effective_fpm_axes()` hängt sie in `_load_axes_from_db` hinter die Stability-Achsen; Smart Chart
+(`trial_explorer`, `computed: fpm_effective`) bekommt sie mit. Tests Desktop `test_report_effective_fpm.py`.
 
 **Links, Live-Backlog, Tooltips** (2026-11-14): Links **nur im Web** (Nutzerentscheid 2026-11-14: im Desktop nicht nötig) -
 `frontend/src/links.ts` (`/series/<id>?tab=<key>&trial=<id>`, `/series/<id>/report?report=<id>`, `/tools/canvas?board=<id>`; Reiter-Schlüssel

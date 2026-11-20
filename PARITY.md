@@ -16,7 +16,7 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 | 1. All Experiments | 22 | 0 | 0 | 0 | 1 | 23 |
 | 2. Backlog | 33 | 0 | 0 | 1 | 1 | 35 |
 | 3. Show Experiment | 98 | 2 | 0 | 1 | 1 | 102 |
-| 4. Report from Show Experiment | 11 | 0 | 0 | 0 | 0 | 11 |
+| 4. Report from Show Experiment | 12 | 0 | 0 | 0 | 0 | 12 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 23 | 2 | 2 | 0 | 0 | 27 |
 | 7. Login, sidebar, account | 21 | 0 | 0 | 2 | 0 | 23 |
@@ -31,7 +31,7 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 | 16. Superuser pages | 1 | 0 | 0 | 2 | 0 | 3 |
 | Conclusion per series | 8 | 0 | 0 | 0 | 0 | 8 |
 | Jet Advisor | 2 | 0 | 0 | 0 | 0 | 2 |
-| **Total** | 339 | 5 | 2 | 8 | 4 | 358 |
+| **Total** | 340 | 5 | 2 | 8 | 4 | 359 |
 
 Open rows (2026-11-19), none blocking:
 - PARTIAL Show Experiment: leaving with unsaved changes asks OK/Cancel instead of Save/Discard/Cancel, browser back not guarded.
@@ -261,6 +261,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Help button "How does the Report work?" | `_open_help` | **DONE** | `HelpButton screen="report"` |
 | Back to Show Experiment | `_go_back` | **DONE** | |
 | Open report in new tab (Ctrl+click from lists) | `main._open_report_in_new_tab` | **DONE** | `ReportIcon` (Ctrl / middle click = new tab) |
+| Y axes "FPm effective@t" (FP/m at 0 × Stability / 100, also in Smart Chart; 2026-11-20) | `report_queries.effective_fpm_values` | **DONE** | same shared module |
 
 ## 5. YarnScope (`ui/dty_yarnscope_tab.py`, `ui/aty_yarnscope_tab.py` → `fe/components/YarnScopeView.tsx`, `YarnScopeBatch.tsx`, `be/yarnscope.py`)
 
