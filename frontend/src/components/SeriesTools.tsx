@@ -134,7 +134,7 @@ type CField = { key: string; label: string; rule: string | null; default: boolea
 type CVal = { v?: string | number | null; text?: string; na?: boolean; varies?: boolean };
 type CLab = { table: string; tab: string; title: string; trials: number[] };
 type CSetup = { trials: { id: number; label: string; summary: string }[]; next_no: number; fields: CField[]; source: Record<string, Record<string, CVal>>;
-  labs: CLab[] };
+  labs?: CLab[] };   // missing from a server that was not restarted after the update
 
 export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
   seriesId: number; preselected: number[]; onClose: () => void; onDone: (n: number) => void;
@@ -157,7 +157,8 @@ export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
   const sources = block ? Array.from({ length: n }, () => selected).flat() : selected.flatMap((x) => Array.from({ length: n }, () => x));
   const keys = (() => { const occ: Record<number, number> = {}; return sources.map((x) => `${x.id}:${(occ[x.id] = (occ[x.id] ?? -1) + 1)}`); })();
   const fields = s ? s.fields.filter((f) => allFields || f.default) : [];
-  const labs = s ? s.labs.filter((l) => l.trials.some((id) => sel.includes(id))) : [];
+  // `?? []`: an older server (not restarted after an update) sends no "labs" - the dialog must still open
+  const labs = (s?.labs ?? []).filter((l) => l.trials.some((id) => sel.includes(id)));
   const toggle = (id: number, i: number, shift: boolean) => {
     if (!s) return;
     if (shift && lastClick !== null) {
@@ -173,7 +174,7 @@ export function CopyTrialsDialog({ seriesId, preselected, onClose, onDone }: {
     try {
       const plan = sources.map((x, i) => ({ source: x.id, values: edits[keys[i]] ?? {} }));
       const body: { plan: typeof plan; labs?: string[] } = { plan };
-      if (s && noLab.length) body.labs = s.labs.map((l) => l.table).filter((x) => !noLab.includes(x));
+      if (s?.labs && noLab.length) body.labs = s.labs.map((l) => l.table).filter((x) => !noLab.includes(x));
       const r = await request<{ new_ids: number[] }>("POST", `/api/series/${seriesId}/copy`, body);
       onDone(r.new_ids.length);
     } catch (e) { setErr(errText(e)); setBusy(false); }
