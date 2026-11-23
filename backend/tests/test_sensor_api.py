@@ -114,3 +114,35 @@ def test_read_only_and_no_box(env):
     sm.set_daq(NoDriver())
     s = _client().get(f"/api/series/{env.sid}/sensor/setup").json()
     assert s["boxes"] == [] and s["box_error"]["code"] == "no_driver"
+
+
+def test_inspector_free_measurement_opens_the_file(env):
+    """TDMS Inspector "📏 Messen": own name + speed, file in <folder>/_manual, opened at once (negative number)
+    and analysable like an upload; the measured file is never deleted by the inspector's cleanup."""
+    from app import tdms_inspector
+    c = _client()
+    s = c.get("/api/tdms-inspector/sensor/setup").json()
+    assert s["boxes"][0]["name"] == "Dev2" and s["manual_dir"] == sm.MANUAL_DIR
+    body = {"box": "Dev2", "sensor": "PXL_3_121_W@C1", "name": "99999_34", "speed": 764, "length": 3}
+    r = c.post("/api/tdms-inspector/sensor/measure", json={**body, "name": "a/b"})
+    assert r.status_code == 400 and r.json()["code"] == "bad_name"
+    j = _wait_insp(c, c.post("/api/tdms-inspector/sensor/measure", json=body).json()["job_id"])
+    assert j["error"] is None
+    res = j["result"]
+    assert res["file"].startswith("99999_34_") and res["next_name"] == "99999_35" and "path" not in res
+    assert res["series_id"] < 0 and (env.dty / sm.MANUAL_DIR / res["file"]).is_file()
+    assert not list(env.dty.glob("*.tdms"))                       # not in the folder the automatic analysis reads
+    a = c.get(f"/api/series/{res['series_id']}/yarnscope").json()
+    assert a["trials"] and a["trials"][0]["file"]
+    tdms_inspector._files[res["series_id"]]["time"] = 0             # cleanup after a day: forget, never delete
+    tdms_inspector._cleanup()
+    assert (env.dty / sm.MANUAL_DIR / res["file"]).is_file() and res["series_id"] not in tdms_inspector._files
+
+
+def _wait_insp(c, job_id):
+    for _ in range(200):
+        j = c.get(f"/api/tdms-inspector/sensor/job/{job_id}").json()
+        if j["finished"]:
+            return j
+        time.sleep(0.05)
+    raise AssertionError("job did not finish")

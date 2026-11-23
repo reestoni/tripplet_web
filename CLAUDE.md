@@ -430,6 +430,15 @@ Web `app/sensor_api.py` (`/api/series/{id}/sensor/setup|zero|measure|job/<id>[/c
 Sensor-Schlüssel, Box-Name): **der Server misst** - geht nur, solange er auf dem Laptop mit der Box läuft (auf der VM: später ein Helfer).
 Frontend `components/SensorMeasure.tsx`. Desktop `ui/widgets/sensor_measure_dialog.py`. Tests: Desktop `test_sensor_measure.py`, Web
 `test_sensor_api.py` (simulierte Box, tmp-Ordner).
+**Freie Messung im TDMS Inspector** (2026-11-23, beide Apps, Nutzerwunsch für die Validierung): Knopf "📏 Messen…" - eigener Name (z. B.
+`99999_34`, `sensor_measure.check_name`: Buchstaben/Ziffern/`_ . -`/Leerzeichen, max. 60) + Geschwindigkeit von Hand, ohne Serie/DB.
+`measure_free()` schreibt nach `<DTY|ATY-Ordner>\_manual\<Name>_<TTMMJJ_HHMM>.tdms` (gleiche Minute -> Sekunden dazu, nie überschreiben);
+die automatische Analyse und die YarnScope-Reiter lesen nur den Ordner selbst -> nie einem echten Versuch zugeordnet. Danach öffnet der
+Inspector die Datei und der Name zählt hoch (`next_name`: 99999_34 -> 99999_35). Web: `sensor_api.inspector_router`
+(`/api/tdms-inspector/sensor/setup|zero|measure|job/<id>[/cancel]`, Feature `tdms_inspector` + Stufe 2), die Datei wird mit
+`tdms_inspector.register()` geöffnet (`own: False` - das Aufräumen nach einem Tag vergisst sie nur, löscht sie nie), Dialog
+`FreeMeasureDialog`. Desktop: `SensorMeasureDialog(free=True, on_measured=…)`, `TdmsInspectorScreen._open_path`. Schreibrecht prüft der
+Dialog selbst (`read_only` unter Stufe 2).
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

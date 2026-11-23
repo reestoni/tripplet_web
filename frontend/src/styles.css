@@ -464,6 +464,7 @@ button.sb-brand { background: none; border: none; cursor: pointer; font: inherit
 .ms-form > label { font-weight: 600; }
 .ms-form select, .ms-form input { max-width: 100%; }
 .ms-form input[type="text"] { width: 110px; }
+.ms-form input.ms-name { width: 180px; }
 .ms-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
 .ms-row > select { flex: 1 1 0; min-width: 0; }
 .ms-step { grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 0;

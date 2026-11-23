@@ -223,3 +223,181 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
     </Modal>
   );
 }
+
+/* ------------------------------------------------------------------ TDMS Inspector: free measurement */
+type FreeSetup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; length: number;
+  speed_range: [number, number]; length_range: [number, number]; manual_dir: string };
+export type FreeResult = Result & { name: string; next_name: string; series_id: number; size: number };
+const FREE_PREF = "tripplet.sensorMeasure.free";
+type FreePrefs = { name?: string; speed?: string };
+const loadFree = (): FreePrefs => { try { return JSON.parse(localStorage.getItem(FREE_PREF) || "{}"); } catch { return {}; } };
+
+/** "📏 Messen…" in the TDMS Inspector (Nutzerwunsch 2026-11-23): own name (e.g. 99999_34) and speed, no series and no
+ *  database. The file goes to the _manual sub-folder of the DTY / ATY folder (never picked up by the automatic
+ *  analysis); when it is saved the inspector opens it and the name counts up (99999_35). Server: /api/tdms-inspector/sensor */
+export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void; onMeasured: (r: FreeResult) => void }) {
+  const { t } = useI18n();
+  const prefs = useRef(loadPrefs());
+  const free = useRef(loadFree());
+  const [setup, setSetup] = useState<FreeSetup | null>(null);
+  const [box, setBox] = useState("");
+  const [sensor, setSensor] = useState("");
+  const [kind, setKind] = useState<"dty" | "aty">(prefs.current.kind ?? "dty");
+  const [name, setName] = useState(free.current.name ?? "99999_1");
+  const [speed, setSpeed] = useState(free.current.speed ?? "");
+  const [length, setLength] = useState(String(prefs.current.length ?? 100));
+  const [zero, setZero] = useState<Zero | null>(null);
+  const [busy, setBusy] = useState<"" | "zero" | "measure">("");
+  const [job, setJob] = useState<Job | null>(null);
+  const [result, setResult] = useState<FreeResult | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const alive = useRef(true);
+  const jobId = useRef<string | null>(null);
+  useEffect(() => () => { alive.current = false; }, []);
+
+  const errMsg = (e: ErrJson | unknown): string => {
+    const j: ErrJson | null = e instanceof ApiError ? { code: e.code ?? "", detail: e.message, vars: (e.data?.vars as ErrJson["vars"]) }
+      : e && typeof e === "object" && "code" in e ? (e as ErrJson) : null;
+    if (!j) return String(e);
+    const k = `ms.err.${j.code}`;
+    const v = t(k, { detail: j.detail, ...(j.vars ?? {}) });
+    return v === k ? j.detail : v;
+  };
+
+  const load = async () => {
+    try {
+      const s = await request<FreeSetup>("GET", "/api/tdms-inspector/sensor/setup");
+      if (!alive.current) return;
+      setSetup(s);
+      setBox((cur) => cur && s.boxes.some((b) => b.name === cur) ? cur
+        : (s.boxes.find((b) => b.name === prefs.current.box) ?? s.boxes[0])?.name ?? "");
+      setSensor((cur) => cur && s.sensors.some((x) => x.key === cur) ? cur
+        : (s.sensors.find((x) => x.key === prefs.current.sensor) ?? s.sensors[0])?.key ?? "");
+    } catch (e) { if (alive.current) setErr(errMsg(e)); }
+  };
+  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const sens = setup?.sensors.find((x) => x.key === sensor);
+  const num = (s: string) => Number(s.replace(",", "."));
+
+  const doZero = async () => {
+    setBusy("zero"); setErr(null);
+    try {
+      const z = await request<Zero>("POST", "/api/tdms-inspector/sensor/zero", { box, sensor });
+      if (alive.current) setZero(z);
+    } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
+  };
+
+  const doMeasure = async () => {
+    if (!setup) return;
+    const [lo, hi] = setup.speed_range;
+    if (!name.trim()) { setErr(t("ms.err.bad_name", { name })); return; }
+    if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
+    if (!zero && !window.confirm(t("ms.noZeroAsk"))) return;
+    prefs.current = { box, sensor, kind, length: num(length) };
+    savePrefs(prefs.current);
+    setBusy("measure"); setErr(null); setResult(null); setJob(null);
+    try {
+      const { job_id } = await request<{ job_id: string }>("POST", "/api/tdms-inspector/sensor/measure", {
+        box, sensor, name: name.trim(), speed: num(speed), length: num(length), kind, zero });
+      jobId.current = job_id;
+      for (;;) {
+        await new Promise((res) => setTimeout(res, 400));
+        if (!alive.current) return;
+        const j = await request<Job>("GET", `/api/tdms-inspector/sensor/job/${job_id}`);
+        if (!alive.current) return;
+        setJob(j);
+        if (j.finished) {
+          if (j.error) setErr(errMsg(j.error));
+          else if (j.result) {
+            const r = j.result as FreeResult;
+            setResult(r);
+            setName(r.next_name);
+            try { localStorage.setItem(FREE_PREF, JSON.stringify({ name: r.next_name, speed })); } catch { /* storage blocked */ }
+            onMeasured(r);
+          }
+          break;
+        }
+      }
+    } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { jobId.current = null; if (alive.current) setBusy(""); }
+  };
+
+  const cancel = () => {
+    if (jobId.current) void request("POST", `/api/tdms-inspector/sensor/job/${jobId.current}/cancel`).catch(() => undefined);
+  };
+  const close = () => { if (busy === "measure") { if (!window.confirm(t("ms.cancelAsk"))) return; cancel(); } onClose(); };
+  const pct = job && job.total > 0 ? Math.round((job.done / job.total) * 100) : 0;
+  const noBox = setup && !setup.boxes.length;
+  const ready = !!setup?.can_write && !!box && !!sens && !busy;
+
+  return (
+    <Modal title={t("ms.freeTitle")} onClose={close}>
+      <p className="muted small">{t("ms.freeIntro", { dir: setup?.manual_dir ?? "_manual" })}</p>
+      {!setup && !err && <p className="muted">{t("app.loading")}</p>}
+      {setup && (
+        <div className="ms-form">
+          <label>{t("ms.box")}</label>
+          <div className="ms-row">
+            {noBox ? <span className="ms-warn">{setup.box_error ? errMsg(setup.box_error) : t("ms.noBox")}</span> : (
+              <select value={box} onChange={(e) => { setBox(e.target.value); setZero(null); }} disabled={!!busy}>
+                {setup.boxes.map((b) => <option key={b.name} value={b.name}>{b.name} – {b.product} ({t("ms.serial")} {b.serial})</option>)}
+              </select>)}
+            <button className="btn-plain" title={t("ms.rescan")} onClick={() => void load()} disabled={!!busy}>↻</button>
+          </div>
+          <label>{t("ms.sensor")}</label>
+          {setup.sensors.length ? (
+            <select value={sensor} onChange={(e) => { setSensor(e.target.value); setZero(null); }} disabled={!!busy}
+              title={sens ? `${sens.title} – ${t("ms.calibrated")} ${sens.date}` : undefined}>
+              {setup.sensors.map((x) => <option key={x.key} value={x.key}>
+                {headLabel(x.head)} · {t(x.axes === 2 ? "ms.axes2" : "ms.axes1")} · {x.connector}</option>)}
+            </select>) : <span className="ms-warn">{t("ms.noSensor")}</span>}
+          <label>{t("ms.folder")}</label>
+          <div className="ms-row jr-seg">
+            {(["dty", "aty"] as const).map((k) => (
+              <button key={k} className={kind === k ? "on" : ""} disabled={!!busy} onClick={() => setKind(k)}>{k.toUpperCase()}</button>))}
+          </div>
+
+          <div className="ms-step">
+            <button className="btn-plain" disabled={!box || !sens || !!busy || !setup.can_write} onClick={doZero}>
+              {busy === "zero" ? t("ms.zeroBusy") : t("ms.zero")}</button>
+            <span className="small">{zero ? zero.axes.map((a) => `${a.axis.toUpperCase()}: ${a.mean_um.toFixed(1)} µm (± ${a.std_um.toFixed(1)})`).join("   ")
+              : <span className="muted">{t("ms.zeroHint")}</span>}</span>
+          </div>
+
+          <label>{t("ms.name")}</label>
+          <div className="ms-row"><input type="text" className="ms-name" value={name} disabled={!!busy} maxLength={60}
+            onChange={(e) => setName(e.target.value)} /> <span className="muted small">{t("ms.nameHint")}</span></div>
+          <label>{t("ms.speed")}</label>
+          <div className="ms-row"><input type="text" inputMode="decimal" value={speed} disabled={!!busy}
+            onChange={(e) => setSpeed(e.target.value)} /> <span>m/min</span></div>
+          <label>{t("ms.length")}</label>
+          <div className="ms-row"><input type="text" inputMode="decimal" value={length} disabled={!!busy}
+            onChange={(e) => setLength(e.target.value)} /> <span>m</span></div>
+        </div>
+      )}
+      {!setup?.can_write && setup && <p className="ms-warn">{t("tl.writeNeeded")}</p>}
+      {busy === "measure" && (
+        <div className="imp-progress" role="status" aria-live="polite">
+          <div className={"imp-bar" + (job && job.total > 0 ? "" : " indet")} role="progressbar" aria-valuemin={0}
+            aria-valuemax={100} aria-valuenow={job && job.total > 0 ? pct : undefined}>
+            <div className="imp-fill" style={job && job.total > 0 ? { width: `${Math.max(pct, 3)}%` } : undefined} />
+          </div>
+          <div className="imp-lines small"><span><b>{job && job.total > 0 ? `${pct} %` : ""}</b> {t("ms.measuring", { trial: name.trim() })}</span></div>
+        </div>
+      )}
+      {result && (
+        <div className="rq-ok">
+          <b>{t("ms.saved")}</b> {result.file} – {result.points.toLocaleString("de-CH")} {t("ms.points")} · {result.rate.toFixed(1)} Hz
+          <div className="small">{result.axes.map((a) => `${a.axis.toUpperCase()} Ø ${a.mean_um.toFixed(0)} µm`).join("   ")} · {t("ms.opened")}</div>
+        </div>
+      )}
+      {err && <div className="login-error">{err}</div>}
+      <div className="modal-buttons">
+        {busy === "measure" && <button className="btn-plain" onClick={cancel}>{t("ms.cancel")}</button>}
+        <button className="btn-plain" onClick={close}>{t("cm.close")}</button>
+        <button className="btn-green" disabled={!ready} onClick={() => void doMeasure()}>
+          {t("ms.measure", { trial: name.trim() || "…" })}</button>
+      </div>
+    </Modal>
+  );
+}

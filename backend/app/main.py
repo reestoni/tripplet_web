@@ -31,6 +31,7 @@ app.include_router(yarnscope.router)
 app.include_router(yarnscope_aty.router)
 from . import sensor_api  # noqa: E402  (YarnScope measuring with the NI box, 2026-11-20)
 app.include_router(sensor_api.router)
+app.include_router(sensor_api.inspector_router)
 
 # automatic YarnScope analysis of new TDMS files (yarnscope_auto.py; only with TRIPPLET_WEB_AUTO_ANALYSE=1 and prod)
 from . import yarnscope_auto  # noqa: E402

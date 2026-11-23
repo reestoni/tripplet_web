@@ -62,11 +62,22 @@ def _cleanup() -> None:
     with _lock:
         for k, f in list(_files.items()):
             if now - f["time"] > KEEP_SECONDS:
-                try:
-                    f["path"].unlink()
-                except OSError:
-                    pass
+                if f.get("own", True):            # only uploads are ours to delete, never a measured file
+                    try:
+                        f["path"].unlink()
+                    except OSError:
+                        pass
                 _files.pop(k, None)
+
+
+def register(path: Path, name: str, username: str) -> int:
+    """Opens a file that is already on the server (a measurement of "📏 Messen" in the inspector) like an upload:
+    negative number for the YarnScope views, only for this user - the file itself is never deleted."""
+    _cleanup()
+    n = next(_counter)
+    with _lock:
+        _files[-n] = {"user": str(username or ""), "path": Path(path), "name": name, "time": time.time(), "own": False}
+    return -n
 
 
 @router.post("/upload")
