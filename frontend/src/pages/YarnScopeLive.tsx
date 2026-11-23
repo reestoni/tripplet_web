@@ -132,13 +132,27 @@ export default function YarnScopeLive() {
   const charts = useMemo(() => {
     const line = (y: (number | null | undefined)[], i: number, nm: string) =>
       ({ type: "scatter", mode: "lines+markers", x, y, name: nm, line: { color: COLORS[i], width: 2 }, marker: { size: 5 } });
-    const lay = (title: string) => ({ height: 200, margin: { l: 50, r: 10, t: 24, b: 32 }, title: { text: title, font: { size: 12 } },
-      showlegend: two, legend: { orientation: "h", y: 1.25 }, xaxis: { title: { text: "m" } } });
+    // y axis with a MINIMUM span around the values, so 0.5 knots more does not look like a jump (user 2026-11-23):
+    // knots/m at least +-10 % of the mean, CV at least 0..40 %, speed at least +-3 %
+    const range = (vals: (number | null | undefined)[], rel: number, floor?: [number, number]): [number, number] | undefined => {
+      const v = vals.filter((x): x is number => x != null && Number.isFinite(x));
+      if (!v.length) return floor;
+      let lo = Math.min(...v), hi = Math.max(...v);
+      if (floor) { lo = Math.min(lo, floor[0]); hi = Math.max(hi, floor[1]); }
+      const mid = (lo + hi) / 2, half = Math.max((hi - lo) / 2 * 1.15, Math.abs(v.reduce((a, b) => a + b, 0) / v.length) * rel);
+      return [floor ? Math.max(floor[0], mid - half) : mid - half, mid + half];
+    };
+    const lay = (title: string, yr?: [number, number]) => ({ margin: { l: 46, r: 8, t: 30, b: 34 },
+      title: { text: title, font: { size: 12 }, y: 0.97 }, showlegend: two, legend: { orientation: "h", y: -0.28, font: { size: 10 } },
+      xaxis: { title: { text: "m", standoff: 2 } }, yaxis: yr ? { range: yr } : {} });
     const names = (view?.sensors ?? []).map((s) => `${headLabel(s.head)} ${s.connector}`);
+    const fpm = rows.flatMap((r) => r.sensors.map((s) => s.fpm));
+    const cv = rows.flatMap((r) => r.sensors.map((s) => s.cv));
+    const sp = rows.map((r) => r.speed ?? null);
     return [
-      { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.fpm), i, nm)), layout: lay(t("yl.fpm")) },
-      { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.cv), i, nm)), layout: lay(t("yl.cv")) },
-      ...(two ? [{ data: [line(rows.map((r) => r.speed ?? null), 0, "m/min")], layout: lay(t("yl.speed")) }] : []),
+      { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.fpm), i, nm)), layout: lay(t("yl.fpm"), range(fpm, 0.10)) },
+      { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.cv), i, nm)), layout: lay(t("yl.cv"), range(cv, 0, [0, 40])) },
+      ...(two ? [{ data: [line(sp, 0, "m/min")], layout: { ...lay(t("yl.speed"), range(sp, 0.03)), showlegend: false } }] : []),
     ];
   }, [rows, view?.sensors, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
