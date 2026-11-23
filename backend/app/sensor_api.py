@@ -93,6 +93,8 @@ def _sensors(body: SensorChoice):
             raise sm.MeasureError("head_missing", "Unknown sensor.", head=body.second)
         if p2["connector"] == p["connector"]:
             raise sm.MeasureError("same_connector", "Both sensors on one connector.", connector=p["connector"])
+        if p2["head"] == p["head"]:
+            raise sm.MeasureError("same_head", "The same head twice.", head=p["head"])
     return p, p2
 
 

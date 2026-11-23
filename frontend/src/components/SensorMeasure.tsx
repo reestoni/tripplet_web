@@ -40,7 +40,7 @@ function SecondFields({ sensors, main, second, setSecond, distance, setDistance,
   sensors: Sensor[]; main: Sensor | undefined; second: string; setSecond: (v: string) => void;
   distance: string; setDistance: (v: string) => void; busy: boolean }) {
   const { t } = useI18n();
-  const others = sensors.filter((x) => main && x.connector !== main.connector);
+  const others = sensors.filter((x) => main && x.connector !== main.connector && x.head !== main.head);
   return (<>
     <label>{t("ms.second")}</label>
     <select value={others.some((x) => x.key === second) ? second : ""} onChange={(e) => setSecond(e.target.value)} disabled={busy || !others.length}>
@@ -143,7 +143,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   };
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
-  const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector) ? second : "";
+  const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector && x.head !== sens.head) ? second : "";
   const trial = setup?.trials.find((x) => x.trial_id === trialId);
   const num = (s: string) => Number(s.replace(",", "."));
 
@@ -344,7 +344,7 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
   useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
-  const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector) ? second : "";
+  const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector && x.head !== sens.head) ? second : "";
   const num = (s: string) => Number(s.replace(",", "."));
 
   const doZero = async () => {

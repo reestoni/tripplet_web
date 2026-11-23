@@ -101,7 +101,7 @@ export default function YarnScopeLive() {
   }, [running, busy]);
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
-  const others = (setup?.sensors ?? []).filter((x) => sens && x.connector !== sens.connector);
+  const others = (setup?.sensors ?? []).filter((x) => sens && x.connector !== sens.connector && x.head !== sens.head);
   const sec = others.some((x) => x.key === second) ? second : "";
   const autoOn = auto && !!sec && num(distance) > 0;       // TrippleT measures the speed itself
 

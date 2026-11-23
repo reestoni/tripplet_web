@@ -84,7 +84,7 @@ def test_setup_zero_measure_replace(env):
     c = _client()
     s = c.get(f"/api/series/{env.sid}/sensor/setup").json()
     assert s["boxes"][0]["serial"] == "1A6A875" and s["box_error"] is None
-    assert [x["key"] for x in s["sensors"]] == ["PXL_3_121_W@C1", "OBD_5_192_M@C2"]
+    assert [x["key"] for x in s["sensors"]] == ["PXL_3_121_W@C1", "PXL_3_121_W@C2", "OBD_5_192_M@C1", "OBD_5_192_M@C2"]
     trial = s["trials"][0]
     assert trial["dty"] is None
 
@@ -174,3 +174,10 @@ def test_two_sensors_trial_and_inspector(env):
     res = j["result"]
     assert res["file"].startswith("99999_50_C1_") and res["second"]["file"].startswith("99999_50_C2_")
     assert res["series_id"] < 0 and res["second"]["series_id"] < 0 and res["second"]["series_id"] != res["series_id"]
+
+
+def test_same_head_twice_refused(env):
+    c = _client()
+    r = c.post(f"/api/series/{env.sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1",
+                                                           "second": "PXL_3_121_W@C2"})
+    assert r.status_code == 400 and r.json()["code"] == "same_head"
