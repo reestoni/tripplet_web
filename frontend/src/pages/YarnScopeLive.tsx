@@ -22,7 +22,7 @@ type View = { state: string; error: ErrJson | null; rows: Row[]; n_rows: number;
 
 const PREF = "tripplet.yarnscopeLive";
 type Prefs = { box?: string; sensor?: string; second?: string; distance?: string; speed?: string; window?: string;
-  save?: boolean; name?: string; kind?: "dty" | "aty" };
+  save?: boolean; name?: string; kind?: "dty" | "aty"; auto?: boolean };
 const loadPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREF) || "{}"); } catch { return {}; } };
 const savePrefs = (p: Prefs) => { try { localStorage.setItem(PREF, JSON.stringify(p)); } catch { /* storage blocked */ } };
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
@@ -43,6 +43,7 @@ export default function YarnScopeLive() {
   const [save, setSave] = useState(prefs.current.save ?? true);
   const [name, setName] = useState(prefs.current.name ?? "99999_live");
   const [kind, setKind] = useState<"dty" | "aty">(prefs.current.kind ?? "dty");
+  const [auto, setAuto] = useState(prefs.current.auto ?? true);
   const [view, setView] = useState<View | null>(null);
   const [rows, setRows] = useState<Row[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -102,17 +103,19 @@ export default function YarnScopeLive() {
   const sens = setup?.sensors.find((x) => x.key === sensor);
   const others = (setup?.sensors ?? []).filter((x) => sens && x.connector !== sens.connector);
   const sec = others.some((x) => x.key === second) ? second : "";
+  const autoOn = auto && !!sec && num(distance) > 0;       // TrippleT measures the speed itself
 
   const start = async () => {
     if (!setup) return;
     const [lo, hi] = setup.speed_range;
-    if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
-    prefs.current = { box, sensor, second, distance, speed, window: win, save, name, kind };
+    if (!autoOn && !(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
+    prefs.current = { box, sensor, second, distance, speed, window: win, save, name, kind, auto };
     savePrefs(prefs.current);
     setBusy(true); setErr(null);
     try {
       const v = await request<View>("POST", "/api/yarnscope-live/start", { box, sensor, second: sec || undefined,
-        speed: num(speed), distance: num(distance) > 0 ? num(distance) : undefined, window: num(win) || 30, save, name: name.trim(), kind });
+        speed: autoOn ? undefined : num(speed), auto_speed: autoOn, distance: num(distance) > 0 ? num(distance) : undefined,
+        window: num(win) || 30, save, name: name.trim(), kind });
       nRows.current = 0;
       setRows([]);
       setView(v);
@@ -168,8 +171,12 @@ export default function YarnScopeLive() {
             {sec && (<><label>{t("ms.distance")}</label>
               <div className="ms-row"><input type="text" inputMode="decimal" value={distance} disabled={lock} placeholder="–"
                 onChange={(e) => setDistance(e.target.value)} /> <span>mm</span></div></>)}
+            {sec && num(distance) > 0 && (<><label>{t("yl.auto")}</label>
+              <div className="ms-row"><input type="checkbox" checked={auto} disabled={lock} onChange={(e) => setAuto(e.target.checked)} />
+                <span className="muted small">{t("yl.autoHint")}</span></div></>)}
             <label>{t("ms.speed")}</label>
-            <div className="ms-row"><input type="text" inputMode="decimal" value={speed} disabled={lock} onChange={(e) => setSpeed(e.target.value)} /> <span>m/min</span></div>
+            <div className="ms-row"><input type="text" inputMode="decimal" value={autoOn ? "" : speed} placeholder={autoOn ? t("yl.autoPh") : ""}
+              disabled={lock || autoOn} onChange={(e) => setSpeed(e.target.value)} /> <span>m/min</span></div>
             <label>{t("yl.window")}</label>
             <div className="ms-row"><input type="text" inputMode="decimal" value={win} disabled={lock} onChange={(e) => setWin(e.target.value)} /> <span>m</span></div>
             <label>{t("yl.save")}</label>

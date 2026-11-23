@@ -460,7 +460,7 @@ Experiments/Show Experiment). Logik `ui/yarnscope/sensor_live.py`: Start/Stopp v
 alle `window_m` (30 m) eine Zeile: Knoten/m + CV (Start-zu-Start) pro Sensor mit `analyze_series` (~0.3 s für 30 m), mit 2. Sensor Verzögerung,
 Übereinstimmung, Speed (mit Abstand) bzw. Abstand aus Speed; Analyse in eigenem Faden. Speichern (Häkchen, Standard an) stückweise als TDMS-Segmente
 nach `_manual` (`.part` während der Messung, Parameter-Tabelle als letztes Segment), höchstens `SAVE_LIMIT_M` 5000 m, danach nur Anzeige. Eine
-Live-Sitzung pro Prozess, hält `_measuring`. Tests: Desktop `test_sensor_live.py` (simulierte Dauer-Box, Fenster, Konstruktoren), Web
+Live-Sitzung pro Prozess, hält `_measuring`. **Speed selbst messen** (Nutzerwunsch 2026-11-23, Häkchen, Standard an sobald 2. Sensor + Abstand): keine Geschwindigkeit eingeben - die Box liest mit fester Frequenz (`AUTO_RATE_MAX` 80 kHz/Kanal, mit 4 Kanälen weniger), jede Sekunde (`BLOCK_S`) Verzögerung -> Speed, damit jeder Sensor per `np.interp` auf genau 0.25 mm umgerechnet (Position über die Blöcke weitergeführt) -> Analyse und gespeicherte TDMS wie jede YarnScope-Datei, auch wenn die Maschine schwankt; Block ohne Übereinstimmung nimmt den letzten Speed. Datei: Geschwindigkeit = mittlerer gemessener Speed, `TrippleT.AutoSpeed`, `SampleRateHz`, `MeasuredSpeedMean`. Ohne 2. Sensor/Abstand -> 400 `auto_needs_two`. Simulation (700 -> 760 m/min, 160 mm): Speed exakt gefunden, Knoten/m 159.4-160.5 bei Wahrheit 159.7. Tests: Desktop `test_sensor_live.py` (simulierte Dauer-Box, Fenster, Konstruktoren), Web
 `test_sensor_live_api.py`.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +

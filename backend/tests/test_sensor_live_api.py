@@ -56,3 +56,13 @@ def test_live_start_poll_stop(env):  # noqa: F811
     v = c.post("/api/yarnscope-live/stop").json()
     assert v["state"] == "done" and v["files"] and v["files"][0].startswith("99999_live_")
     assert (env.dty / sm.MANUAL_DIR / v["files"][0]).is_file()
+
+
+def test_live_auto_speed_needs_two_sensors(env):  # noqa: F811
+    sm.set_daq(StreamDaq())
+    c = _client()
+    r = c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "auto_speed": True,
+                                                  "save": False})
+    assert r.status_code == 400 and r.json()["code"] == "auto_needs_two"
+    r = c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "save": False})
+    assert r.json()["code"] == "bad_speed"                       # without auto a speed is still needed

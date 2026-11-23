@@ -48,8 +48,9 @@ class StartBody(BaseModel):
     box: str
     sensor: str
     second: Optional[str] = None
-    speed: float
+    speed: Optional[float] = None
     distance: Optional[float] = None
+    auto_speed: bool = False               # two sensors + distance: TrippleT measures the speed itself
     window: float = sl.WINDOW_M
     save: bool = True
     name: str = "live"
@@ -66,7 +67,8 @@ def start(body: StartBody, user: Dict[str, Any] = Depends(_feature)):
         p, p2 = _sensors(body)
         s = sl.start(box=body.box, head_name=p["head"], connector=p["connector"], speed_m_min=body.speed,
                      distance_mm=body.distance, window_m=body.window, save=body.save, name=body.name, kind=body.kind,
-                     user={"id": user.get("id"), "username": user.get("username")}, **_second_kw(p2))
+                     user={"id": user.get("id"), "username": user.get("username")}, auto_speed=body.auto_speed,
+                     **_second_kw(p2))
     except sm.MeasureError as e:
         return _merr(e)
     return s.view()
