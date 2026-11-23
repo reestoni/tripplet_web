@@ -45,10 +45,10 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const small = useMedia(TABLET);
   const [headOpen, setHeadOpen] = useState(false);
   const [reload, setReload] = useState(0);
-  const [fresh, setFresh] = useState(0);          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
+  const [fresh, setFresh] = useState(0);
+  const [ysKey, setYsKey] = useState(0);          // new measurement: YarnScope tabs reload their file list          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
   const [rights, setRights] = useState<SeriesRights | null>(null);
   const [tool, setTool] = useState<Tool | null>(null);
-  const measured = useRef(false);                 // "📏 Messen" saved a file -> rebuild the tables on close
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
     if (!toast) return;
@@ -210,7 +210,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       <EditProvider key={`${s.id}:${fresh}`} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
-        <SeriesBody data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights} copyLink={copyLink}
+        <SeriesBody ysKey={ysKey} data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights} copyLink={copyLink}
           onChanged={() => setReload((x) => x + 1)} onTool={openTool} tools={data.trials.length > 0 && (
             <>
               <button className="tb-icon" onClick={() => setTool({ kind: "labels" })} title={t("tl.labels")}>
@@ -247,15 +247,12 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       {tool?.kind === "yarns" && <YarnsDialog seriesId={s.id} onClose={() => setTool(null)} onDone={() => reloadAll(t("tl.yarnsSaved"))} />}
       {tool?.kind === "import" && <PdfImportDialog seriesId={s.id} onClose={() => setTool(null)}
         onDone={() => { setFresh((x) => x + 1); setReload((x) => x + 1); }} />}
-      {/* new TDMS files: the YarnScope tabs appear / show them after closing (reload of the series data) */}
+      {/* new TDMS files: after each measurement only the series data again (like after saving - the tables keep their
+          scroll position; YarnScope tabs appear) and an open YarnScope tab lists the new file. No rebuild on close:
+          that threw the user back to the top of the table (2026-11-23). */}
       {tool?.kind === "measure" && <SensorMeasureDialog seriesId={s.id}
-        onClose={() => {
-          setTool(null);
-          if (measured.current && confirmLeave()) setFresh((x) => x + 1);     // YarnScope tabs list the new files
-          measured.current = false;
-          setReload((x) => x + 1);
-        }}
-        onMeasured={() => { measured.current = true; }} />}
+        onClose={() => setTool(null)}
+        onMeasured={() => { setReload((x) => x + 1); setYsKey((x) => x + 1); }} />}
       {tool?.kind === "ref-add" &&<RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
         onOk={(name) => refAction(`/api/series/${s.id}/references`, { name }, t("tl.refAdded"))} />}
       {tool?.kind === "ref-mark" && <RefNameDialog title={t("tl.markRefTitle", { trial: tool.trial.label })} initial="" onClose={() => setTool(null)}
@@ -330,7 +327,8 @@ type Tool =
   | { kind: "ref-mark"; trial: Trial } | { kind: "ref-rename"; trial: Trial; name: string }
   | { kind: "import" } | { kind: "compare"; ref: number | null } | { kind: "measure" };
 
-function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools, copyLink }: {
+function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onTool, tools, copyLink, ysKey = 0 }: {
+  ysKey?: number;
   data: SeriesData; tab: string | null; choose: (k: string) => void; tr: (p: string, k: string, f: string) => string;
   copyLink: (url: string) => void;
   accessLevel: number; rights: SeriesRights | null; onChanged: () => void; onTool: (x: Tool) => void; tools?: ReactNode;
@@ -467,8 +465,8 @@ function SeriesBody({ data, tab, choose, tr, accessLevel, rights, onChanged, onT
       )}
       <div className="se-swipe" {...swipeProps}>
       {data.trials.length === 0 && <div className="card muted">{t("se.noTrials")}</div>}
-      {tab === "yarnscope" && <YarnScopeView seriesId={s.id} canWrite={accessLevel >= 2} />}
-      {tab === "yarnscope_aty" && <YarnScopeAty seriesId={s.id} canWrite={accessLevel >= 2} />}
+      {tab === "yarnscope" && <YarnScopeView key={`ys:${ysKey}`} seriesId={s.id} canWrite={accessLevel >= 2} />}
+      {tab === "yarnscope_aty" && <YarnScopeAty key={`ysa:${ysKey}`} seriesId={s.id} canWrite={accessLevel >= 2} />}
       {data.trials.length > 0 && tab === "rd" && (
         <MachineTable seriesId={s.id} source="rd" rowTitle={(x) => tr("row", x, x)} menus={menus} onlyTrial={focusId} />
       )}

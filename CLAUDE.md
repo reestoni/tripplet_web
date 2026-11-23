@@ -430,7 +430,8 @@ Vorschlag). Nach einer Messung ist der nächste Versuch gewählt, der Knopf heis
 Mal neu nullen): Desktop `dlg.show()` (ein Fenster pro Serie, `_RUNNING` hält laufende Mess-Threads am Leben, auch wenn der Screen zugeht), Web
 `FloatingWindow` (Klasse `ms-float`). `sensor_measure.zero_check` merkt sich jeden Leerwert pro (Box, Kopf, Anschluss) im Prozess,
 `remembered_zero(box, head, connector, second)` gibt ihn zurück, bis neu geprüft wird oder `ZERO_MAX_AGE_H` (12 h) um ist; Web: `zeros` in den
-Setup-Antworten, `useKeptZero` wählt den passenden. Auch im TDMS Inspector.
+Setup-Antworten, `useKeptZero` wählt den passenden. Auch im TDMS Inspector. Nach einer Messung wird NICHT neu aufgebaut (Tabelle sprang an den Anfang): Desktop
+`on_measured` -> nur `_build_yarnscope_tab`/`_build_aty_yarnscope_tab`, Web nur die Seitendaten (`reload`, wie nach dem Speichern) + `ysKey` für offene YarnScope-Reiter; Schliessen tut nichts mehr.
 Web `app/sensor_api.py` (`/api/series/{id}/sensor/setup|zero|measure|job/<id>[/cancel]`, ein Job gleichzeitig, Browser schickt nur Versuchs-ID,
 Sensor-Schlüssel, Box-Name): **der Server misst** - geht nur, solange er auf dem Laptop mit der Box läuft (auf der VM: später ein Helfer).
 Frontend `components/SensorMeasure.tsx`. Desktop `ui/widgets/sensor_measure_dialog.py`. Tests: Desktop `test_sensor_measure.py`, Web
