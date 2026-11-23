@@ -401,6 +401,13 @@ html[data-night] .rq-due.today { color: #eead63; }
 html[data-night] .rq-due.week { color: #f1d083; }
 html[data-night] tr.rq-sec td { background: var(--accent-tint, #203623); }
 html[data-night] .stk-cam-frame { border: 3px solid rgba(34, 40, 53, 0.85); }
+html[data-night] .ms-pair { border-top: 1px dashed #335e3c; }
+html[data-night] .yl-tile { border: 1px solid #2b3343; background: #151921; }
+html[data-night] .yl-tile-h { color: #a6adb9; }
+html[data-night] .yl-big span { color: #a6adb9; }
+html[data-night] .yl-table-wrap { border: 1px solid #28303f; }
+html[data-night] .yl-table th, html[data-night] .yl-table td { border-bottom: 1px solid #262d3b; }
+html[data-night] .yl-table th { background: #191d27; }
 
 /* ---- dark twins of theme-modern.css ---- */
 html[data-theme="modern"][data-night] ::-webkit-scrollbar-thumb { background: #3a4250; }

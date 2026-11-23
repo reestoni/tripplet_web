@@ -17,7 +17,10 @@ from ui.yarnscope import aty_service, dty_service
 from ui.yarnscope import sensor_measure as sm
 
 CAL = "* PROFILE SENSOR PXL\n16.12.2022\nDCX_COEFF\t10267.73\t-1458.12\nDCY_COEFF\t10424.72\t-1480.20\n"
-CONFIG = ('Boxes 0.Heads 0.Name = "PXL_3_121_W"\nBoxes 0.Heads 0.Channel inputs 0 = "Dev2/ai1"\n')
+CONFIG = ('Boxes 0.Heads 0.Name = "PXL_3_121_W"\nBoxes 0.Heads 0.Channel inputs 0 = "Dev2/ai1"\n'
+          'Boxes 0.Heads 1.Name = "OBD_5_192_M"\nBoxes 0.Heads 1.Active = "FALSE"\n'
+          'Boxes 0.Heads 1.Channel inputs 0 = "Dev2/ai4"\n')
+CAL_1AX = "* PROFILE SENSOR LARGE\n31.08.2021\nDCX_COEFF\t2493.35\t-353.89\n"
 
 
 class FakeDaq(sm.Daq):
@@ -49,6 +52,7 @@ def _client(min_level=2, max_level=9):
 def env(tmp_path, monkeypatch):
     (tmp_path / "cal").mkdir()
     (tmp_path / "cal" / "PXL_3_121_W.dat").write_text(CAL, encoding="latin-1")
+    (tmp_path / "cal" / "OBD_5_192_M.dat").write_text(CAL_1AX, encoding="latin-1")
     cfg = tmp_path / "Sensoft" / "Config Data" / "Configurations ATY"
     cfg.mkdir(parents=True)
     (cfg / "Default config.ini").write_text(CONFIG, encoding="latin-1")
@@ -80,7 +84,7 @@ def test_setup_zero_measure_replace(env):
     c = _client()
     s = c.get(f"/api/series/{env.sid}/sensor/setup").json()
     assert s["boxes"][0]["serial"] == "1A6A875" and s["box_error"] is None
-    assert [x["key"] for x in s["sensors"]] == ["PXL_3_121_W@C1"]
+    assert [x["key"] for x in s["sensors"]] == ["PXL_3_121_W@C1", "OBD_5_192_M@C2"]
     trial = s["trials"][0]
     assert trial["dty"] is None
 
@@ -146,3 +150,27 @@ def _wait_insp(c, job_id):
             return j
         time.sleep(0.05)
     raise AssertionError("job did not finish")
+
+
+def test_two_sensors_trial_and_inspector(env):
+    """Second sensor by key: zero of both, the trial file + the second in _C2, in the inspector both opened;
+    same connector refused; no server paths in the answers."""
+    c = _client()
+    sid = env.sid
+    trial = c.get(f"/api/series/{sid}/sensor/setup").json()["trials"][0]
+    z = c.post(f"/api/series/{sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1",
+                                                       "second": "OBD_5_192_M@C2"}).json()
+    assert [(a["axis"], a["connector"]) for a in z["axes"]] == [("x", "C1"), ("y", "C1"), ("x", "C2")]
+    body = {"box": "Dev2", "sensor": "PXL_3_121_W@C1", "second": "OBD_5_192_M@C2", "trial_id": trial["trial_id"],
+            "speed": 600, "length": 3, "distance": 100}
+    r = c.post(f"/api/series/{sid}/sensor/measure", json={**body, "second": "PXL_3_121_W@C1"})
+    assert r.status_code == 400 and r.json()["code"] == "same_connector"
+    j = _wait(c, sid, c.post(f"/api/series/{sid}/sensor/measure", json=body).json()["job_id"])
+    res = j["result"]
+    assert j["error"] is None and "path" not in res and "path" not in res["second"]
+    assert (env.dty / res["file"]).is_file() and (env.dty / "_C2" / res["second"]["file"]).is_file()
+    assert "pair" in res                                  # constant fake signals: not reliable, but reported
+    j = _wait_insp(c, c.post("/api/tdms-inspector/sensor/measure", json={**body, "name": "99999_50"}).json()["job_id"])
+    res = j["result"]
+    assert res["file"].startswith("99999_50_C1_") and res["second"]["file"].startswith("99999_50_C2_")
+    assert res["series_id"] < 0 and res["second"]["series_id"] < 0 and res["second"]["series_id"] != res["series_id"]

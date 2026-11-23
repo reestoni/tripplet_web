@@ -13,18 +13,72 @@ type Sensor = { key: string; head: string; connector: string; axes: number; labe
 type MTrial = { trial_id: number; vno: number; speed: number | null; dty: string | null; aty: string | null };
 type ErrJson = { code: string; detail: string; vars?: Record<string, string | number> };
 type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; trials: MTrial[];
-  length: number; speed_range: [number, number]; length_range: [number, number]; replaced_dir: string };
-type Axis = { axis: string; mean_um: number; std_um: number };
+  length: number; speed_range: [number, number]; length_range: [number, number]; replaced_dir: string; default_distance_mm?: number };
+type Axis = { axis: string; mean_um: number; std_um: number; connector?: string };
 type Zero = { axes: Axis[]; head: string; connector: string; box: string; at: string };
-type Result = { file: string; points: number; rate: number; axes: Axis[]; replaced: string | null };
+type Pair = { reliable: boolean; corr: number | null; delay_ms?: number; speed?: number; speed_dev_pct?: number;
+  distance_from_speed_mm?: number; distance_mm?: number | null; synced?: boolean; error?: string;
+  profile?: { from_m: number; to_m: number; speed: number | null; corr: number | null }[];
+  knots?: { knots_a: number; knots_b: number; matched: number; pct_a?: number; pct_b?: number; only_a?: number;
+    only_b?: number; len_diff_mm?: number | null; len_diff_sd_mm?: number | null } };
+type Second = { file: string; connector: string; head: string; axes: Axis[]; series_id?: number };
+type Result = { file: string; points: number; rate: number; axes: Axis[]; replaced: string | null; second?: Second; pair?: Pair | null };
 type Job = { id: string; vno: number; done: number; total: number; queued: boolean; finished: boolean;
   result: Result | null; error: ErrJson | null };
 
 const PREF = "tripplet.sensorMeasure";
-type Prefs = { box?: string; sensor?: string; kind?: "dty" | "aty"; length?: number };
+type Prefs = { box?: string; sensor?: string; kind?: "dty" | "aty"; length?: number; second?: string; distance?: string };
 const loadPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREF) || "{}"); } catch { return {}; } };
 const savePrefs = (p: Prefs) => { try { localStorage.setItem(PREF, JSON.stringify(p)); } catch { /* storage blocked */ } };
 const vlabel = (vno: number) => `V${String(vno).padStart(3, "0")}`;
+/** Zero result: per sensor (connector) its axes, e.g. "C1 X: -88.9 µm (± 2.0)" */
+const zeroText = (z: Zero) => z.axes.map((a) => `${a.connector && z.axes.some((b) => b.connector !== a.connector) ? a.connector + " " : ""}`
+  + `${a.axis.toUpperCase()}: ${a.mean_um.toFixed(1)} µm (± ${a.std_um.toFixed(1)})`).join("   ");
+
+/** "2nd sensor at the same time" + distance (Nutzerwunsch 2026-11-23): only sensors on the other connector. */
+function SecondFields({ sensors, main, second, setSecond, distance, setDistance, busy }: {
+  sensors: Sensor[]; main: Sensor | undefined; second: string; setSecond: (v: string) => void;
+  distance: string; setDistance: (v: string) => void; busy: boolean }) {
+  const { t } = useI18n();
+  const others = sensors.filter((x) => main && x.connector !== main.connector);
+  return (<>
+    <label>{t("ms.second")}</label>
+    <select value={others.some((x) => x.key === second) ? second : ""} onChange={(e) => setSecond(e.target.value)} disabled={busy || !others.length}>
+      <option value="">{t("ms.secondNone")}</option>
+      {others.map((x) => <option key={x.key} value={x.key}>{headLabel(x.head)} · {t(x.axes === 2 ? "ms.axes2" : "ms.axes1")} · {x.connector}</option>)}
+    </select>
+    {others.some((x) => x.key === second) && (<>
+      <label>{t("ms.distance")}</label>
+      <div className="ms-row"><input type="text" inputMode="decimal" value={distance} disabled={busy} placeholder="–"
+        onChange={(e) => setDistance(e.target.value)} /> <span>mm</span> <span className="muted small">{t("ms.distanceHint")}</span></div>
+    </>)}
+  </>);
+}
+
+/** Result of a simultaneous measurement: delay, speed (with a distance), same knots (sensor_pair.py). */
+function PairResult({ pair, second }: { pair: Pair | null | undefined; second?: Second }) {
+  const { t } = useI18n();
+  if (!second) return null;
+  const k = pair?.knots;
+  return (
+    <div className="ms-pair">
+      <div className="small">{t("ms.secondFile", { file: second.file })}</div>
+      {!pair || !pair.reliable ? <div className="ms-warn small">{t("ms.pairUnreliable", { c: pair?.corr ?? "–" })}</div> : (<>
+        <div><b>{t("ms.pairTitle")}</b> · {t("ms.pairDelay", { ms: pair.delay_ms?.toFixed(3) ?? "–" })} · {t("ms.pairCorr", { c: pair.corr ?? "–" })}</div>
+        {pair.speed != null
+          ? <div><b>{t("ms.pairSpeed", { v: pair.speed.toFixed(1) })}</b>{pair.speed_dev_pct != null ? ` (${pair.speed_dev_pct > 0 ? "+" : ""}${pair.speed_dev_pct.toFixed(2)} %)` : ""}</div>
+          : pair.distance_from_speed_mm != null && <div className="small">{t("ms.pairDistance", { mm: pair.distance_from_speed_mm.toFixed(1) })}</div>}
+        {pair.profile && pair.profile.some((x) => x.speed != null) && (
+          <div className="small muted">{t("ms.pairProfile")}: {pair.profile.map((x) => x.speed != null ? x.speed.toFixed(0) : "–").join(" · ")}</div>)}
+        {k && k.pct_a != null && (<>
+          <div>{t("ms.pairKnots", { a: k.pct_a, b: k.pct_b ?? "–", oa: k.only_a ?? 0, ob: k.only_b ?? 0 })}</div>
+          {k.len_diff_mm != null && <div className="small muted">{t("ms.pairLen", { d: k.len_diff_mm.toFixed(2), sd: (k.len_diff_sd_mm ?? 0).toFixed(2) })}</div>}
+        </>)}
+      </>)}
+    </div>
+  );
+}
+
 /** "PXL_3_121_W" -> "PXL 3-121" (type, serial number of the head) */
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
 
@@ -40,6 +94,8 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   const [speed, setSpeed] = useState("");
   const [length, setLength] = useState(String(prefs.current.length ?? 100));
   const [zero, setZero] = useState<Zero | null>(null);
+  const [second, setSecond] = useState(prefs.current.second ?? "");
+  const [distance, setDistance] = useState(prefs.current.distance ?? "");
   const [busy, setBusy] = useState<"" | "zero" | "measure">("");
   const [job, setJob] = useState<Job | null>(null);
   const [result, setResult] = useState<Result | null>(null);
@@ -69,6 +125,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
       const s = await request<Setup>("GET", `/api/series/${seriesId}/sensor/setup`);
       if (!alive.current) return;
       setSetup(s);
+      if (prefs.current.distance == null && s.default_distance_mm) setDistance(String(s.default_distance_mm));
       setBox((cur) => cur && s.boxes.some((b) => b.name === cur) ? cur
         : (s.boxes.find((b) => b.name === prefs.current.box) ?? s.boxes[0])?.name ?? "");
       setSensor((cur) => cur && s.sensors.some((x) => x.key === cur) ? cur
@@ -86,13 +143,14 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   };
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
+  const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector) ? second : "";
   const trial = setup?.trials.find((x) => x.trial_id === trialId);
   const num = (s: string) => Number(s.replace(",", "."));
 
   const doZero = async () => {
     setBusy("zero"); setErr(null);
     try {
-      const z = await request<Zero>("POST", `/api/series/${seriesId}/sensor/zero`, { box, sensor });
+      const z = await request<Zero>("POST", `/api/series/${seriesId}/sensor/zero`, { box, sensor, second: sec || undefined });
       if (alive.current) setZero(z);
     } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
   };
@@ -102,12 +160,13 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
     const [lo, hi] = setup.speed_range;
     if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
     if (!zero && !replace && !window.confirm(t("ms.noZeroAsk"))) return;
-    prefs.current = { box, sensor, kind, length: num(length) };
+    prefs.current = { box, sensor, kind, length: num(length), second, distance };
     savePrefs(prefs.current);
     setBusy("measure"); setErr(null); setAsk(null); setResult(null); setJob(null);
     try {
       const { job_id } = await request<{ job_id: string }>("POST", `/api/series/${seriesId}/sensor/measure`, {
-        box, sensor, trial_id: trial.trial_id, speed: num(speed), length: num(length), kind, replace, zero });
+        box, sensor, trial_id: trial.trial_id, speed: num(speed), length: num(length), kind, replace, zero,
+        second: sec || undefined, distance: num(distance) > 0 ? num(distance) : undefined });
       jobId.current = job_id;
       for (;;) {
         await new Promise((res) => setTimeout(res, 400));
@@ -165,10 +224,13 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
                 onClick={() => { setKind(k); if (setup) pick(setup, firstFree(setup, k)); }}>{k.toUpperCase()}</button>))}
           </div>
 
+          <SecondFields sensors={setup.sensors} main={sens} second={second} setSecond={(v) => { setSecond(v); setZero(null); }}
+            distance={distance} setDistance={setDistance} busy={!!busy} />
+
           <div className="ms-step">
             <button className="btn-plain" disabled={!box || !sens || !!busy || !setup.can_write} onClick={doZero}>
               {busy === "zero" ? t("ms.zeroBusy") : t("ms.zero")}</button>
-            <span className="small">{zero ? zero.axes.map((a) => `${a.axis.toUpperCase()}: ${a.mean_um.toFixed(1)} µm (± ${a.std_um.toFixed(1)})`).join("   ")
+            <span className="small">{zero ? zeroText(zero)
               : <span className="muted">{t("ms.zeroHint")}</span>}</span>
           </div>
 
@@ -211,6 +273,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
           <b>{t("ms.saved")}</b> {result.file} – {result.points.toLocaleString("de-CH")} {t("ms.points")} · {result.rate.toFixed(1)} Hz
           <div className="small">{result.axes.map((a) => `${a.axis.toUpperCase()} Ø ${a.mean_um.toFixed(0)} µm`).join("   ")}
             {result.replaced ? ` · ${t("ms.replaced", { file: result.replaced })}` : ""}</div>
+          <PairResult pair={result.pair} second={result.second} />
         </div>
       )}
       {err && <div className="login-error">{err}</div>}
@@ -226,7 +289,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
 
 /* ------------------------------------------------------------------ TDMS Inspector: free measurement */
 type FreeSetup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; length: number;
-  speed_range: [number, number]; length_range: [number, number]; manual_dir: string };
+  speed_range: [number, number]; length_range: [number, number]; manual_dir: string; default_distance_mm?: number };
 export type FreeResult = Result & { name: string; next_name: string; series_id: number; size: number };
 const FREE_PREF = "tripplet.sensorMeasure.free";
 type FreePrefs = { name?: string; speed?: string };
@@ -247,6 +310,8 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
   const [speed, setSpeed] = useState(free.current.speed ?? "");
   const [length, setLength] = useState(String(prefs.current.length ?? 100));
   const [zero, setZero] = useState<Zero | null>(null);
+  const [second, setSecond] = useState(prefs.current.second ?? "");
+  const [distance, setDistance] = useState(prefs.current.distance ?? "");
   const [busy, setBusy] = useState<"" | "zero" | "measure">("");
   const [job, setJob] = useState<Job | null>(null);
   const [result, setResult] = useState<FreeResult | null>(null);
@@ -269,6 +334,7 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
       const s = await request<FreeSetup>("GET", "/api/tdms-inspector/sensor/setup");
       if (!alive.current) return;
       setSetup(s);
+      if (prefs.current.distance == null && s.default_distance_mm) setDistance(String(s.default_distance_mm));
       setBox((cur) => cur && s.boxes.some((b) => b.name === cur) ? cur
         : (s.boxes.find((b) => b.name === prefs.current.box) ?? s.boxes[0])?.name ?? "");
       setSensor((cur) => cur && s.sensors.some((x) => x.key === cur) ? cur
@@ -278,12 +344,13 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
   useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
+  const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector) ? second : "";
   const num = (s: string) => Number(s.replace(",", "."));
 
   const doZero = async () => {
     setBusy("zero"); setErr(null);
     try {
-      const z = await request<Zero>("POST", "/api/tdms-inspector/sensor/zero", { box, sensor });
+      const z = await request<Zero>("POST", "/api/tdms-inspector/sensor/zero", { box, sensor, second: sec || undefined });
       if (alive.current) setZero(z);
     } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
   };
@@ -294,12 +361,13 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
     if (!name.trim()) { setErr(t("ms.err.bad_name", { name })); return; }
     if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
     if (!zero && !window.confirm(t("ms.noZeroAsk"))) return;
-    prefs.current = { box, sensor, kind, length: num(length) };
+    prefs.current = { box, sensor, kind, length: num(length), second, distance };
     savePrefs(prefs.current);
     setBusy("measure"); setErr(null); setResult(null); setJob(null);
     try {
       const { job_id } = await request<{ job_id: string }>("POST", "/api/tdms-inspector/sensor/measure", {
-        box, sensor, name: name.trim(), speed: num(speed), length: num(length), kind, zero });
+        box, sensor, name: name.trim(), speed: num(speed), length: num(length), kind, zero,
+        second: sec || undefined, distance: num(distance) > 0 ? num(distance) : undefined });
       jobId.current = job_id;
       for (;;) {
         await new Promise((res) => setTimeout(res, 400));
@@ -357,10 +425,13 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
               <button key={k} className={kind === k ? "on" : ""} disabled={!!busy} onClick={() => setKind(k)}>{k.toUpperCase()}</button>))}
           </div>
 
+          <SecondFields sensors={setup.sensors} main={sens} second={second} setSecond={(v) => { setSecond(v); setZero(null); }}
+            distance={distance} setDistance={setDistance} busy={!!busy} />
+
           <div className="ms-step">
             <button className="btn-plain" disabled={!box || !sens || !!busy || !setup.can_write} onClick={doZero}>
               {busy === "zero" ? t("ms.zeroBusy") : t("ms.zero")}</button>
-            <span className="small">{zero ? zero.axes.map((a) => `${a.axis.toUpperCase()}: ${a.mean_um.toFixed(1)} µm (± ${a.std_um.toFixed(1)})`).join("   ")
+            <span className="small">{zero ? zeroText(zero)
               : <span className="muted">{t("ms.zeroHint")}</span>}</span>
           </div>
 
@@ -389,6 +460,7 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
         <div className="rq-ok">
           <b>{t("ms.saved")}</b> {result.file} – {result.points.toLocaleString("de-CH")} {t("ms.points")} · {result.rate.toFixed(1)} Hz
           <div className="small">{result.axes.map((a) => `${a.axis.toUpperCase()} Ø ${a.mean_um.toFixed(0)} µm`).join("   ")} · {t("ms.opened")}</div>
+          <PairResult pair={result.pair} second={result.second} />
         </div>
       )}
       {err && <div className="login-error">{err}</div>}

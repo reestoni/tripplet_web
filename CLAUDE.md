@@ -439,6 +439,29 @@ Inspector die Datei und der Name zählt hoch (`next_name`: 99999_34 -> 99999_35)
 `tdms_inspector.register()` geöffnet (`own: False` - das Aufräumen nach einem Tag vergisst sie nur, löscht sie nie), Dialog
 `FreeMeasureDialog`. Desktop: `SensorMeasureDialog(free=True, on_measured=…)`, `TdmsInspectorScreen._open_path`. Schreibrecht prüft der
 Dialog selbst (`read_only` unter Stufe 2).
+**Zwei Sensoren gleichzeitig + Geschwindigkeit** (2026-11-23, beide Apps, Nutzerwunsch): in beiden Mess-Dialogen "2. Sensor gleichzeitig"
+(nur Köpfe am ANDEREN Anschluss derselben Box) + Abstand (mm, nicht fest, leer = nur Verzögerung; Vorgabe `sensor_pair.DEFAULT_DISTANCE_MM` = 160 mm = Testaufbau des Nutzers "ca. 16 cm", Web bekommt sie über `default_distance_mm` in den Setup-Antworten). EINE Task für alle Kanäle (`_record`),
+also gleicher Takt. Dateien: Hauptsensor wie gehabt (= Datei des Versuchs), der zweite gleichnamig in `<Ordner>\_C1|_C2\` (von Analyse/Reitern
+nicht gesehen); im Inspector beide in `_manual` mit `_C1`/`_C2` im Namen. Eigenschaften `TrippleT.Pair*` (Partnerdatei, Abstand,
+Verzögerung, Speed). Auswertung `ui/yarnscope/sensor_pair.py`: Verzögerung = Maximum der normierten Kreuzkorrelation (FFT, vorher ~20 cm
+gleitendes Mittel abgezogen, Parabel zwischen den Punkten), `MIN_CORR` 0.3; Speed = Abstand / Verzögerung, ohne Abstand Abstand aus der
+eingestellten Geschwindigkeit; Speed pro 10 m; gleiche Knoten: `dty_analysis.knot_runs` (= genau die YarnScope-Erkennung) beider Signale,
+verschoben, gepaart (Toleranz halbe Median-Knotenlänge) -> % gemeinsam, nur in einem, Längenunterschied. Geprüft an echten Daten: verschiedene
+Garnstücke corr 0.03; echtes Signal verschoben + Rauschen = Verzögerung/Speed exakt, 96 % gleiche Knoten (die übrigen 4 % = Unsicherheit der
+Erkennung allein durch Rauschen). Web: `second` (Sensor-Schlüssel) + `distance` in `/sensor/zero|measure` (Zero misst beide), Antworten ohne
+Server-Pfade (`_no_paths`), Inspector öffnet beide Dateien; Frontend `SecondFields`/`PairResult` in `SensorMeasure.tsx`. Desktop:
+`cb_second`/`sp_distance`, `pair_text()`. Grenze: 250 kS/s für alle Kanäle (1+2 Achsen bis ~1'250 m/min, 2+2 bis ~930). Tests: Desktop
+`test_sensor_pair.py`, `test_sensor_measure.py`; Web `test_sensor_api.py`.
+**YarnScope Live** (2026-11-23, beide Apps, Nutzerwunsch "Mini-Dashboard"): Werkzeug `/tools/yarnscope-live` (Web-Seite `YarnScopeLive.tsx`,
+`app/sensor_live_api.py`: `/api/yarnscope-live/setup|start|state?since=|stop`, Feature `tdms_inspector`, Start ab Stufe 2, Stopp nur Starter
+oder Superuser; Seitenleiste nach TDMS Inspector) bzw. Desktop eigenes Fenster `ui/widgets/sensor_live_window.py` (Seitenleiste Werkzeuge,
+`main._go_yarnscope_live`; der Callback `on_yarnscope_live` läuft durch `_sidebar_nav_kwargs` und die Konstruktoren von Home/Backlog/All
+Experiments/Show Experiment). Logik `ui/yarnscope/sensor_live.py`: Start/Stopp von Hand, Dauer-Aufnahme `Daq.stream` (CONTINUOUS, 20 s Puffer),
+alle `window_m` (30 m) eine Zeile: Knoten/m + CV (Start-zu-Start) pro Sensor mit `analyze_series` (~0.3 s für 30 m), mit 2. Sensor Verzögerung,
+Übereinstimmung, Speed (mit Abstand) bzw. Abstand aus Speed; Analyse in eigenem Faden. Speichern (Häkchen, Standard an) stückweise als TDMS-Segmente
+nach `_manual` (`.part` während der Messung, Parameter-Tabelle als letztes Segment), höchstens `SAVE_LIMIT_M` 5000 m, danach nur Anzeige. Eine
+Live-Sitzung pro Prozess, hält `_measuring`. Tests: Desktop `test_sensor_live.py` (simulierte Dauer-Box, Fenster, Konstruktoren), Web
+`test_sensor_live_api.py`.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

@@ -28,6 +28,7 @@ from .user_context import reset, set_user
 
 from db import trial_actions as ta  # noqa: E402
 from ui.yarnscope import sensor_measure as sm  # noqa: E402
+from ui.yarnscope.sensor_pair import DEFAULT_DISTANCE_MM  # noqa: E402
 
 router = APIRouter(prefix="/api/series")
 # free measurement in the TDMS Inspector (own name + speed, no series; Nutzerwunsch 2026-11-23)
@@ -71,12 +72,40 @@ def setup(series_id: int, user: Dict[str, Any] = Depends(current_user)):
     return {"can_write": ta.can_edit_trials(user), "boxes": boxes, "box_error": box_error,
             "sensors": sm.sensor_presets(), "trials": sm.trials_for(series_id),
             "length": sm.DEFAULT_LENGTH_M, "speed_range": list(sm.SPEED_RANGE), "length_range": list(sm.LENGTH_RANGE),
-            "replaced_dir": sm.REPLACED_DIR}
+            "replaced_dir": sm.REPLACED_DIR, "default_distance_mm": DEFAULT_DISTANCE_MM}
 
 
 class SensorChoice(BaseModel):
     box: str
     sensor: str
+    second: Optional[str] = None          # key of a second sensor on the other connector (both read at once)
+
+
+def _sensors(body: SensorChoice):
+    """(main preset, second preset or None) - only keys out of the user's Sensoft configurations."""
+    p = _preset(body.sensor)
+    if not p:
+        raise sm.MeasureError("head_missing", "Unknown sensor.", head=body.sensor)
+    p2 = None
+    if body.second:
+        p2 = _preset(body.second)
+        if not p2:
+            raise sm.MeasureError("head_missing", "Unknown sensor.", head=body.second)
+        if p2["connector"] == p["connector"]:
+            raise sm.MeasureError("same_connector", "Both sensors on one connector.", connector=p["connector"])
+    return p, p2
+
+
+def _second_kw(p2) -> Dict[str, Any]:
+    return {"second": {"head_name": p2["head"], "connector": p2["connector"]}} if p2 else {}
+
+
+def _no_paths(res: Dict[str, Any]) -> Dict[str, Any]:
+    """Server paths stay on the server."""
+    res.pop("path", None)
+    if isinstance(res.get("second"), dict):
+        res["second"].pop("path", None)
+    return res
 
 
 class ZeroBody(SensorChoice):
@@ -88,11 +117,12 @@ def zero(series_id: int, body: ZeroBody, user: Dict[str, Any] = Depends(current_
     """Empty value of the sensor (no yarn) - nothing is saved."""
     if not ta.can_edit_trials(user):
         return _err(403, "read_only", "Write access required.")
-    p = _preset(body.sensor)
-    if not p:
-        return _err(400, "head_missing", "Unknown sensor.", head=body.sensor)
     try:
-        return sm.zero_check(body.box, p["head"], p["connector"], body.seconds)
+        p, p2 = _sensors(body)
+        z = sm.zero_check(body.box, p["head"], p["connector"], body.seconds)
+        if p2:                                   # second sensor: its own empty value (axes carry the connector)
+            z["axes"] += sm.zero_check(body.box, p2["head"], p2["connector"], body.seconds)["axes"]
+        return z
     except sm.MeasureError as e:
         return _merr(e)
 
@@ -104,6 +134,7 @@ class MeasureBody(SensorChoice):
     kind: str = "dty"
     replace: bool = False
     zero: Optional[Dict[str, Any]] = None
+    distance: Optional[float] = None       # mm between the two sensors -> measured speed
 
 
 def _run(job: Dict[str, Any], kwargs: Dict[str, Any], user: Dict[str, Any], fn=None, on_done=None) -> None:
@@ -131,13 +162,11 @@ def measure_start(series_id: int, body: MeasureBody, user: Dict[str, Any] = Depe
     trial = next((t for t in sm.trials_for(series_id) if t["trial_id"] == body.trial_id), None)
     if not trial:
         return _err(404, "not_found", "Trial not in this series.")
-    p = _preset(body.sensor)
-    if not p:
-        return _err(400, "head_missing", "Unknown sensor.", head=body.sensor)
     if body.kind not in sm.KINDS:
         return _err(400, "bad_kind", "Unknown folder.")
     try:                                         # quick checks before the job (the page shows them at once)
-        sm.check_plan(body.speed, body.length, p["axes"])
+        p, p2 = _sensors(body)
+        sm.check_plan(body.speed, body.length, p["axes"] + (p2["axes"] if p2 else 0))
         if trial.get(body.kind) and not body.replace:
             raise sm.MeasureError("exists", f"{trial[body.kind]} exists", file=trial[body.kind])
     except sm.MeasureError as e:
@@ -145,8 +174,8 @@ def measure_start(series_id: int, body: MeasureBody, user: Dict[str, Any] = Depe
     kwargs = dict(series_id=series_id, trial_id=trial["trial_id"], vno=trial["vno"], box=body.box,
                   head_name=p["head"], connector=p["connector"], speed_m_min=body.speed, length_m=body.length,
                   kind=body.kind, replace=body.replace, user={"id": user.get("id"), "username": user.get("username")},
-                  zero=body.zero if isinstance(body.zero, dict) else None)
-    return _start_job(series_id, user, trial["vno"], kwargs)
+                  zero=body.zero if isinstance(body.zero, dict) else None, distance_mm=body.distance, **_second_kw(p2))
+    return _start_job(series_id, user, trial["vno"], kwargs, on_done=_no_paths)
 
 
 def _start_job(scope: int, user: Dict[str, Any], vno: Any, kwargs: Dict[str, Any], fn=None, on_done=None):
@@ -200,7 +229,8 @@ def inspector_setup(user: Dict[str, Any] = Depends(_inspector)):
         box_error = _error_json(e)
     return {"can_write": ta.can_edit_trials(user), "boxes": boxes, "box_error": box_error,
             "sensors": sm.sensor_presets(), "length": sm.DEFAULT_LENGTH_M, "speed_range": list(sm.SPEED_RANGE),
-            "length_range": list(sm.LENGTH_RANGE), "manual_dir": sm.MANUAL_DIR}
+            "length_range": list(sm.LENGTH_RANGE), "manual_dir": sm.MANUAL_DIR,
+            "default_distance_mm": DEFAULT_DISTANCE_MM}
 
 
 @inspector_router.post("/zero")
@@ -214,6 +244,7 @@ class FreeBody(SensorChoice):
     length: float
     kind: str = "dty"
     zero: Optional[Dict[str, Any]] = None
+    distance: Optional[float] = None
 
 
 @inspector_router.post("/measure")
@@ -222,27 +253,27 @@ def inspector_measure(body: FreeBody, user: Dict[str, Any] = Depends(_inspector)
     The finished job's result carries series_id = the inspector number of the new file, so the page opens it."""
     if not ta.can_edit_trials(user):
         return _err(403, "read_only", "Write access required.")
-    p = _preset(body.sensor)
-    if not p:
-        return _err(400, "head_missing", "Unknown sensor.", head=body.sensor)
     if body.kind not in sm.KINDS:
         return _err(400, "bad_kind", "Unknown folder.")
     try:
+        p, p2 = _sensors(body)
         name = sm.check_name(body.name)
-        sm.check_plan(body.speed, body.length, p["axes"])
+        sm.check_plan(body.speed, body.length, p["axes"] + (p2["axes"] if p2 else 0))
     except sm.MeasureError as e:
         return _merr(e)
     from . import tdms_inspector
     username = str(user.get("username") or "")
     kwargs = dict(name=name, box=body.box, head_name=p["head"], connector=p["connector"], speed_m_min=body.speed,
                   length_m=body.length, kind=body.kind, user={"id": user.get("id"), "username": username},
-                  zero=body.zero if isinstance(body.zero, dict) else None)
+                  zero=body.zero if isinstance(body.zero, dict) else None, distance_mm=body.distance, **_second_kw(p2))
 
     def opened(res: Dict[str, Any]) -> Dict[str, Any]:
-        path = res.pop("path")                   # the server path stays on the server
+        path = res["path"]
         res["series_id"] = tdms_inspector.register(path, res["file"], username)
         res["size"] = os.path.getsize(path)
-        return res
+        if isinstance(res.get("second"), dict) and res["second"].get("path"):
+            res["second"]["series_id"] = tdms_inspector.register(res["second"]["path"], res["second"]["file"], username)
+        return _no_paths(res)
     return _start_job(0, user, name, kwargs, fn=sm.measure_free, on_done=opened)
 
 

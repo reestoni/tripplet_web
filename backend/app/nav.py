@@ -43,6 +43,7 @@ SECTIONS: List[Tuple[str, str, List[Item]]] = [
         ("yarn_stock", "Yarn Stock", "manage_yarn.png", "/tools/yarn-stock", None),
         ("label_generator", "Label Generator", "label.png", "/tools/label-generator", None),
         ("tdms_inspector", "TDMS Inspector", "tdms_inspector.png", "/tools/tdms-inspector", None),
+        ("tdms_inspector", "YarnScope Live", "tdms_inspector.png", "/tools/yarnscope-live", None),
     ]),
     ("Admin", "admin_white.png", [
         ("manage_jets", "Jets", "", "/admin/jets", None),
@@ -69,7 +70,7 @@ PINNED: List[Item] = [
 
 # routes that already work in the web app
 WEB_READY: set = {"/experiments", "/backlog", "/requests", "/requests/new", "/knowledge-base",
-                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/admin/top-plates", "/admin/order-types", "/admin/product-groups", "/admin/material", "/admin/projects", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/superuser/recycle-bin", "/tools/requirement-hub", "/tools/process-playground", "/tools/jet-advisor", "/tools/canvas", "/tools/tdms-inspector", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
+                  "/experiments/new", "/series/new", "/lab-machines/new", "/help", "/admin/jets", "/admin/yarn", "/admin/top-plates", "/admin/order-types", "/admin/product-groups", "/admin/material", "/admin/projects", "/tools/yarn-stock", "/superuser/users", "/settings", "/tools/smart-chart", "/tools/dashboards", "/superuser/recycle-bin", "/tools/requirement-hub", "/tools/process-playground", "/tools/jet-advisor", "/tools/canvas", "/tools/tdms-inspector", "/tools/yarnscope-live", "/tools/label-generator", "/tools/image-compare", "/tools/air-supply", "/tools/jet-roi", "/tools/yarn-count"}
 
 
 def _badges(keys: set) -> Dict[str, int]:

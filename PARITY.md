@@ -15,7 +15,7 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 |---|---|---|---|---|---|---|
 | 1. All Experiments | 22 | 0 | 0 | 0 | 1 | 23 |
 | 2. Backlog | 33 | 0 | 0 | 1 | 1 | 35 |
-| 3. Show Experiment | 99 | 2 | 0 | 1 | 1 | 103 |
+| 3. Show Experiment | 100 | 2 | 0 | 1 | 1 | 104 |
 | 4. Report from Show Experiment | 12 | 0 | 0 | 0 | 0 | 12 |
 | 5. YarnScope | 18 | 0 | 0 | 0 | 0 | 18 |
 | 6. Experiment Requests | 23 | 2 | 2 | 0 | 0 | 27 |
@@ -26,12 +26,12 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 0 | 16 |
 | 12. Manage User | 7 | 0 | 0 | 1 | 0 | 8 |
 | 13. Smart Chart / Dashboards | 21 | 1 | 0 | 0 | 1 | 23 |
-| 14. Tools | 11 | 0 | 0 | 0 | 0 | 11 |
+| 14. Tools | 12 | 0 | 0 | 0 | 0 | 12 |
 | 15. Admin master tables | 5 | 0 | 0 | 0 | 0 | 5 |
 | 16. Superuser pages | 1 | 0 | 0 | 2 | 0 | 3 |
 | Conclusion per series | 8 | 0 | 0 | 0 | 0 | 8 |
 | Jet Advisor | 2 | 0 | 0 | 0 | 0 | 2 |
-| **Total** | 342 | 5 | 2 | 8 | 4 | 361 |
+| **Total** | 344 | 5 | 2 | 8 | 4 | 363 |
 
 Open rows (2026-11-19), none blocking:
 - PARTIAL Show Experiment: leaving with unsaved changes asks OK/Cancel instead of Save/Discard/Cancel, browser back not guarded.
@@ -145,6 +145,7 @@ Desktop paths are relative to `C:\python\tripplet_project`, web paths to `C:\pyt
 | Itemat import | `_itemat_import` | **DONE** | same as Statimat |
 | One "PDF import" for both: kind recognised per PDF (text "STATIMAT" / scan without text, file name as hint) | `_pdf_import` / `pdf_import_impl` | **DONE** | `lab_pdf_import.detect_kind` + `import_auto` (2026-11-16, both apps), `GET …/pdf-import/kinds` |
 | "📏 Measure": YarnScope TDMS straight from the NI box instead of Sensoft (box, sensor from the Sensoft configs, empty value, trial, speed, length; existing file -> _replaced) | `_open_sensor_measure` / `sensor_measure_dialog.py` | **DONE** | `sensor_measure.py` (2026-11-20, both apps, feasibility); web measures on the server = only with the box on the server PC |
+| "📏 Measure" with a 2nd sensor at once (other connector) + distance: measured speed, speed per 10 m, same knots (2nd file in `_C1`/`_C2`) | `sensor_measure_dialog.py` (`cb_second`, `pair_text`) | **DONE** | `sensor_pair.py` (2026-11-23, both apps) |
 | Report button | `_open_report` | **DONE** | `/series/:id/report` |
 | Saved reports dropdown + "Go!" | `_refresh_saved_reports_dropdown` / `_open_selected_saved_report` | **DONE** | `SavedReports` in the header (only with saved reports; Ctrl+click = new tab) |
 | Print trial labels (V-numbers, range) → PDF | `_on_print_trial_labels` | **DONE** | LabelsDialog (range, start cell, template, save template) → PDF in new tab |
@@ -484,6 +485,7 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | Label Generator (series/trial data incl. Machine Data fields, label size, designs save/load, text parts static/field/counter, logo, table, drag/resize, anchor groups, copies / per trial, sheet template + start position, PDF) | `ui/screen_label_generator.py` | **DONE** | `be/label_generator_api.py` on `ui/label_designer.py` + `db/label_sheets.py` |
 | TDMS Inspector (any .tdms file, DTY + ATY YarnScope, no DB; no save/batch/compare) | `ui/screen_tdms_inspector.py` | **DONE** | `be/tdms_inspector.py` (upload) + the YarnScope routes for negative series numbers |
 | TDMS Inspector "📏 Measure…": free measurement with own name + speed (no series/DB), file to `_manual`, opened at once, name counts up | `TdmsInspectorScreen._on_measure` / `SensorMeasureDialog(free=True)` | **DONE** | `sensor_measure.measure_free` (2026-11-23, both apps), `/api/tdms-inspector/sensor/...` |
+| YarnScope Live: continuous measurement, start/stop, every 30 m knots/m + CV (+ speed with 2 sensors), optional saving | `ui/widgets/sensor_live_window.py` (own window, sidebar Tools) | **DONE** | `/tools/yarnscope-live`, `sensor_live.py` (2026-11-23) |
 | Canvas (free board, series images + PDFs + local files, move / scale / rotate, annotation tools, undo, grid, background colour, PNG export, project files, paste, Del) | `ui/screen_canvas.py` | **DONE** | `fe/pages/Canvas.tsx` on the Image Compare routes; rotation around the centre |
 | Canvas boards in the DB (title, series, shared, autosave, version check, files stored with the board) - new 2026-11-14 in both apps | `db/canvas_boards.py`, board bar in `ui/screen_canvas.py` | **DONE** | `be/canvas_api.py`, `fe/pages/Canvas.tsx`; "Board" button in Show Experiment (both); web imports old .ttcanvas files |
 | Process Playground (yarn/jet list with search + sort, start from a trial or typed with range notes, sliders, statements per lab value, warnings, goals + Find settings, suggestions, chart with model curve + band, Reload/F5, open from Show Experiment) | `ui/screen_process_playground.py` | **DONE** | `be/process_playground_api.py` on `ui/dty_whatif.py` + `ui/process_playground_core.py`; statements / based-on / start notes English (shared module) |

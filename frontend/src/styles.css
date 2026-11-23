@@ -1788,3 +1788,22 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
   background: var(--card-bg); }
 .stk-cam-bar .btn-green { min-height: 48px; font-size: 16px; }
 .stk-cam-hint { font-size: 12px; }
+.ms-pair { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #b9d9c0; display: flex; flex-direction: column; gap: 2px; }
+/* YarnScope Live (pages/YarnScopeLive.tsx) */
+.yl-grid { display: grid; grid-template-columns: minmax(300px, 400px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.yl-form .ms-form { margin-top: 0; }
+.yl-dash { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.yl-tiles { display: flex; flex-wrap: wrap; gap: 10px; }
+.yl-tile { flex: 1 1 180px; border: 1px solid #d9dee3; border-left-width: 5px; border-radius: 8px; padding: 10px 14px; background: #fff; }
+.yl-tile-h { font-size: 12px; color: #666; margin-bottom: 2px; }
+.yl-big { font-size: 30px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.yl-big span { font-size: 13px; font-weight: 400; color: #666; }
+.yl-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 8px; }
+.yl-table-wrap { max-height: 320px; overflow: auto; border: 1px solid #e4e7eb; border-radius: 6px; }
+.yl-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
+.yl-table th, .yl-table td { padding: 3px 8px; border-bottom: 1px solid #eef0f2; text-align: right; white-space: nowrap; }
+.yl-table th { position: sticky; top: 0; background: #f4f6f8; }
+.yl-table td:first-child, .yl-table th:first-child { text-align: left; }
+.btn-red { background: #c0392b; color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-weight: 600; cursor: pointer; }
+.btn-red:disabled { opacity: .5; cursor: default; }
+@media (max-width: 1023px) { .yl-grid { grid-template-columns: 1fr; } }

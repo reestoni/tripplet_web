@@ -33,6 +33,7 @@ const ProcessPlayground = lazyPage(() => import("./pages/ProcessPlayground"));
 const JetAdvisor = lazyPage(() => import("./pages/JetAdvisor"));
 const Canvas = lazyPage(() => import("./pages/Canvas"));
 const TdmsInspector = lazyPage(() => import("./pages/TdmsInspector"));
+const YarnScopeLive = lazyPage(() => import("./pages/YarnScopeLive"));
 const LabelGenerator = lazyPage(() => import("./pages/LabelGenerator"));
 const ImageCompare = lazyPage(() => import("./pages/ImageCompare"));
 const AirSupply = lazyPage(() => import("./pages/AirSupply"));
@@ -118,6 +119,7 @@ export default function App() {
         <Route path="/tools/jet-advisor" element={<JetAdvisor />} />
         <Route path="/tools/canvas" element={<PcOnly><Canvas /></PcOnly>} />
         <Route path="/tools/tdms-inspector" element={<PcOnly><TdmsInspector /></PcOnly>} />
+        <Route path="/tools/yarnscope-live" element={<PcOnly><YarnScopeLive /></PcOnly>} />
         <Route path="/tools/label-generator" element={<PcOnly><LabelGenerator /></PcOnly>} />
         <Route path="/tools/image-compare" element={<PcOnly><ImageCompare /></PcOnly>} />
         <Route path="/tools/air-supply" element={<AirSupply />} />
