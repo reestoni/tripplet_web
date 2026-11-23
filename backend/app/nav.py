@@ -43,7 +43,7 @@ SECTIONS: List[Tuple[str, str, List[Item]]] = [
         ("yarn_stock", "Yarn Stock", "manage_yarn.png", "/tools/yarn-stock", None),
         ("label_generator", "Label Generator", "label.png", "/tools/label-generator", None),
         ("tdms_inspector", "TDMS Inspector", "tdms_inspector.png", "/tools/tdms-inspector", None),
-        ("tdms_inspector", "YarnScope Live", "tdms_inspector.png", "/tools/yarnscope-live", None),
+        ("tdms_inspector", "YarnScope Live", "yarnscope_live.png", "/tools/yarnscope-live", None),
     ]),
     ("Admin", "admin_white.png", [
         ("manage_jets", "Jets", "", "/admin/jets", None),
