@@ -444,7 +444,7 @@ Dialog selbst (`read_only` unter Stufe 2).
 also gleicher Takt. Dateien: Hauptsensor wie gehabt (= Datei des Versuchs), der zweite gleichnamig in `<Ordner>\_C1|_C2\` (von Analyse/Reitern
 nicht gesehen); im Inspector beide in `_manual` mit `_C1`/`_C2` im Namen. Eigenschaften `TrippleT.Pair*` (Partnerdatei, Abstand,
 Verzögerung, Speed). Auswertung `ui/yarnscope/sensor_pair.py`: Verzögerung = Maximum der normierten Kreuzkorrelation (FFT, vorher ~20 cm
-gleitendes Mittel abgezogen, Parabel zwischen den Punkten), `MIN_CORR` 0.3; Speed = Abstand / Verzögerung, ohne Abstand Abstand aus der
+gleitendes Mittel abgezogen, Parabel zwischen den Punkten), vertraut wenn `MIN_CORR` 0.3 ODER die Spitze `MIN_Z` 8-fach aus dem Rauschen der Korrelation >50 mm daneben ragt (`reliable()`; seit 2026-11-23: der OBD an C2 sieht das Garn schwach, Übereinstimmung fiel unter 0.3 bei exakt 160.0 mm Verzögerung -> Speed ging verloren; gleiches Garn z 12-17 bis corr 0.04, fremdes Garn z ~3); Speed = Abstand / Verzögerung, ohne Abstand Abstand aus der
 eingestellten Geschwindigkeit; Speed pro 10 m; gleiche Knoten: `dty_analysis.knot_runs` (= genau die YarnScope-Erkennung) beider Signale,
 verschoben, gepaart (Toleranz halbe Median-Knotenlänge) -> % gemeinsam, nur in einem, Längenunterschied. Geprüft an echten Daten: verschiedene
 Garnstücke corr 0.03; echtes Signal verschoben + Rauschen = Verzögerung/Speed exakt, 96 % gleiche Knoten (die übrigen 4 % = Unsicherheit der
