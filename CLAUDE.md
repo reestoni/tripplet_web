@@ -426,6 +426,11 @@ Y 521.6/521.6 µm); Sensofts "Nullen" ändert die gespeicherten Werte nicht -> h
 verschiebt die alte nach `_replaced\` (nie löschen). Geschwindigkeit = Winder-Geschwindigkeit des Versuchs (Nutzerangabe 2026-11-20,
 `default_speed`: Speed Shaft 2 × (1 − Winder % / 100) wie das Prozess-Schema; prod 466 V70: 800 m/min, 4.5 % -> 764 = Sensoft-Dateien; ATY ohne
 Vorschlag). Nach einer Messung ist der nächste Versuch gewählt, der Knopf heisst dann "2. V002 messen" (wie Sensofts Hochzählen).
+**Messfenster nicht modal + Leerwert gemerkt** (2026-11-23, beide Apps, Nutzerwunsch: zwischen den Versuchen in die Tabelle tippen, nicht jedes
+Mal neu nullen): Desktop `dlg.show()` (ein Fenster pro Serie, `_RUNNING` hält laufende Mess-Threads am Leben, auch wenn der Screen zugeht), Web
+`FloatingWindow` (Klasse `ms-float`). `sensor_measure.zero_check` merkt sich jeden Leerwert pro (Box, Kopf, Anschluss) im Prozess,
+`remembered_zero(box, head, connector, second)` gibt ihn zurück, bis neu geprüft wird oder `ZERO_MAX_AGE_H` (12 h) um ist; Web: `zeros` in den
+Setup-Antworten, `useKeptZero` wählt den passenden. Auch im TDMS Inspector.
 Web `app/sensor_api.py` (`/api/series/{id}/sensor/setup|zero|measure|job/<id>[/cancel]`, ein Job gleichzeitig, Browser schickt nur Versuchs-ID,
 Sensor-Schlüssel, Box-Name): **der Server misst** - geht nur, solange er auf dem Laptop mit der Box läuft (auf der VM: später ein Helfer).
 Frontend `components/SensorMeasure.tsx`. Desktop `ui/widgets/sensor_measure_dialog.py`. Tests: Desktop `test_sensor_measure.py`, Web

@@ -42,7 +42,8 @@ export function Overlay({ children, onClose, wide }: { children: ReactNode; onCl
 /** Non-modal window that floats above the page and can be moved by its title bar (and resized at the lower right
  *  corner) - the page behind stays usable, like the desktop request dialog next to Create Experiment.
  *  Escape closes it only while the focus is inside it. */
-export function FloatingWindow({ children, title, onClose }: { children: ReactNode; title: string; onClose: () => void }) {
+export function FloatingWindow({ children, title, onClose, className }: {
+  children: ReactNode; title: string; onClose: () => void; className?: string }) {
   const { t } = useI18n();
   const box = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(() => {
@@ -60,7 +61,7 @@ export function FloatingWindow({ children, title, onClose }: { children: ReactNo
     return () => window.removeEventListener("resize", fit);
   }, []);
   return createPortal(
-    <div ref={box} className="modal rqp rqp-float" role="dialog" aria-modal="false" style={{ left: pos.x, top: pos.y }}
+    <div ref={box} className={"modal rqp rqp-float" + (className ? " " + className : "")} role="dialog" aria-modal="false" style={{ left: pos.x, top: pos.y }}
       onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Escape") onClose(); }}
       onClick={stop} onDoubleClick={stop} onContextMenu={stop} onDragStart={stop}>
       <div className="rqp-float-bar" title={t("rqp.dragTip")}

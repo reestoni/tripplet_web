@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
-import { Modal } from "./SeriesTools";
+import { FloatingWindow } from "./RequestPopup";
 
 /* "📏 Messen" in Show Experiment (Nutzerwunsch 2026-11-20, F&E feasibility): YarnScope measuring straight from the
    NI box instead of Sensoft - box + sensor, empty value (no yarn), trial, measure. After a measurement the next
@@ -13,9 +13,11 @@ type Sensor = { key: string; head: string; connector: string; axes: number; labe
 type MTrial = { trial_id: number; vno: number; speed: number | null; dty: string | null; aty: string | null };
 type ErrJson = { code: string; detail: string; vars?: Record<string, string | number> };
 type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; trials: MTrial[];
-  length: number; speed_range: [number, number]; length_range: [number, number]; replaced_dir: string; default_distance_mm?: number };
+  length: number; speed_range: [number, number]; length_range: [number, number]; replaced_dir: string; default_distance_mm?: number; zeros?: Kept[] };
 type Axis = { axis: string; mean_um: number; std_um: number; connector?: string };
 type Zero = { axes: Axis[]; head: string; connector: string; box: string; at: string };
+/** remembered empty value of one sensor (server: sensor_measure.remembered_zeros) */
+type Kept = { box: string; head: string; connector: string; at: string; axes: Axis[] };
 type Pair = { reliable: boolean; corr: number | null; delay_ms?: number; speed?: number; speed_dev_pct?: number;
   distance_from_speed_mm?: number; distance_mm?: number | null; synced?: boolean; error?: string;
   profile?: { from_m: number; to_m: number; speed: number | null; corr: number | null }[];
@@ -34,6 +36,38 @@ const vlabel = (vno: number) => `V${String(vno).padStart(3, "0")}`;
 /** Zero result: per sensor (connector) its axes, e.g. "C1 X: -88.9 µm (± 2.0)" */
 const zeroText = (z: Zero) => z.axes.map((a) => `${a.connector && z.axes.some((b) => b.connector !== a.connector) ? a.connector + " " : ""}`
   + `${a.axis.toUpperCase()}: ${a.mean_um.toFixed(1)} µm (± ${a.std_um.toFixed(1)})`).join("   ");
+
+/** The empty value stays valid until it is checked again (Nutzerwunsch 2026-11-23: the window is closed between the
+ *  trials to type into the table - zeroing again each time is not workable). The server remembers every check per
+ *  box + head + connector (setup -> zeros); here the one for the current choice (both sensors, if two) is picked. */
+function useKeptZero(fromServer: Kept[] | undefined, box: string, main: Sensor | undefined, second: Sensor | undefined) {
+  const [kept, setKept] = useState<Kept[]>([]);
+  useEffect(() => { if (fromServer) setKept(fromServer); }, [fromServer]);
+  const zero = useMemo<Zero | null>(() => {
+    if (!box || !main) return null;
+    const find = (s: Sensor) => kept.find((k) => k.box === box && k.head === s.head && k.connector === s.connector);
+    const parts = [find(main), ...(second ? [find(second)] : [])];
+    if (parts.some((p) => !p)) return null;
+    const ok = parts as Kept[];
+    return { box, head: main.head, connector: main.connector, at: ok.map((p) => p.at).sort()[0],
+      axes: ok.flatMap((p) => p.axes.map((a) => ({ ...a, connector: a.connector ?? p.connector }))) };
+  }, [kept, box, main, second]);
+  const store = (z: Zero) => {
+    const sensors = [main, second].filter(Boolean) as Sensor[];
+    const fresh: Kept[] = sensors.map((s) => ({ box: z.box, head: s.head, connector: s.connector, at: z.at,
+      axes: z.axes.filter((a) => (a.connector ?? z.connector) === s.connector) }));
+    setKept((k) => [...k.filter((x) => !fresh.some((f) => f.box === x.box && f.head === x.head && f.connector === x.connector)), ...fresh]);
+  };
+  return [zero, store] as const;
+}
+
+/** Zero line: values + "checked at 09:31 – kept until you check again" */
+function ZeroInfo({ zero }: { zero: Zero | null }) {
+  const { t } = useI18n();
+  return <span className="small">{zero ? (<>{zeroText(zero)}
+    <span className="muted"> · {t("ms.zeroKept", { time: zero.at.slice(11, 16) })}</span></>)
+    : <span className="muted">{t("ms.zeroHint")}</span>}</span>;
+}
 
 /** "2nd sensor at the same time" + distance (Nutzerwunsch 2026-11-23): only sensors on the other connector. */
 function SecondFields({ sensors, main, second, setSecond, distance, setDistance, busy }: {
@@ -93,7 +127,6 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   const [trialId, setTrialId] = useState<number | null>(null);
   const [speed, setSpeed] = useState("");
   const [length, setLength] = useState(String(prefs.current.length ?? 100));
-  const [zero, setZero] = useState<Zero | null>(null);
   const [second, setSecond] = useState(prefs.current.second ?? "");
   const [distance, setDistance] = useState(prefs.current.distance ?? "");
   const [busy, setBusy] = useState<"" | "zero" | "measure">("");
@@ -144,6 +177,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
   const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector && x.head !== sens.head) ? second : "";
+  const [zero, storeZero] = useKeptZero(setup?.zeros, box, sens, setup?.sensors.find((x) => x.key === sec));
   const trial = setup?.trials.find((x) => x.trial_id === trialId);
   const num = (s: string) => Number(s.replace(",", "."));
 
@@ -151,7 +185,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
     setBusy("zero"); setErr(null);
     try {
       const z = await request<Zero>("POST", `/api/series/${seriesId}/sensor/zero`, { box, sensor, second: sec || undefined });
-      if (alive.current) setZero(z);
+      if (alive.current) storeZero(z);
     } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
   };
 
@@ -197,7 +231,8 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   const ready = !!setup?.can_write && !!box && !!sens && !!trial && !busy;
 
   return (
-    <Modal title={t("ms.title")} onClose={close}>
+    // floating, not modal (Nutzerwunsch 2026-11-23): the table behind it stays editable between the trials
+    <FloatingWindow title={t("ms.title")} onClose={close} className="ms-float">
       <p className="muted small">{t("ms.intro")}</p>
       {!setup && !err && <p className="muted">{t("se.loading")}</p>}
       {setup && (
@@ -205,14 +240,14 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
           <label>{t("ms.box")}</label>
           <div className="ms-row">
             {noBox ? <span className="ms-warn">{setup.box_error ? errMsg(setup.box_error) : t("ms.noBox")}</span> : (
-              <select value={box} onChange={(e) => { setBox(e.target.value); setZero(null); }} disabled={!!busy}>
+              <select value={box} onChange={(e) => { setBox(e.target.value); }} disabled={!!busy}>
                 {setup.boxes.map((b) => <option key={b.name} value={b.name}>{b.name} – {b.product} ({t("ms.serial")} {b.serial})</option>)}
               </select>)}
             <button className="btn-plain" title={t("ms.rescan")} onClick={() => void load()} disabled={!!busy}>↻</button>
           </div>
           <label>{t("ms.sensor")}</label>
           {setup.sensors.length ? (
-            <select value={sensor} onChange={(e) => { setSensor(e.target.value); setZero(null); }} disabled={!!busy}
+            <select value={sensor} onChange={(e) => { setSensor(e.target.value); }} disabled={!!busy}
               title={sens ? `${sens.title} – ${t("ms.calibrated")} ${sens.date}` : undefined}>
               {setup.sensors.map((x) => <option key={x.key} value={x.key}>
                 {headLabel(x.head)} · {t(x.axes === 2 ? "ms.axes2" : "ms.axes1")} · {x.connector}</option>)}
@@ -224,14 +259,13 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
                 onClick={() => { setKind(k); if (setup) pick(setup, firstFree(setup, k)); }}>{k.toUpperCase()}</button>))}
           </div>
 
-          <SecondFields sensors={setup.sensors} main={sens} second={second} setSecond={(v) => { setSecond(v); setZero(null); }}
+          <SecondFields sensors={setup.sensors} main={sens} second={second} setSecond={(v) => { setSecond(v); }}
             distance={distance} setDistance={setDistance} busy={!!busy} />
 
           <div className="ms-step">
             <button className="btn-plain" disabled={!box || !sens || !!busy || !setup.can_write} onClick={doZero}>
-              {busy === "zero" ? t("ms.zeroBusy") : t("ms.zero")}</button>
-            <span className="small">{zero ? zeroText(zero)
-              : <span className="muted">{t("ms.zeroHint")}</span>}</span>
+              {busy === "zero" ? t("ms.zeroBusy") : t(zero ? "ms.zeroAgain" : "ms.zero")}</button>
+            <ZeroInfo zero={zero} />
           </div>
 
           <label>{t("ms.trial")}</label>
@@ -283,13 +317,13 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
         <button className="btn-green" disabled={!ready} onClick={() => void doMeasure(false)}>
           {t("ms.measure", { trial: trial ? vlabel(trial.vno) : "" })}</button>
       </div>
-    </Modal>
+    </FloatingWindow>
   );
 }
 
 /* ------------------------------------------------------------------ TDMS Inspector: free measurement */
 type FreeSetup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; length: number;
-  speed_range: [number, number]; length_range: [number, number]; manual_dir: string; default_distance_mm?: number };
+  speed_range: [number, number]; length_range: [number, number]; manual_dir: string; default_distance_mm?: number; zeros?: Kept[] };
 export type FreeResult = Result & { name: string; next_name: string; series_id: number; size: number };
 const FREE_PREF = "tripplet.sensorMeasure.free";
 type FreePrefs = { name?: string; speed?: string };
@@ -309,7 +343,6 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
   const [name, setName] = useState(free.current.name ?? "99999_1");
   const [speed, setSpeed] = useState(free.current.speed ?? "");
   const [length, setLength] = useState(String(prefs.current.length ?? 100));
-  const [zero, setZero] = useState<Zero | null>(null);
   const [second, setSecond] = useState(prefs.current.second ?? "");
   const [distance, setDistance] = useState(prefs.current.distance ?? "");
   const [busy, setBusy] = useState<"" | "zero" | "measure">("");
@@ -345,13 +378,14 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
 
   const sens = setup?.sensors.find((x) => x.key === sensor);
   const sec = setup?.sensors.some((x) => x.key === second && sens && x.connector !== sens.connector && x.head !== sens.head) ? second : "";
+  const [zero, storeZero] = useKeptZero(setup?.zeros, box, sens, setup?.sensors.find((x) => x.key === sec));
   const num = (s: string) => Number(s.replace(",", "."));
 
   const doZero = async () => {
     setBusy("zero"); setErr(null);
     try {
       const z = await request<Zero>("POST", "/api/tdms-inspector/sensor/zero", { box, sensor, second: sec || undefined });
-      if (alive.current) setZero(z);
+      if (alive.current) storeZero(z);
     } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
   };
 
@@ -399,7 +433,7 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
   const ready = !!setup?.can_write && !!box && !!sens && !busy;
 
   return (
-    <Modal title={t("ms.freeTitle")} onClose={close}>
+    <FloatingWindow title={t("ms.freeTitle")} onClose={close} className="ms-float">
       <p className="muted small">{t("ms.freeIntro", { dir: setup?.manual_dir ?? "_manual" })}</p>
       {!setup && !err && <p className="muted">{t("app.loading")}</p>}
       {setup && (
@@ -407,14 +441,14 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
           <label>{t("ms.box")}</label>
           <div className="ms-row">
             {noBox ? <span className="ms-warn">{setup.box_error ? errMsg(setup.box_error) : t("ms.noBox")}</span> : (
-              <select value={box} onChange={(e) => { setBox(e.target.value); setZero(null); }} disabled={!!busy}>
+              <select value={box} onChange={(e) => { setBox(e.target.value); }} disabled={!!busy}>
                 {setup.boxes.map((b) => <option key={b.name} value={b.name}>{b.name} – {b.product} ({t("ms.serial")} {b.serial})</option>)}
               </select>)}
             <button className="btn-plain" title={t("ms.rescan")} onClick={() => void load()} disabled={!!busy}>↻</button>
           </div>
           <label>{t("ms.sensor")}</label>
           {setup.sensors.length ? (
-            <select value={sensor} onChange={(e) => { setSensor(e.target.value); setZero(null); }} disabled={!!busy}
+            <select value={sensor} onChange={(e) => { setSensor(e.target.value); }} disabled={!!busy}
               title={sens ? `${sens.title} – ${t("ms.calibrated")} ${sens.date}` : undefined}>
               {setup.sensors.map((x) => <option key={x.key} value={x.key}>
                 {headLabel(x.head)} · {t(x.axes === 2 ? "ms.axes2" : "ms.axes1")} · {x.connector}</option>)}
@@ -425,14 +459,13 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
               <button key={k} className={kind === k ? "on" : ""} disabled={!!busy} onClick={() => setKind(k)}>{k.toUpperCase()}</button>))}
           </div>
 
-          <SecondFields sensors={setup.sensors} main={sens} second={second} setSecond={(v) => { setSecond(v); setZero(null); }}
+          <SecondFields sensors={setup.sensors} main={sens} second={second} setSecond={(v) => { setSecond(v); }}
             distance={distance} setDistance={setDistance} busy={!!busy} />
 
           <div className="ms-step">
             <button className="btn-plain" disabled={!box || !sens || !!busy || !setup.can_write} onClick={doZero}>
-              {busy === "zero" ? t("ms.zeroBusy") : t("ms.zero")}</button>
-            <span className="small">{zero ? zeroText(zero)
-              : <span className="muted">{t("ms.zeroHint")}</span>}</span>
+              {busy === "zero" ? t("ms.zeroBusy") : t(zero ? "ms.zeroAgain" : "ms.zero")}</button>
+            <ZeroInfo zero={zero} />
           </div>
 
           <label>{t("ms.name")}</label>
@@ -470,6 +503,6 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
         <button className="btn-green" disabled={!ready} onClick={() => void doMeasure()}>
           {t("ms.measure", { trial: name.trim() || "…" })}</button>
       </div>
-    </Modal>
+    </FloatingWindow>
   );
 }

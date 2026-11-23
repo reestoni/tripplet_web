@@ -63,12 +63,14 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv(dty_service.ENV_TDMS_DIR, str(tmp_path / "dty"))
     monkeypatch.setenv(aty_service.ENV_TDMS_DIR, str(tmp_path / "aty"))
     sm.set_daq(FakeDaq())
+    sm.forget_zeros()
     rows = fetch_all("SELECT s.ID FROM tblTrialSeries s WHERE (SELECT COUNT(*) FROM tblTrial t WHERE "
                      "t.TrialSeriesID = s.ID) BETWEEN 2 AND 6 ORDER BY s.ID DESC LIMIT 1")
     if not rows:
         pytest.skip("no small series")
     yield type("E", (), {"sid": int(rows[0]["ID"]), "dty": tmp_path / "dty"})
     sm.set_daq(None)
+    sm.forget_zeros()
 
 
 def _wait(c, sid, job_id):
@@ -88,8 +90,14 @@ def test_setup_zero_measure_replace(env):
     trial = s["trials"][0]
     assert trial["dty"] is None
 
+    assert s["zeros"] == []
     z = c.post(f"/api/series/{env.sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).json()
     assert [a["axis"] for a in z["axes"]] == ["x", "y"]
+    # remembered until checked again (dialog closed + reopened = setup again), also for the inspector
+    kept = c.get(f"/api/series/{env.sid}/sensor/setup").json()["zeros"]
+    assert [(k["box"], k["head"], k["connector"]) for k in kept] == [("Dev2", "PXL_3_121_W", "C1")]
+    assert kept[0]["axes"] == z["axes"] and "path" not in str(kept)
+    assert c.get("/api/tdms-inspector/sensor/setup").json()["zeros"] == kept
 
     body = {"box": "Dev2", "sensor": "PXL_3_121_W@C1", "trial_id": trial["trial_id"], "speed": 600, "length": 3}
     assert c.post(f"/api/series/{env.sid}/sensor/measure", json={**body, "sensor": "..\\x@C1"}).json()["code"] == "head_missing"

@@ -61,6 +61,14 @@ def _preset(key: str) -> Optional[Dict[str, Any]]:
     return next((p for p in sm.sensor_presets() if p["key"] == key), None)
 
 
+def _zeros():
+    """Remembered empty values (box, head, connector, axes, at) - valid until checked again (Nutzerwunsch 2026-11-23:
+    the dialog is closed between trials, zeroing again each time is not workable). The page picks the one that fits
+    its selection; the server remembers each zero_check() itself."""
+    return [{"box": z["box"], "head": z["head"], "connector": z["connector"], "at": z["at"], "axes": z["axes"]}
+            for z in sm.remembered_zeros()]
+
+
 @router.get("/{series_id}/sensor/setup")
 def setup(series_id: int, user: Dict[str, Any] = Depends(current_user)):
     """Boxes (or why none), sensors from the Sensoft configurations, trials with proposed speed and files."""
@@ -72,7 +80,7 @@ def setup(series_id: int, user: Dict[str, Any] = Depends(current_user)):
     return {"can_write": ta.can_edit_trials(user), "boxes": boxes, "box_error": box_error,
             "sensors": sm.sensor_presets(), "trials": sm.trials_for(series_id),
             "length": sm.DEFAULT_LENGTH_M, "speed_range": list(sm.SPEED_RANGE), "length_range": list(sm.LENGTH_RANGE),
-            "replaced_dir": sm.REPLACED_DIR, "default_distance_mm": DEFAULT_DISTANCE_MM}
+            "replaced_dir": sm.REPLACED_DIR, "default_distance_mm": DEFAULT_DISTANCE_MM, "zeros": _zeros()}
 
 
 class SensorChoice(BaseModel):
@@ -232,7 +240,7 @@ def inspector_setup(user: Dict[str, Any] = Depends(_inspector)):
     return {"can_write": ta.can_edit_trials(user), "boxes": boxes, "box_error": box_error,
             "sensors": sm.sensor_presets(), "length": sm.DEFAULT_LENGTH_M, "speed_range": list(sm.SPEED_RANGE),
             "length_range": list(sm.LENGTH_RANGE), "manual_dir": sm.MANUAL_DIR,
-            "default_distance_mm": DEFAULT_DISTANCE_MM}
+            "default_distance_mm": DEFAULT_DISTANCE_MM, "zeros": _zeros()}
 
 
 @inspector_router.post("/zero")
