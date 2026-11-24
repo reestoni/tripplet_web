@@ -19,7 +19,9 @@ type ErrJson = { code: string; detail: string; vars?: Record<string, string | nu
 type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; window_m: number;
   window_range: [number, number]; speed_range: [number, number]; manual_dir: string; save_limit_m: number; running: boolean; default_distance_mm?: number;
   zeros?: Kept[] };
-type SensorRow = { fpm: number | null; cv: number | null; mean_um: number | null };
+type SensorRow = { fpm: number | null; cv: number | null; mean_um: number | null;
+  /** thickness minus the empty value (2026-11-24): whole window, open (bulky) parts, knots - null without an empty value */
+  d_um?: number | null; d_bulk?: number | null; d_knot?: number | null };
 type Row = { i: number; from_m: number; to_m: number; t: number; sensors: SensorRow[]; corr?: number | null;
   delay_ms?: number | null; speed?: number | null; distance_from_speed_mm?: number | null };
 type Bookmark = { id: number; at: string; at_m: number; length_m: number; speed: number | null; sensors: SensorRow[];
@@ -208,10 +210,18 @@ export default function YarnScopeLive() {
     const fpm = rows.flatMap((r) => r.sensors.map((s) => s.fpm));
     const cv = rows.flatMap((r) => r.sensors.map((s) => s.cv));
     const sp = rows.map((r) => r.speed ?? null);
+    const dv = rows.flatMap((r) => r.sensors.flatMap((s) => [s.d_bulk, s.d_knot]));
+    const hasD = dv.some((v) => v != null);
+    const dline = (y: (number | null | undefined)[], i: number, nm: string, dash: boolean) =>
+      ({ ...line(y, i, nm), line: { color: COLORS[i], width: 2, dash: dash ? "dot" : "solid" } });
     return [
       { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.fpm), i, nm)), layout: lay(t("yl.fpm"), range(fpm, 0.10)) },
       { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.cv), i, nm)), layout: lay(t("yl.cv"), range(cv, 0, [0, 40])) },
       ...(two ? [{ data: [line(sp, 0, "m/min")], layout: { ...lay(t("yl.speed"), range(sp, 0.03)), showlegend: false } }] : []),
+      // thickness: open (bulky) parts solid, knots dotted, per sensor (2026-11-24)
+      ...(hasD ? [{ data: names.flatMap((nm, i) => [dline(rows.map((r) => r.sensors[i]?.d_bulk), i, `${nm} ${t("yl.bulk")}`, false),
+        dline(rows.map((r) => r.sensors[i]?.d_knot), i, `${nm} ${t("yl.knot")}`, true)]),
+        layout: { ...lay(`${t("yl.thick")} µm`, range(dv, 0.05)), showlegend: true } }] : []),
     ];
   }, [rows, view?.sensors, view?.bookmarks, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -292,6 +302,13 @@ export default function YarnScopeLive() {
               <div key={s.connector + "c"} className="yl-tile" style={{ borderColor: COLORS[i] }}>
                 <div className="yl-tile-h">{headLabel(s.head)} · {s.connector} · {t("yl.cv")}</div>
                 <div className="yl-big">{fmt(last?.sensors[i]?.cv, 1)}<span> %</span></div>
+              </div>,
+              <div key={s.connector + "d"} className="yl-tile" style={{ borderColor: COLORS[i] }} title={t("yl.thickNote")}>
+                <div className="yl-tile-h">{headLabel(s.head)} · {s.connector} · {t("yl.thick")}</div>
+                {last?.sensors[i]?.d_um != null ? (<>
+                  <div className="yl-big">{fmt(last.sensors[i].d_um, 0)}<span> µm</span></div>
+                  <div className="small">{t("yl.bulk")} {fmt(last.sensors[i].d_bulk, 0)} · {t("yl.knot")} {fmt(last.sensors[i].d_knot, 0)} µm</div>
+                </>) : <div className="small muted">{rows.length ? t("yl.thickNoZero") : "–"}</div>}
               </div>])}
             {two && (<div className="yl-tile">
               <div className="yl-tile-h">{t("yl.speed")}</div>
@@ -345,13 +362,15 @@ export default function YarnScopeLive() {
             </div>)}
           {rows.length > 0 && (
             <div className="yl-table-wrap"><table className="yl-table">
-              <thead><tr><th>m</th>{(view?.sensors ?? []).map((s) => <th key={s.connector} colSpan={2}>{headLabel(s.head)} {s.connector}</th>)}
+              <thead><tr><th>m</th>{(view?.sensors ?? []).map((s) => <th key={s.connector} colSpan={5}>{headLabel(s.head)} {s.connector}</th>)}
                 {two && <th>{t("yl.speed")}</th>}{two && <th>{t("yl.match")}</th>}</tr>
-                <tr><th />{(view?.sensors ?? []).map((s) => [<th key={s.connector + "f"}>{t("yl.fpmUnit")}</th>, <th key={s.connector + "c"}>CV %</th>])}
+                <tr><th />{(view?.sensors ?? []).map((s) => [<th key={s.connector + "f"}>{t("yl.fpmUnit")}</th>, <th key={s.connector + "c"}>CV %</th>,
+                  <th key={s.connector + "d"}>{t("yl.thick")} µm</th>, <th key={s.connector + "b"}>{t("yl.bulk")}</th>, <th key={s.connector + "k"}>{t("yl.knot")}</th>])}
                   {two && <th>m/min</th>}{two && <th />}</tr></thead>
               <tbody>{[...rows].reverse().map((r) => (
                 <tr key={r.i}><td>{r.from_m}–{r.to_m}</td>
-                  {r.sensors.map((s, i) => [<td key={i + "f"}>{fmt(s.fpm, 1)}</td>, <td key={i + "c"}>{fmt(s.cv, 1)}</td>])}
+                  {r.sensors.map((s, i) => [<td key={i + "f"}>{fmt(s.fpm, 1)}</td>, <td key={i + "c"}>{fmt(s.cv, 1)}</td>,
+                    <td key={i + "d"}>{fmt(s.d_um, 0)}</td>, <td key={i + "b"}>{fmt(s.d_bulk, 0)}</td>, <td key={i + "k"}>{fmt(s.d_knot, 0)}</td>])}
                   {two && <td>{fmt(r.speed, 1)}</td>}{two && <td>{fmt(r.corr, 2)}</td>}</tr>))}</tbody>
             </table></div>)}
         </div>

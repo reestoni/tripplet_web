@@ -141,4 +141,7 @@ def test_live_zero(env):  # noqa: F811
     c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "speed": 764, "save": False})
     assert c.post("/api/yarnscope-live/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).json()["code"] == "busy"
     assert sl.current().zero["axes"] == z["axes"]
+    _wait(lambda: c.get("/api/yarnscope-live/state").json()["n_rows"] >= 1)
+    d = c.get("/api/yarnscope-live/state").json()["rows"][0]["sensors"][0]
+    assert d["d_um"] is not None and d["d_knot"] < d["d_bulk"]          # thickness with the empty value (2026-11-24)
     c.post("/api/yarnscope-live/stop")

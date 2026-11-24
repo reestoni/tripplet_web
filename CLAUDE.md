@@ -495,6 +495,11 @@ Druck, OF, Speed …; nur geänderte Werte, Prüfung `trial_copy.validate_overri
 (`sensor_measure.remembered_zero`), `LiveSession.zero` -> `TrippleT.EmptyX/Y_um` in den Live- und Merk-Dateien; Start ohne Leerwert fragt.
 **Versuch ohne Merk-Zeile** (2026-11-24, beide Apps): Knopf "Versuch anlegen… (ohne TDMS)" in der Merken-Leiste, auch ohne Live-Messung - derselbe
 Dialog ohne TDMS-Häkchen; Web `POST /api/yarnscope-live/trial` (nie eine Datei, `save_tdms` wird ignoriert), Desktop `LiveTrialDialog(None, None, …)`.
+**Garndicke in Live** (2026-11-24, beide Apps): mit Leerwert pro Abschnitt `d_um` (Mittel), `d_bulk` (Offenstellen/Bausch), `d_knot` (Knoten) =
+Signal minus Leerwert (`sensor_live.zero_offset` = Mittel der Achsen-Leerwerte des Sensors, `thickness()` trennt mit `dty_analysis.knot_runs`); ohne
+Leerwert None. Kachel "Dicke" pro Sensor, Diagramm (Bausch durchgezogen, Knoten gepunktet, ⤢), Tabellenspalten; auch in Merk-Zeilen. Begründung:
+Kalibrierung hat Achsen-Versatz (PXL 3-121 leer X −53 / Y +522 µm), 466_12 nach Abzug X 183.5 / Y 174.6 µm. Nicht validiert (Hinweis im Tooltip).
+Desktop-Kacheln jetzt 3 pro Sensor + Speed an Index 3n.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
