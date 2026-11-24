@@ -405,6 +405,9 @@ html[data-blueprint] .ms-pair { border-top: 1px dashed #335e3c; }
 html[data-blueprint] .yl-tile { border: 1px solid #2765a7; background: #133253; }
 html[data-blueprint] .yl-tile-h { color: #94afcc; }
 html[data-blueprint] .yl-big span { color: #94afcc; }
+html[data-blueprint] .yl-chart-max { border: 1px solid #2765a7; background: #133253; color: #b0c4d9; }
+html[data-blueprint] .yl-chart-max:hover { background: #183d64; }
+html[data-blueprint] .yl-bigchart { background: #133253; }
 html[data-blueprint] .yl-table-wrap { border: 1px solid #2662a2; }
 html[data-blueprint] .yl-table th, html[data-blueprint] .yl-table td { border-bottom: 1px solid #255f9d; }
 html[data-blueprint] .yl-table th { background: #15375b; }

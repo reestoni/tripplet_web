@@ -488,6 +488,11 @@ Druck, OF, Speed …; nur geänderte Werte, Prüfung `trial_copy.validate_overri
 `/trial-setup?series=` (Recht Versuche bearbeiten); Seite: Merken-Leiste + Liste + Fähnchen in den Diagrammen, Dialoge `LiveTrialDialog`,
 `BookmarkFileDialog`. Desktop: Leiste + Tabelle im Live-Fenster, `LiveTrialDialog`. Tests: Desktop `test_live_trial.py`, Web
 `test_sensor_live_api.py::test_bookmark_and_trial_from_it` (Kopie ersetzt, keine DB-Schreibzugriffe).
+**Live: volle Grösse, CV-Kachel, Leerwert** (2026-11-24, beide Apps, Nutzerwunsch): jedes Diagramm hat ⤢ -> volle Grösse (Web Overlay
+`.yl-bigchart`, Esc/✕; Desktop `_set_focus(key)` blendet Kacheln/Tabellen aus, auch Doppelklick aufs Diagramm), CV pro Sensor als eigene Kachel
+(Desktop-Kacheln: 2 pro Sensor + Speed an Index 2n). Leerwert vor dem Start: Web `POST /api/yarnscope-live/zero` + `zeros` in `/setup`
+(`useKeptZero`/`ZeroInfo` aus `SensorMeasure.tsx`), Desktop Knopf im Live-Fenster; derselbe gemerkte Wert wie im Messfenster
+(`sensor_measure.remembered_zero`), `LiveSession.zero` -> `TrippleT.EmptyX/Y_um` in den Live- und Merk-Dateien; Start ohne Leerwert fragt.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

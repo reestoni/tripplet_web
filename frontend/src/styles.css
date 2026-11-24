@@ -1802,6 +1802,15 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
 .yl-big span { font-size: 13px; font-weight: 400; color: #666; }
 .yl-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
 .yl-charts .ys-plot { height: 250px; }
+.yl-chart { position: relative; min-width: 0; }
+.yl-chart-max { position: absolute; top: 4px; right: 4px; z-index: 2; border: 1px solid #d9dee3; background: #fff; border-radius: 6px;
+  padding: 0 7px; font-size: 16px; line-height: 24px; cursor: pointer; color: #444; }
+.yl-chart-max:hover { background: #e7efe8; }
+.yl-bigchart { position: fixed; inset: 0; z-index: 70; background: #fff; display: flex; flex-direction: column;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
+.yl-bigchart-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 16px; }
+.yl-bigchart-plot { flex: 1; min-height: 0; }
+.yl-bigchart-plot .ys-plot { height: 100%; }
 .yl-table-wrap { max-height: 360px; overflow: auto; border: 1px solid #e4e7eb; border-radius: 6px; }
 .yl-table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 13px; }
 .yl-table th, .yl-table td { padding: 3px 8px; border-bottom: 1px solid #eef0f2; text-align: right; white-space: nowrap; }

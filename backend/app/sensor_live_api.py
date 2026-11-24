@@ -22,7 +22,7 @@ from pydantic import BaseModel
 
 from . import core  # noqa: F401
 from .deps import require_feature
-from .sensor_api import _err, _merr, _error_json, _second_kw, _sensors
+from .sensor_api import _err, _merr, _error_json, _second_kw, _sensors, _zeros
 
 from db import display_settings as ds  # noqa: E402
 from db import trial_actions as ta  # noqa: E402
@@ -48,7 +48,32 @@ def setup(user: Dict[str, Any] = Depends(_feature)):
             "window_m": sl.WINDOW_M, "window_range": list(sl.WINDOW_RANGE), "speed_range": list(sm.SPEED_RANGE),
             "manual_dir": sm.MANUAL_DIR, "save_limit_m": sl.SAVE_LIMIT_M,
             "running": bool(cur and cur.state in ("running", "stopping")),
-            "default_distance_mm": DEFAULT_DISTANCE_MM}
+            "default_distance_mm": DEFAULT_DISTANCE_MM, "zeros": _zeros()}
+
+
+class ZeroBody(BaseModel):
+    box: str
+    sensor: str
+    second: Optional[str] = None
+
+
+@router.post("/zero")
+def zero(body: ZeroBody, user: Dict[str, Any] = Depends(_feature)):
+    """Empty value (no yarn) before the start - remembered per box/head/connector like the measure window
+    (sensor_measure.zero_check); the live session writes it into its files."""
+    if not ta.can_edit_trials(user):
+        return _err(403, "read_only", "Write access required.")
+    cur = sl.current()
+    if cur is not None and cur.state in ("running", "stopping"):
+        return _err(409, "busy", "A measurement is already running.")
+    try:
+        p, p2 = _sensors(body)
+        z = sm.zero_check(body.box, p["head"], p["connector"])
+        if p2:
+            z["axes"] += sm.zero_check(body.box, p2["head"], p2["connector"])["axes"]
+    except sm.MeasureError as e:
+        return _merr(e)
+    return z
 
 
 class StartBody(BaseModel):

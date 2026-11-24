@@ -3,6 +3,7 @@ import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Plot } from "../components/YarnScopeView";
 import { Modal } from "../components/SeriesTools";
+import { useKeptZero, ZeroInfo, type Kept, type Zero } from "../components/SensorMeasure";
 
 /* YarnScope Live (Nutzerwunsch 2026-11-23; desktop ui/widgets/sensor_live_window.py): continuous measurement with a
    small dashboard - start / stop by hand, every 30 m knots/m + CV per sensor and, with a second sensor + the distance,
@@ -16,7 +17,8 @@ type Box = { name: string; product: string; serial: string };
 type Sensor = { key: string; head: string; connector: string; axes: number; title: string; date: string };
 type ErrJson = { code: string; detail: string; vars?: Record<string, string | number> };
 type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; window_m: number;
-  window_range: [number, number]; speed_range: [number, number]; manual_dir: string; save_limit_m: number; running: boolean; default_distance_mm?: number };
+  window_range: [number, number]; speed_range: [number, number]; manual_dir: string; save_limit_m: number; running: boolean; default_distance_mm?: number;
+  zeros?: Kept[] };
 type SensorRow = { fpm: number | null; cv: number | null; mean_um: number | null };
 type Row = { i: number; from_m: number; to_m: number; t: number; sensors: SensorRow[]; corr?: number | null;
   delay_ms?: number | null; speed?: number | null; distance_from_speed_mm?: number | null };
@@ -66,6 +68,13 @@ export default function YarnScopeLive() {
   const [bmSel, setBmSel] = useState<number | null>(null);
   const [bmMsg, setBmMsg] = useState<string | null>(null);
   const [dlg, setDlg] = useState<{ kind: "trial" | "file"; bm: Bookmark } | null>(null);
+  const [big, setBig] = useState<number | null>(null);      // chart shown at full size (2026-11-24)
+  useEffect(() => {
+    if (big == null) return;
+    const k = (e: KeyboardEvent) => { if (e.key === "Escape") setBig(null); };
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [big]);
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
@@ -122,11 +131,20 @@ export default function YarnScopeLive() {
   const others = (setup?.sensors ?? []).filter((x) => sens && x.connector !== sens.connector && x.head !== sens.head);
   const sec = others.some((x) => x.key === second) ? second : "";
   const autoOn = auto && !!sec && num(distance) > 0;       // TrippleT measures the speed itself
+  // empty value before the start (2026-11-24) - the same remembered value as the measure window
+  const [zero, storeZero] = useKeptZero(setup?.zeros, box, sens as never, setup?.sensors.find((x) => x.key === sec) as never);
+  const [zeroBusy, setZeroBusy] = useState(false);
+  const doZero = async () => {
+    setZeroBusy(true); setErr(null);
+    try { storeZero(await request<Zero>("POST", "/api/yarnscope-live/zero", { box, sensor, second: sec || undefined })); }
+    catch (e) { setErr(errMsg(e)); } finally { setZeroBusy(false); }
+  };
 
   const start = async () => {
     if (!setup) return;
     const [lo, hi] = setup.speed_range;
     if (!autoOn && !(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
+    if (!zero && !window.confirm(t("yl.noZeroAsk"))) return;
     prefs.current = { box, sensor, second, distance, speed, window: win, save, name, kind, auto };
     savePrefs(prefs.current);
     setBusy(true); setErr(null);
@@ -241,6 +259,11 @@ export default function YarnScopeLive() {
             </div>
           </div>)}
           {save && setup && <p className="muted small">{t("yl.saveHint", { dir: setup.manual_dir, max: setup.save_limit_m })}</p>}
+          {setup && (<div className="ms-step">
+            <button className="btn-plain" disabled={!box || !sens || lock || zeroBusy || !setup.can_write} onClick={() => void doZero()}>
+              {zeroBusy ? t("ms.zeroBusy") : t(zero ? "ms.zeroAgain" : "ms.zero")}</button>
+            <ZeroInfo zero={zero} />
+          </div>)}
           <div className="modal-buttons">
             {!running ? <button className="btn-green" disabled={!setup?.can_write || !box || !sens || busy} onClick={() => void start()}>▶ {t("yl.start")}</button>
               : <button className="btn-red" disabled={busy || view?.state === "stopping"} onClick={() => void stopIt()}>■ {t("yl.stop")}</button>}
@@ -260,12 +283,16 @@ export default function YarnScopeLive() {
             </> : <span className="muted">{t("yl.idle")}</span>}
           </div>
           <div className="yl-tiles">
-            {(view?.sensors ?? []).map((s, i) => (
-              <div key={s.connector} className="yl-tile" style={{ borderColor: COLORS[i] }}>
-                <div className="yl-tile-h">{headLabel(s.head)} · {s.connector}</div>
+            {(view?.sensors ?? []).map((s, i) => [
+              <div key={s.connector + "f"} className="yl-tile" style={{ borderColor: COLORS[i] }}>
+                <div className="yl-tile-h">{headLabel(s.head)} · {s.connector} · {t("yl.fpm")}</div>
                 <div className="yl-big">{fmt(last?.sensors[i]?.fpm, 1)}<span> {t("yl.fpmUnit")}</span></div>
-                <div>CV {fmt(last?.sensors[i]?.cv, 1)} %</div>
-              </div>))}
+              </div>,
+              // CV is important for the user (2026-11-24): its own card, as large as knots/m
+              <div key={s.connector + "c"} className="yl-tile" style={{ borderColor: COLORS[i] }}>
+                <div className="yl-tile-h">{headLabel(s.head)} · {s.connector} · {t("yl.cv")}</div>
+                <div className="yl-big">{fmt(last?.sensors[i]?.cv, 1)}<span> %</span></div>
+              </div>])}
             {two && (<div className="yl-tile">
               <div className="yl-tile-h">{t("yl.speed")}</div>
               <div className="yl-big">{fmt(last?.speed, 1)}<span> m/min</span></div>
@@ -299,7 +326,20 @@ export default function YarnScopeLive() {
                       </td></tr>))}</tbody>
                 </table></div>)}
             </div>)}
-          {rows.length > 0 && <div className="yl-charts">{charts.map((c, i) => <Plot key={i} data={c.data} layout={c.layout} />)}</div>}
+          {rows.length > 0 && <div className="yl-charts">{charts.map((c, i) => (
+            <div key={i} className="yl-chart">
+              <button className="yl-chart-max" title={t("yl.enlarge")} aria-label={t("yl.enlarge")} onClick={() => setBig(i)}>⤢</button>
+              <Plot data={c.data} layout={c.layout} />
+            </div>))}</div>}
+          {big != null && charts[big] && (
+            <div className="yl-bigchart" role="dialog" aria-modal="true">
+              <div className="yl-bigchart-bar">
+                <b>{String((charts[big].layout as { title?: { text?: string } }).title?.text ?? "")}</b>
+                <button className="btn-plain" onClick={() => setBig(null)}>✕ {t("yl.shrink")}</button>
+              </div>
+              <div className="yl-bigchart-plot"><Plot data={charts[big].data}
+                layout={{ ...charts[big].layout, title: undefined, margin: { l: 60, r: 20, t: 20, b: 50 } }} /></div>
+            </div>)}
           {rows.length > 0 && (
             <div className="yl-table-wrap"><table className="yl-table">
               <thead><tr><th>m</th>{(view?.sensors ?? []).map((s) => <th key={s.connector} colSpan={2}>{headLabel(s.head)} {s.connector}</th>)}

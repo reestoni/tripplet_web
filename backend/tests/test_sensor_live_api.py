@@ -119,3 +119,21 @@ def test_bookmark_and_trial_from_it(env, monkeypatch):  # noqa: F811
     assert c.delete(f"/api/yarnscope-live/bookmark/{b['id']}").json()["ok"]
     assert c.get("/api/yarnscope-live/state").json()["bookmarks"] == []
     assert tc.validate_overrides  # shared with the copy dialog
+
+
+def test_live_zero(env):  # noqa: F811
+    """Empty value before the start (2026-11-24): remembered like the measure window, shown in /setup, busy while live."""
+    sm.forget_zeros()
+    c = _client()
+    assert c.get("/api/yarnscope-live/setup").json()["zeros"] == []
+    assert _client(0, 1).post("/api/yarnscope-live/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).status_code == 403
+    z = c.post("/api/yarnscope-live/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).json()
+    assert [a["axis"] for a in z["axes"]] == ["x", "y"]
+    kept = c.get("/api/yarnscope-live/setup").json()["zeros"]
+    assert [(k["head"], k["connector"]) for k in kept] == [("PXL_3_121_W", "C1")]
+    assert c.get(f"/api/series/{env.sid}/sensor/setup").json()["zeros"] == kept      # same value as the measure window
+    sm.set_daq(StreamDaq())
+    c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "speed": 764, "save": False})
+    assert c.post("/api/yarnscope-live/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).json()["code"] == "busy"
+    assert sl.current().zero["axes"] == z["axes"]
+    c.post("/api/yarnscope-live/stop")

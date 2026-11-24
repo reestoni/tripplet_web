@@ -9,15 +9,15 @@ import { FloatingWindow } from "./RequestPopup";
    (desktop repo, same as the desktop dialog). The server talks to the box - works while it runs on the laptop. */
 
 type Box = { name: string; product: string; serial: string; simulated: boolean };
-type Sensor = { key: string; head: string; connector: string; axes: number; label: string; title: string; date: string };
+export type Sensor = { key: string; head: string; connector: string; axes: number; label: string; title: string; date: string };
 type MTrial = { trial_id: number; vno: number; speed: number | null; dty: string | null; aty: string | null };
 type ErrJson = { code: string; detail: string; vars?: Record<string, string | number> };
 type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; trials: MTrial[];
   length: number; speed_range: [number, number]; length_range: [number, number]; replaced_dir: string; default_distance_mm?: number; zeros?: Kept[] };
 type Axis = { axis: string; mean_um: number; std_um: number; connector?: string };
-type Zero = { axes: Axis[]; head: string; connector: string; box: string; at: string };
+export type Zero = { axes: Axis[]; head: string; connector: string; box: string; at: string };
 /** remembered empty value of one sensor (server: sensor_measure.remembered_zeros) */
-type Kept = { box: string; head: string; connector: string; at: string; axes: Axis[] };
+export type Kept = { box: string; head: string; connector: string; at: string; axes: Axis[] };
 type Pair = { reliable: boolean; corr: number | null; delay_ms?: number; speed?: number; speed_dev_pct?: number;
   distance_from_speed_mm?: number; distance_mm?: number | null; synced?: boolean; error?: string;
   profile?: { from_m: number; to_m: number; speed: number | null; corr: number | null }[];
@@ -44,7 +44,7 @@ const zeroText = (z: Zero) => z.axes.map((a) => `${a.connector && z.axes.some((b
 /** The empty value stays valid until it is checked again (Nutzerwunsch 2026-11-23: the window is closed between the
  *  trials to type into the table - zeroing again each time is not workable). The server remembers every check per
  *  box + head + connector (setup -> zeros); here the one for the current choice (both sensors, if two) is picked. */
-function useKeptZero(fromServer: Kept[] | undefined, box: string, main: Sensor | undefined, second: Sensor | undefined) {
+export function useKeptZero(fromServer: Kept[] | undefined, box: string, main: Sensor | undefined, second: Sensor | undefined) {
   const [kept, setKept] = useState<Kept[]>([]);
   useEffect(() => { if (fromServer) setKept(fromServer); }, [fromServer]);
   const zero = useMemo<Zero | null>(() => {
@@ -66,7 +66,7 @@ function useKeptZero(fromServer: Kept[] | undefined, box: string, main: Sensor |
 }
 
 /** Zero line: values + "checked at 09:31 – kept until you check again" */
-function ZeroInfo({ zero }: { zero: Zero | null }) {
+export function ZeroInfo({ zero }: { zero: Zero | null }) {
   const { t } = useI18n();
   return <span className="small">{zero ? (<>{zeroText(zero)}
     <span className="muted"> · {t("ms.zeroKept", { time: zero.at.slice(11, 16) })}</span></>)
