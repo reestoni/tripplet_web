@@ -1823,6 +1823,7 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
 .yl-marks { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
 .yl-markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .yl-marklen { width: 64px; }
+.yl-newtrial { margin-left: auto; }
 .yl-bmtable tbody tr { cursor: pointer; }
 .yl-bmtable tbody tr.on td { background: #e7efe8; }
 .yl-bmact { display: flex; gap: 4px; justify-content: flex-end; }

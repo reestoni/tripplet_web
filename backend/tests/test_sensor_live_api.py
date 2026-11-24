@@ -114,6 +114,11 @@ def test_bookmark_and_trial_from_it(env, monkeypatch):  # noqa: F811
     r = c.post(f"/api/yarnscope-live/bookmark/{b['id']}/trial", json={**body, "save_tdms": True}).json()
     assert r["file"].startswith(f"{sid}_9999_") and dty_service.find_tdms(sid, 9999).name == r["file"]
     assert "path" not in r
+    # without a bookmark (2026-11-24): never a TDMS, even if asked
+    assert _client(0, 1).post("/api/yarnscope-live/trial", json=body).status_code == 403
+    r = c.post("/api/yarnscope-live/trial", json={**body, "save_tdms": True}).json()
+    assert r["vno"] == 9999 and r["file"] is None
+    assert c.post("/api/yarnscope-live/trial", json={**body, "series_id": 999999999}).json()["code"] == "no_series"
     f = c.post(f"/api/yarnscope-live/bookmark/{b['id']}/file", json={"name": "99999_90"}).json()
     assert f["file"].startswith("99999_90_") and f["next_name"] == "99999_91"
     assert c.delete(f"/api/yarnscope-live/bookmark/{b['id']}").json()["ok"]

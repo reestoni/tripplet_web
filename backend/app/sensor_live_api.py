@@ -230,6 +230,23 @@ def bookmark_trial(bid: int, body: TrialBody, user: Dict[str, Any] = Depends(_fe
     return r
 
 
+@router.post("/trial")
+def trial_without_bookmark(body: TrialBody, user: Dict[str, Any] = Depends(_feature)):
+    """A trial without a bookmark (Nutzerwunsch 2026-11-24): the same copy with jet / pressure / OF / speed, never a
+    TDMS - works without a live measurement too."""
+    if not ta.can_edit_trials(user):
+        return _err(403, "read_only", "Write access required.")
+    if live_trial.series_info(body.series_id) is None:
+        return _err(404, "no_series", "No trial series with this number.", series=body.series_id)
+    try:
+        r = live_trial.create(body.series_id, body.template_id, body.values, user=user, save_tdms=False)
+    except sm.MeasureError as e:
+        return _merr(e)
+    from db.usage_log import log_usage_event
+    log_usage_event("feature", "live_trial", f"web series {body.series_id} V{r['vno']} without bookmark")
+    return r
+
+
 class FileBody(BaseModel):
     name: str
 

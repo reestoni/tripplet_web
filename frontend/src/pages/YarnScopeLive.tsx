@@ -67,7 +67,7 @@ export default function YarnScopeLive() {
   const [bmLen, setBmLen] = useState(prefs.current.bmLen ?? "100");
   const [bmSel, setBmSel] = useState<number | null>(null);
   const [bmMsg, setBmMsg] = useState<string | null>(null);
-  const [dlg, setDlg] = useState<{ kind: "trial" | "file"; bm: Bookmark } | null>(null);
+  const [dlg, setDlg] = useState<{ kind: "trial"; bm: Bookmark | null } | { kind: "file"; bm: Bookmark } | null>(null);
   const [big, setBig] = useState<number | null>(null);      // chart shown at full size (2026-11-24)
   useEffect(() => {
     if (big == null) return;
@@ -300,15 +300,18 @@ export default function YarnScopeLive() {
                 {last?.speed == null && last?.distance_from_speed_mm != null ? ` · ${t("ms.pairDistance", { mm: last.distance_from_speed_mm.toFixed(1) })}` : ""}</div>
             </div>)}
           </div>
-          {view && (
+          {setup && (
             <div className="yl-marks card">
               <div className="yl-markbar">
-                <button className="btn-green" disabled={!setup?.can_write || !(running || view.state === "done")} onClick={() => void mark()}
+                <button className="btn-green" disabled={!setup?.can_write || !(running || view?.state === "done")} onClick={() => void mark()}
                   title={t("yl.markTip")}>📌 {t("yl.mark")}</button>
                 <span className="small">{t("yl.markLast")}</span>
                 <input type="text" inputMode="decimal" className="yl-marklen" value={bmLen} onChange={(e) => setBmLen(e.target.value)}
                   aria-label={t("yl.markLen")} /> <span className="small">m</span>
                 {bmMsg && <span className="small muted">{bmMsg}</span>}
+                {/* a trial without a bookmark - never a TDMS (Nutzerwunsch 2026-11-24) */}
+                <button className="btn-plain yl-newtrial" disabled={!setup?.can_write} title={t("yl.newTrialTip")}
+                  onClick={() => setDlg({ kind: "trial", bm: null })}>{t("yl.newTrial")}</button>
               </div>
               {!bookmarks.length ? <p className="muted small">{t("yl.bmNone")}</p> : (
                 <div className="yl-table-wrap"><table className="yl-table yl-bmtable">
@@ -364,7 +367,7 @@ export default function YarnScopeLive() {
 /** "Versuch anlegen": series (recent or typed), template trial (default: highest number), the copy fields shown by
  *  default filled from the template; only changed values are sent. TDMS of the bookmark only if ticked. */
 function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
-  bm: Bookmark; prefs: { current: Prefs }; errMsg: (e: unknown) => string; onClose: () => void; onDone: (msg: string) => void }) {
+  bm: Bookmark | null; prefs: { current: Prefs }; errMsg: (e: unknown) => string; onClose: () => void; onDone: (msg: string) => void }) {
   const { t } = useI18n();
   const [series, setSeries] = useState(prefs.current.bmSeries ?? "");
   const [st, setSt] = useState<TSetup | null>(null);
@@ -406,18 +409,19 @@ function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
     if (!st?.series || tpl == null) return;
     setBusy(true); setErr(null);
     try {
-      const r = await request<TResult>("POST", `/api/yarnscope-live/bookmark/${bm.id}/trial`,
-        { series_id: st.series.id, template_id: tpl, values: changed, save_tdms: tdms });
+      const r = await request<TResult>("POST", bm ? `/api/yarnscope-live/bookmark/${bm.id}/trial` : "/api/yarnscope-live/trial",
+        { series_id: st.series.id, template_id: tpl, values: changed, save_tdms: !!bm && tdms });
       let msg = t("yl.created", { series: r.series_id, vno: vlabel(r.vno) });
       if (r.file) msg += " " + t("yl.createdFile", { file: r.file }) + (r.replaced ? " " + t("yl.replaced", { dir: "_replaced" }) : "");
       if (r.tdms_error) msg += " " + t("yl.tdmsFailed", { detail: r.tdms_error });
       onDone(msg);
     } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
   };
-  const s0 = bm.sensors[0];
+  const s0 = bm?.sensors[0];
   return (
-    <Modal title={t("yl.trialTitle", { id: bm.id })} onClose={onClose}>
-      <p className="muted small">{t("yl.trialInfo", { len: fmt(bm.length_m, 0), m: fmt(bm.at_m, 0), fpm: fmt(s0?.fpm, 1), cv: fmt(s0?.cv, 1), speed: fmt(bm.speed, 1) })}</p>
+    <Modal title={bm ? t("yl.trialTitle", { id: bm.id }) : t("yl.trialTitleFree")} onClose={onClose}>
+      <p className="muted small">{bm ? t("yl.trialInfo", { len: fmt(bm.length_m, 0), m: fmt(bm.at_m, 0), fpm: fmt(s0?.fpm, 1), cv: fmt(s0?.cv, 1), speed: fmt(bm.speed, 1) })
+        : t("yl.trialInfoFree")}</p>
       <div className="ms-form">
         <label htmlFor="yl-series">{t("yl.series")}</label>
         <div className="ms-row">
@@ -436,9 +440,9 @@ function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
             </select>) : <span className="ms-warn">{t("yl.noTemplate")}</span>}
           {(st.fields ?? []).filter((f) => f.key in orig).map((f) => (<FieldRow key={f.key} f={f} value={vals[f.key] ?? ""}
             changed={(vals[f.key] ?? "").trim() !== (orig[f.key] ?? "")} onChange={(v) => setVals((cur) => ({ ...cur, [f.key]: v }))} />))}
-          <label />
+          {bm && (<><label />
           <label className="yl-check"><input type="checkbox" checked={tdms} onChange={(e) => setTdms(e.target.checked)} />
-            {t("yl.saveTdms", { len: fmt(bm.length_m, 0), vno: vlabel(st.next_no ?? 0) })}</label>
+            {t("yl.saveTdms", { len: fmt(bm.length_m, 0), vno: vlabel(st.next_no ?? 0) })}</label></>)}
         </>)}
       </div>
       {err && <div className="login-error">{err}</div>}

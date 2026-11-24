@@ -493,6 +493,8 @@ Druck, OF, Speed …; nur geänderte Werte, Prüfung `trial_copy.validate_overri
 (Desktop-Kacheln: 2 pro Sensor + Speed an Index 2n). Leerwert vor dem Start: Web `POST /api/yarnscope-live/zero` + `zeros` in `/setup`
 (`useKeptZero`/`ZeroInfo` aus `SensorMeasure.tsx`), Desktop Knopf im Live-Fenster; derselbe gemerkte Wert wie im Messfenster
 (`sensor_measure.remembered_zero`), `LiveSession.zero` -> `TrippleT.EmptyX/Y_um` in den Live- und Merk-Dateien; Start ohne Leerwert fragt.
+**Versuch ohne Merk-Zeile** (2026-11-24, beide Apps): Knopf "Versuch anlegen… (ohne TDMS)" in der Merken-Leiste, auch ohne Live-Messung - derselbe
+Dialog ohne TDMS-Häkchen; Web `POST /api/yarnscope-live/trial` (nie eine Datei, `save_tdms` wird ignoriert), Desktop `LiveTrialDialog(None, None, …)`.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
