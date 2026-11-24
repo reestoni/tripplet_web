@@ -500,6 +500,10 @@ Signal minus Leerwert (`sensor_live.zero_offset` = Mittel der Achsen-Leerwerte d
 Leerwert None. Kachel "Dicke" pro Sensor, Diagramm (Bausch durchgezogen, Knoten gepunktet, ⤢), Tabellenspalten; auch in Merk-Zeilen. Begründung:
 Kalibrierung hat Achsen-Versatz (PXL 3-121 leer X −53 / Y +522 µm), 466_12 nach Abzug X 183.5 / Y 174.6 µm. Nicht validiert (Hinweis im Tooltip).
 Desktop-Kacheln jetzt 3 pro Sensor + Speed an Index 3n.
+**Mehrere Versuche auf einmal** (2026-11-24, beide Apps, Nutzerwunsch z. B. Platte 1 und Platte 2): Dialog "Versuche anlegen…" mit einer Spalte pro
+neuem Versuch ("+ Versuch" übernimmt die letzte Spalte, ✕ entfernt), pro Spalte optional "TDMS aus Merk-Zeile" (jede Merk-Zeile höchstens einmal).
+`live_trial.create_many` prüft alles vor der ersten Kopie (`no_items`, `too_many` > 20, `bookmark_twice`, Werte mit `n`), dann EIN `copy_trials` mit
+allen Plänen; `create()` = `create_many` mit einem Eintrag. Web `POST /api/yarnscope-live/trials` {series_id, template_id, items:[{values, bookmark}]}.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

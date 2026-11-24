@@ -375,7 +375,7 @@ export default function YarnScopeLive() {
             </table></div>)}
         </div>
       </div>
-      {dlg?.kind === "trial" && <LiveTrialDialog bm={dlg.bm} prefs={prefs} errMsg={errMsg} onClose={() => setDlg(null)}
+      {dlg?.kind === "trial" && <LiveTrialDialog bm={dlg.bm} bookmarks={bookmarks} prefs={prefs} errMsg={errMsg} onClose={() => setDlg(null)}
         onDone={(msg) => { setDlg(null); setBmMsg(msg); void refresh(); }} />}
       {dlg?.kind === "file" && <BookmarkFileDialog bm={dlg.bm} prefs={prefs} errMsg={errMsg} onClose={() => setDlg(null)}
         onDone={(msg) => { setDlg(null); setBmMsg(msg); void refresh(); }} />}
@@ -383,17 +383,20 @@ export default function YarnScopeLive() {
   );
 }
 
-/** "Versuch anlegen": series (recent or typed), template trial (default: highest number), the copy fields shown by
- *  default filled from the template; only changed values are sent. TDMS of the bookmark only if ticked. */
-function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
-  bm: Bookmark | null; prefs: { current: Prefs }; errMsg: (e: unknown) => string; onClose: () => void; onDone: (msg: string) => void }) {
+/** "Versuche anlegen": series (recent or typed), template trial (default: highest number) and one COLUMN per new trial
+ *  (Nutzerwunsch 2026-11-24: e.g. jet plate 1 and plate 2 at once) with the copy fields shown by default, filled from the
+ *  template; "+ Versuch" copies the last column. Per column optionally a bookmark as that trial's TDMS (each bookmark once).
+ *  Only changed values are sent; the server checks everything before the first copy (live_trial.create_many). */
+type TCol = { vals: Record<string, string>; bm: number | null };
+function LiveTrialDialog({ bm, bookmarks, prefs, errMsg, onClose, onDone }: {
+  bm: Bookmark | null; bookmarks: Bookmark[]; prefs: { current: Prefs }; errMsg: (e: unknown) => string;
+  onClose: () => void; onDone: (msg: string) => void }) {
   const { t } = useI18n();
   const [series, setSeries] = useState(prefs.current.bmSeries ?? "");
   const [st, setSt] = useState<TSetup | null>(null);
   const [tpl, setTpl] = useState<number | null>(null);
-  const [vals, setVals] = useState<Record<string, string>>({});
   const [orig, setOrig] = useState<Record<string, string>>({});
-  const [tdms, setTdms] = useState(false);
+  const [cols, setCols] = useState<TCol[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -405,7 +408,8 @@ function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
       if (!v || v.na) continue;
       o[f.key] = f.choices ? (v.v == null ? "" : String(v.v)) : (v.text ?? "");
     }
-    setOrig(o); setVals(o);
+    setOrig(o);
+    setCols((cur) => (cur.length ? cur : [{ vals: {}, bm: null }]).map((c) => ({ ...c, vals: { ...o } })));
   };
   const load = async (sid?: string) => {
     const want = (sid ?? series).trim();
@@ -423,22 +427,31 @@ function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
   };
   useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const changed = Object.fromEntries(Object.entries(vals).filter(([k, v]) => v.trim() !== (orig[k] ?? "")).map(([k, v]) => [k, v.trim()]));
+  const changedOf = (c: TCol) => Object.fromEntries(Object.entries(c.vals).filter(([k, v]) => v.trim() !== (orig[k] ?? ""))
+    .map(([k, v]) => [k, v.trim()]));
+  const setVal = (ci: number, key: string, v: string) => setCols((cur) => cur.map((c, i) => i === ci ? { ...c, vals: { ...c.vals, [key]: v } } : c));
+  const setBm = (ci: number, v: number | null) => setCols((cur) => cur.map((c, i) => i === ci ? { ...c, bm: v } : c));
+  const addCol = () => setCols((cur) => [...cur, { vals: { ...(cur[cur.length - 1]?.vals ?? orig) }, bm: null }]);
+  const removeCol = (ci: number) => setCols((cur) => cur.length > 1 ? cur.filter((_c, i) => i !== ci) : cur);
+  const next = st?.next_no ?? 1;
+  const names = cols.map((_c, i) => vlabel(next + i));
+
   const create = async () => {
-    if (!st?.series || tpl == null) return;
+    if (!st?.series || tpl == null || !cols.length) return;
     setBusy(true); setErr(null);
     try {
-      const r = await request<TResult>("POST", bm ? `/api/yarnscope-live/bookmark/${bm.id}/trial` : "/api/yarnscope-live/trial",
-        { series_id: st.series.id, template_id: tpl, values: changed, save_tdms: !!bm && tdms });
-      let msg = t("yl.created", { series: r.series_id, vno: vlabel(r.vno) });
-      if (r.file) msg += " " + t("yl.createdFile", { file: r.file }) + (r.replaced ? " " + t("yl.replaced", { dir: "_replaced" }) : "");
-      if (r.tdms_error) msg += " " + t("yl.tdmsFailed", { detail: r.tdms_error });
-      onDone(msg);
+      const r = await request<{ trials: TResult[] }>("POST", "/api/yarnscope-live/trials",
+        { series_id: st.series.id, template_id: tpl, items: cols.map((c) => ({ values: changedOf(c), bookmark: c.bm })) });
+      const parts = r.trials.map((x) => `${x.series_id} ${vlabel(x.vno)}` + (x.file ? ` (${x.file}${x.replaced ? ", " + t("yl.replaced", { dir: "_replaced" }) : ""})` : "")
+        + (x.tdms_error ? ` – ${t("yl.tdmsFailed", { detail: x.tdms_error })}` : ""));
+      onDone(t("yl.createdMany", { list: parts.join(", ") }));
     } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
   };
   const s0 = bm?.sensors[0];
+  const fields = (st?.fields ?? []).filter((f) => f.key in orig);
+  const bmLabel = (b: Bookmark) => `📌${b.id}${b.label ? " " + b.label : ""} · ${fmt(b.length_m, 0)} m · ${fmt(b.sensors[0]?.fpm, 1)} ${t("yl.fpmUnit")}`;
   return (
-    <Modal title={bm ? t("yl.trialTitle", { id: bm.id }) : t("yl.trialTitleFree")} onClose={onClose}>
+    <Modal title={bm ? t("yl.trialTitle", { id: bm.id }) : t("yl.trialTitleFree")} onClose={onClose} wide>
       <p className="muted small">{bm ? t("yl.trialInfo", { len: fmt(bm.length_m, 0), m: fmt(bm.at_m, 0), fpm: fmt(s0?.fpm, 1), cv: fmt(s0?.cv, 1), speed: fmt(bm.speed, 1) })
         : t("yl.trialInfoFree")}</p>
       <div className="ms-form">
@@ -457,33 +470,45 @@ function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
             <select id="yl-tpl" value={tpl ?? ""} onChange={(e) => { const id = Number(e.target.value); setTpl(id); fill(st, id); }}>
               {st.trials.map((x) => <option key={x.id} value={x.id}>{vlabel(x.vno)}</option>)}
             </select>) : <span className="ms-warn">{t("yl.noTemplate")}</span>}
-          {(st.fields ?? []).filter((f) => f.key in orig).map((f) => (<FieldRow key={f.key} f={f} value={vals[f.key] ?? ""}
-            changed={(vals[f.key] ?? "").trim() !== (orig[f.key] ?? "")} onChange={(v) => setVals((cur) => ({ ...cur, [f.key]: v }))} />))}
-          {bm && (<><label />
-          <label className="yl-check"><input type="checkbox" checked={tdms} onChange={(e) => setTdms(e.target.checked)} />
-            {t("yl.saveTdms", { len: fmt(bm.length_m, 0), vno: vlabel(st.next_no ?? 0) })}</label></>)}
         </>)}
       </div>
+      {st?.series && !!st.trials?.length && (
+        <div className="yl-cols-wrap">
+          <table className="yl-cols">
+            <thead><tr><th />{names.map((nm, ci) => (
+              <th key={ci}>{nm}{cols.length > 1 && <button className="yl-colx" title={t("yl.removeTrial")} aria-label={t("yl.removeTrial")}
+                onClick={() => removeCol(ci)}>✕</button>}</th>))}
+              <th><button className="btn-plain" onClick={addCol} disabled={cols.length >= 20}>{t("yl.addTrial")}</button></th></tr></thead>
+            <tbody>
+              {fields.map((f) => (
+                <tr key={f.key}><th>{f.label}</th>{cols.map((c, ci) => {
+                  const v = c.vals[f.key] ?? "";
+                  const cls = v.trim() !== (orig[f.key] ?? "") ? "yl-changed" : "";
+                  const id = `yl-f-${ci}-${f.key.replace(/[^A-Za-z0-9]/g, "_")}`;
+                  return <td key={ci}>{f.choices ? (
+                    <select id={id} aria-label={`${names[ci]} ${f.label}`} value={v} className={cls} onChange={(e) => setVal(ci, f.key, e.target.value)}>
+                      <option value="" />{f.choices.map(([k, n]) => <option key={k} value={String(k)}>{n}</option>)}
+                    </select>) : <input id={id} aria-label={`${names[ci]} ${f.label}`} type="text" value={v} className={cls}
+                      onChange={(e) => setVal(ci, f.key, e.target.value)} />}</td>;
+                })}<td /></tr>))}
+              <tr><th>{t("yl.tdmsFrom")}</th>{cols.map((c, ci) => (
+                <td key={ci}><select aria-label={`${names[ci]} ${t("yl.tdmsFrom")}`} value={c.bm ?? ""}
+                  onChange={(e) => setBm(ci, e.target.value === "" ? null : Number(e.target.value))} disabled={!bookmarks.length}>
+                  <option value="">–</option>
+                  {bookmarks.map((b) => <option key={b.id} value={b.id} disabled={cols.some((o, oi) => oi !== ci && o.bm === b.id)}>{bmLabel(b)}</option>)}
+                </select></td>))}<td /></tr>
+            </tbody>
+          </table>
+        </div>)}
+      {st?.series && <p className="muted small">{t("yl.willCreate", { list: names.join(", ") })}</p>}
       {err && <div className="login-error">{err}</div>}
       <div className="modal-buttons">
         <button className="btn-plain" onClick={onClose}>{t("cm.cancel")}</button>
-        <button className="btn-green" disabled={busy || !st?.series || tpl == null} onClick={() => void create()}>{t("yl.create")}</button>
+        <button className="btn-green" disabled={busy || !st?.series || tpl == null || !cols.length} onClick={() => void create()}>
+          {cols.length > 1 ? t("yl.createMany", { n: cols.length }) : t("yl.create")}</button>
       </div>
     </Modal>
   );
-}
-
-function FieldRow({ f, value, changed, onChange }: { f: TField; value: string; changed: boolean; onChange: (v: string) => void }) {
-  const id = `yl-f-${f.key.replace(/[^A-Za-z0-9]/g, "_")}`;
-  return (<>
-    <label htmlFor={id}>{f.label}</label>
-    {f.choices ? (
-      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={changed ? "yl-changed" : ""}>
-        <option value="" />
-        {f.choices.map(([k, n]) => <option key={k} value={String(k)}>{n}</option>)}
-      </select>
-    ) : <input id={id} type="text" value={value} onChange={(e) => onChange(e.target.value)} className={changed ? "yl-changed" : ""} />}
-  </>);
 }
 
 /** "Als Datei": the bookmark to _manual under a free name (counts up), no trial. */

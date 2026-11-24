@@ -247,6 +247,39 @@ def trial_without_bookmark(body: TrialBody, user: Dict[str, Any] = Depends(_feat
     return r
 
 
+class TrialItem(BaseModel):
+    values: Dict[str, Any] = {}
+    bookmark: Optional[int] = None          # this trial's TDMS = that bookmark (None = no file)
+
+
+class TrialsBody(BaseModel):
+    series_id: int
+    template_id: int
+    items: list[TrialItem]
+
+
+@router.post("/trials")
+def trials_many(body: TrialsBody, user: Dict[str, Any] = Depends(_feature)):
+    """Several trials in one go (Nutzerwunsch 2026-11-24, e.g. jet plate 1 and 2): one copy per item with its values, each
+    optionally with its own bookmark as TDMS (live_trial.create_many - all checked before the first copy)."""
+    if not ta.can_edit_trials(user):
+        return _err(403, "read_only", "Write access required.")
+    if live_trial.series_info(body.series_id) is None:
+        return _err(404, "no_series", "No trial series with this number.", series=body.series_id)
+    s = sl.current()
+    if any(it.bookmark is not None for it in body.items) and s is None:
+        return _err(404, "no_session", "No live measurement.")
+    items = [{"values": it.values, "bookmark_id": it.bookmark, "save_tdms": it.bookmark is not None} for it in body.items]
+    try:
+        out = live_trial.create_many(body.series_id, body.template_id, items, user=user, session=s)
+    except sm.MeasureError as e:
+        return _merr(e)
+    from db.usage_log import log_usage_event
+    log_usage_event("feature", "live_trial", f"web series {body.series_id} {len(out)} trials, "
+                                             f"{sum(1 for r in out if r.get('file'))} with TDMS")
+    return {"trials": out}
+
+
 class FileBody(BaseModel):
     name: str
 

@@ -119,6 +119,16 @@ def test_bookmark_and_trial_from_it(env, monkeypatch):  # noqa: F811
     r = c.post("/api/yarnscope-live/trial", json={**body, "save_tdms": True}).json()
     assert r["vno"] == 9999 and r["file"] is None
     assert c.post("/api/yarnscope-live/trial", json={**body, "series_id": 999999999}).json()["code"] == "no_series"
+    # several trials at once (2026-11-24): own values, a bookmark as TDMS for one of them
+    monkeypatch.setattr(ta, "copy_trials", lambda series_id, plan, fields, user=None, lab_tables=None:
+                        (made.append((series_id, plan)) or [800 + i for i in range(len(plan))], None))
+    many = {"series_id": sid, "template_id": st["default"],
+            "items": [{"values": {air: "3.2"}, "bookmark": b["id"]}, {"values": {air: "3.6"}}]}
+    assert _client(0, 1).post("/api/yarnscope-live/trials", json=many).status_code == 403
+    r = c.post("/api/yarnscope-live/trials", json=many).json()["trials"]
+    assert len(r) == 2 and r[0]["file"] and r[1]["file"] is None and made[-1][1][1][1] == {air: "3.6"}
+    bad = {**many, "items": [{"bookmark": b["id"]}, {"bookmark": b["id"]}]}
+    assert c.post("/api/yarnscope-live/trials", json=bad).json()["code"] == "bookmark_twice"
     f = c.post(f"/api/yarnscope-live/bookmark/{b['id']}/file", json={"name": "99999_90"}).json()
     assert f["file"].startswith("99999_90_") and f["next_name"] == "99999_91"
     assert c.delete(f"/api/yarnscope-live/bookmark/{b['id']}").json()["ok"]

@@ -1824,6 +1824,13 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
 .yl-markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .yl-marklen { width: 64px; }
 .yl-newtrial { margin-left: auto; }
+.yl-cols-wrap { overflow-x: auto; margin-top: 8px; }
+.yl-cols { border-collapse: collapse; }
+.yl-cols th, .yl-cols td { padding: 3px 6px; text-align: left; white-space: nowrap; }
+.yl-cols tbody th { font-weight: 400; color: #555; padding-right: 12px; }
+.yl-cols input, .yl-cols select { width: 150px; }
+.yl-colx { border: 0; background: transparent; cursor: pointer; color: #999; margin-left: 6px; }
+.yl-colx:hover { color: #c0392b; }
 .yl-bmtable tbody tr { cursor: pointer; }
 .yl-bmtable tbody tr.on td { background: #e7efe8; }
 .yl-bmact { display: flex; gap: 4px; justify-content: flex-end; }
