@@ -1824,6 +1824,8 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
 .yl-markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .yl-marklen { width: 64px; }
 .yl-newtrial { margin-left: auto; }
+.yl-loaded { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px;
+  margin-bottom: 10px; border-radius: 8px; background: #e7efe8; border-left: 5px solid #1d983a; }
 .yl-cols-wrap { overflow-x: auto; margin-top: 8px; }
 .yl-cols { border-collapse: collapse; }
 .yl-cols th, .yl-cols td { padding: 3px 6px; text-align: left; white-space: nowrap; }

@@ -504,6 +504,13 @@ Desktop-Kacheln jetzt 3 pro Sensor + Speed an Index 3n.
 neuem Versuch ("+ Versuch" übernimmt die letzte Spalte, ✕ entfernt), pro Spalte optional "TDMS aus Merk-Zeile" (jede Merk-Zeile höchstens einmal).
 `live_trial.create_many` prüft alles vor der ersten Kopie (`no_items`, `too_many` > 20, `bookmark_twice`, Werte mit `n`), dann EIN `copy_trials` mit
 allen Plänen; `create()` = `create_many` mit einem Eintrag. Web `POST /api/yarnscope-live/trials` {series_id, template_id, items:[{values, bookmark}]}.
+**Live-Messung wieder laden** (2026-11-24, beide Apps): am Ende eines gespeicherten Laufs schreibt `LiveSession._write_side_file` neben die Haupt-TDMS
+`<Datei>.live.json` (alle Zeilen, Sensoren, Merk-Zeilen, Leerwert) -> `sensor_live.load_saved(file, kind)` zeigt exakt dieselben Kurven (state "loaded").
+Ohne Zusatzdatei (ältere Läufe) wird neu ausgewertet (gleiche Abschnitte, Leerwert aus `TrippleT.EmptyX/Y_um`; Speed pro Abschnitt nur bei fester Frequenz,
+bei Auto-Speed nur Mittelwert) und die Zusatzdatei danach geschrieben. `saved_runs(kind)` listet `_manual` (Zusatzdateien + TDMS mit `TrippleT.Live`, ohne
+Partner-/Merk-Dateien); Dateiname geprüft (`_check_file`). Web `GET /api/yarnscope-live/saved`, `POST /saved/load` (sofort `view` oder `job_id`),
+`GET /saved/job/{id}`; Seite: "Messung laden…", Banner "Geladen … / Zurück zur Live-Ansicht", Polling pausiert. Desktop: `LoadRunDialog` (Fortschritt über
+`_Job`), `SensorLiveWindow._loaded`/`_view()`.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

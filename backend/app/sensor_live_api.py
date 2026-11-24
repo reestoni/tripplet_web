@@ -296,3 +296,72 @@ def bookmark_file(bid: int, body: FileBody, user: Dict[str, Any] = Depends(_feat
     except sm.MeasureError as e:
         return _merr(e)
     return {"file": r["file"], "files": r["files"], "next_name": sm.next_name(body.name.strip())}
+
+
+# ------------------------------------------------------------------------------------------------ saved runs
+# Nutzerwunsch 2026-11-24: load a saved live run again and see exactly its curves (sensor_live.load_saved). With its side
+# file at once; an older run is analysed again in a background job (the page polls it).
+import threading  # noqa: E402
+import uuid  # noqa: E402
+
+_load_jobs: Dict[str, Dict[str, Any]] = {}
+_load_lock = threading.Lock()
+
+
+@router.get("/saved")
+def saved(kind: str = "dty", user: Dict[str, Any] = Depends(_feature)):
+    if kind not in sm.KINDS:
+        return _err(400, "bad_kind", "Unknown folder.")
+    try:
+        return {"runs": sl.saved_runs(kind)}
+    except sm.MeasureError as e:
+        return _merr(e)
+
+
+class LoadBody(BaseModel):
+    file: str
+    kind: str = "dty"
+
+
+@router.post("/saved/load")
+def saved_load(body: LoadBody, user: Dict[str, Any] = Depends(_feature)):
+    if body.kind not in sm.KINDS:
+        return _err(400, "bad_kind", "Unknown folder.")
+    try:
+        name = sl._check_file(body.file)
+    except sm.MeasureError as e:
+        return _merr(e)
+    if (sl._manual_dir(body.kind) / (name + sl.SIDE_SUFFIX)).is_file():
+        try:
+            return {"view": sl.load_saved(name, body.kind)}
+        except sm.MeasureError as e:
+            return _merr(e)
+    if not (sl._manual_dir(body.kind) / name).is_file():
+        return _err(404, "no_file", "File not found.", file=name)
+    jid = uuid.uuid4().hex[:12]
+    job: Dict[str, Any] = {"id": jid, "user": user.get("id"), "done": 0, "total": 0, "finished": False, "view": None,
+                           "error": None}
+    with _load_lock:
+        for k in [k for k, j in _load_jobs.items() if j["finished"]]:
+            _load_jobs.pop(k, None)
+        _load_jobs[jid] = job
+
+    def run():
+        def progress(a, b):
+            job["done"], job["total"] = a, b
+        try:
+            job["view"] = sl.load_saved(name, body.kind, progress=progress)
+        except Exception as e:  # noqa: BLE001 - shown on the page
+            job["error"] = _error_json(e)
+        job["finished"] = True
+
+    threading.Thread(target=run, name="yarnscope-live-load", daemon=True).start()
+    return {"job_id": jid}
+
+
+@router.get("/saved/job/{job_id}")
+def saved_job(job_id: str, user: Dict[str, Any] = Depends(_feature)):
+    job = _load_jobs.get(job_id)
+    if job is None or job["user"] != user.get("id"):
+        return _err(404, "no_job", "Unknown job.")
+    return {k: v for k, v in job.items() if k != "user"}

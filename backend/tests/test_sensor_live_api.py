@@ -155,3 +155,26 @@ def test_live_zero(env):  # noqa: F811
     d = c.get("/api/yarnscope-live/state").json()["rows"][0]["sensors"][0]
     assert d["d_um"] is not None and d["d_knot"] < d["d_bulk"]          # thickness with the empty value (2026-11-24)
     c.post("/api/yarnscope-live/stop")
+
+
+def test_load_saved_run(env):  # noqa: F811
+    """A saved live run loaded again (2026-11-24): exact from the side file, else analysed again in a job."""
+    sm.set_daq(StreamDaq())
+    c = _client()
+    c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "speed": 764, "window": 5,
+                                              "save": True, "name": "99999_web_load"})
+    _wait(lambda: c.get("/api/yarnscope-live/state").json()["n_rows"] >= 3)
+    v = c.post("/api/yarnscope-live/stop").json()
+    main = v["files"][0]
+    runs = c.get("/api/yarnscope-live/saved?kind=dty").json()["runs"]
+    assert runs[0]["file"] == main and runs[0]["exact"]
+    lv = c.post("/api/yarnscope-live/saved/load", json={"file": main, "kind": "dty"}).json()["view"]
+    assert lv["state"] == "loaded" and lv["n_rows"] == v["n_rows"] and lv["loaded"] == main
+    (env.dty / sm.MANUAL_DIR / (main + sl.SIDE_SUFFIX)).unlink()
+    jid = c.post("/api/yarnscope-live/saved/load", json={"file": main, "kind": "dty"}).json()["job_id"]
+    _wait(lambda: c.get(f"/api/yarnscope-live/saved/job/{jid}").json()["finished"])
+    j = c.get(f"/api/yarnscope-live/saved/job/{jid}").json()
+    assert j["error"] is None and j["view"]["exact"] is False and j["view"]["n_rows"] >= 2
+    assert c.post("/api/yarnscope-live/saved/load", json={"file": "../x.tdms", "kind": "dty"}).json()["code"] == "bad_file"
+    assert c.post("/api/yarnscope-live/saved/load", json={"file": "nope.tdms", "kind": "dty"}).json()["code"] == "no_file"
+    assert c.get("/api/yarnscope-live/saved?kind=x").json()["code"] == "bad_kind"

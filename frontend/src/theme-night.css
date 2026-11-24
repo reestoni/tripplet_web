@@ -412,6 +412,7 @@ html[data-night] .yl-table-wrap { border: 1px solid #28303f; }
 html[data-night] .yl-table th, html[data-night] .yl-table td { border-bottom: 1px solid #262d3b; }
 html[data-night] .yl-table th { background: #191d27; }
 html[data-night] .ms-autodot { color: var(--accent, #6de389); }
+html[data-night] .yl-loaded { background: #1d232e; }
 html[data-night] .yl-cols tbody th { color: #b2b7c2; }
 html[data-night] .yl-colx:hover { color: #df7c71; }
 html[data-night] .yl-bmtable tbody tr.on td { background: #1d232e; }

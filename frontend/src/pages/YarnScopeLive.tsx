@@ -29,7 +29,11 @@ type Bookmark = { id: number; at: string; at_m: number; length_m: number; speed:
 type View = { state: string; error: ErrJson | null; rows: Row[]; n_rows: number; meters?: number; seconds?: number;
   speed?: number; window_m?: number; rate?: number; sensors?: { head: string; connector: string; axes: number }[];
   distance_mm?: number | null; save?: boolean; save_stopped?: boolean; files?: string[]; name?: string; user?: string;
-  bookmarks?: Bookmark[]; bookmark_range?: [number, number]; bookmark_m?: number };
+  bookmarks?: Bookmark[]; bookmark_range?: [number, number]; bookmark_m?: number;
+  /** a saved run loaded again (2026-11-24): file, when it was measured, exact = rows from its side file */
+  loaded?: string; loaded_at?: string | null; exact?: boolean };
+type SavedRun = { file: string; at: string | null; meters: number | null; sensors: { head: string; connector: string }[] | null;
+  window_m: number | null; exact: boolean; n_rows: number | null };
 type Recent = { series: number; eid: string; name: string };
 type TField = { key: string; label: string; rule: string | null; choices: [number, string][] | null };
 type TVal = { na?: boolean; v?: number | string | null; text?: string };
@@ -106,9 +110,17 @@ export default function YarnScopeLive() {
   // poll the running session (also one started from another tab / by the desktop of the same server)
   const running = view?.state === "running" || view?.state === "stopping";
   const nRows = useRef(0);
+  const loadedRef = useRef(false);          // a saved run is shown: the live polling stays out of it
+  const [loadOpen, setLoadOpen] = useState(false);
+  const showLoaded = (v: View) => {
+    loadedRef.current = true;
+    setView(v); setRows(v.rows); nRows.current = v.rows.length; setBig(null); setBmMsg(null); setLoadOpen(false);
+  };
+  const backToLive = () => { loadedRef.current = false; setView(null); setRows([]); nRows.current = 0; };
   useEffect(() => {
     let stop = false;
     const tick = async () => {
+      if (loadedRef.current) return;
       try {
         const v = await request<View>("GET", `/api/yarnscope-live/state?since=${nRows.current}`);
         if (stop || !alive.current) return;
@@ -143,6 +155,7 @@ export default function YarnScopeLive() {
   };
 
   const start = async () => {
+    loadedRef.current = false;
     if (!setup) return;
     const [lo, hi] = setup.speed_range;
     if (!autoOn && !(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
@@ -228,7 +241,15 @@ export default function YarnScopeLive() {
   const lock = running || busy;
   return (
     <div className="page yl-page">
-      <div className="page-head"><h1>{t("nav./tools/yarnscope-live")}</h1></div>
+      <div className="page-head"><h1>{t("nav./tools/yarnscope-live")}</h1>
+        <button className="btn-plain" disabled={running} onClick={() => setLoadOpen(true)}>{t("yl.loadBtn")}</button></div>
+      {view?.state === "loaded" && (
+        <div className="yl-loaded">
+          <span>{t("yl.loadedBanner", { file: view.loaded ?? "", at: (view.loaded_at ?? "").replace("T", " ").slice(0, 16) })}
+            {!view.exact && <span className="muted small"> · {t("yl.loadedRebuilt")}</span>}</span>
+          <button className="btn-plain" onClick={backToLive}>{t("yl.backLive")}</button>
+        </div>)}
+      {loadOpen && <LoadDialog kind={kind} errMsg={errMsg} onClose={() => setLoadOpen(false)} onLoaded={showLoaded} />}
       <p className="muted">{t("yl.info")}</p>
       <div className="yl-grid">
         <div className="card yl-form">
@@ -340,9 +361,9 @@ export default function YarnScopeLive() {
                       <td>{fmt(b.sensors[0]?.fpm, 1)}</td><td>{fmt(b.sensors[0]?.cv, 1)}</td><td>{fmt(b.speed, 1)}</td>
                       <td className="small">{b.trial ? `${b.trial.series_id} ${vlabel(b.trial.vno)}` : ""}{b.file ? ` · ${b.file}` : ""}</td>
                       <td className="yl-bmact">
-                        <button className="btn-plain" disabled={!setup?.can_write} onClick={(e) => { e.stopPropagation(); setDlg({ kind: "trial", bm: b }); }}>{t("yl.bmTrial")}</button>
-                        <button className="btn-plain" disabled={!setup?.can_write} onClick={(e) => { e.stopPropagation(); setDlg({ kind: "file", bm: b }); }}>{t("yl.bmFile")}</button>
-                        <button className="btn-plain" title={t("yl.bmDelete")} aria-label={t("yl.bmDelete")} onClick={(e) => { e.stopPropagation(); void unmark(b); }}>✕</button>
+                        <button className="btn-plain" disabled={!setup?.can_write || view?.state === "loaded"} onClick={(e) => { e.stopPropagation(); setDlg({ kind: "trial", bm: b }); }}>{t("yl.bmTrial")}</button>
+                        <button className="btn-plain" disabled={!setup?.can_write || view?.state === "loaded"} onClick={(e) => { e.stopPropagation(); setDlg({ kind: "file", bm: b }); }}>{t("yl.bmFile")}</button>
+                        <button className="btn-plain" title={t("yl.bmDelete")} aria-label={t("yl.bmDelete")} disabled={view?.state === "loaded"} onClick={(e) => { e.stopPropagation(); void unmark(b); }}>✕</button>
                       </td></tr>))}</tbody>
                 </table></div>)}
             </div>)}
@@ -507,6 +528,66 @@ function LiveTrialDialog({ bm, bookmarks, prefs, errMsg, onClose, onDone }: {
         <button className="btn-green" disabled={busy || !st?.series || tpl == null || !cols.length} onClick={() => void create()}>
           {cols.length > 1 ? t("yl.createMany", { n: cols.length }) : t("yl.create")}</button>
       </div>
+    </Modal>
+  );
+}
+
+/** "Messung laden": the saved live runs of the DTY / ATY _manual folder; with a side file at once, otherwise analysed
+ *  again on the server with progress (sensor_live.load_saved). */
+function LoadDialog({ kind: kind0, errMsg, onClose, onLoaded }: {
+  kind: "dty" | "aty"; errMsg: (e: unknown) => string; onClose: () => void; onLoaded: (v: View) => void }) {
+  const { t } = useI18n();
+  const [kind, setKind] = useState<"dty" | "aty">(kind0);
+  const [runs, setRuns] = useState<SavedRun[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState<{ done: number; total: number } | null>(null);
+  const alive = useRef(true);
+  useEffect(() => () => { alive.current = false; }, []);
+  useEffect(() => {
+    setRuns(null); setErr(null);
+    request<{ runs: SavedRun[] }>("GET", `/api/yarnscope-live/saved?kind=${kind}`).then((r) => { if (alive.current) setRuns(r.runs); })
+      .catch((e) => { if (alive.current) setErr(errMsg(e)); });
+  }, [kind]); // eslint-disable-line react-hooks/exhaustive-deps
+  const load = async (r: SavedRun) => {
+    setErr(null); setBusy({ done: 0, total: 0 });
+    try {
+      const res = await request<{ view?: View; job_id?: string }>("POST", "/api/yarnscope-live/saved/load", { file: r.file, kind });
+      if (res.view) { onLoaded(res.view); return; }
+      for (;;) {
+        await new Promise((ok) => setTimeout(ok, 700));
+        if (!alive.current) return;
+        const j = await request<{ done: number; total: number; finished: boolean; view: View | null; error: ErrJson | null }>(
+          "GET", `/api/yarnscope-live/saved/job/${res.job_id}`);
+        if (!alive.current) return;
+        setBusy({ done: j.done, total: j.total });
+        if (j.finished) {
+          if (j.view) onLoaded(j.view); else setErr(errMsg(j.error));
+          break;
+        }
+      }
+    } catch (e) { setErr(errMsg(e)); } finally { if (alive.current) setBusy(null); }
+  };
+  const pct = busy && busy.total ? Math.round(busy.done / busy.total * 100) : 0;
+  return (
+    <Modal title={t("yl.loadTitle")} onClose={onClose} wide>
+      <div className="ms-row jr-seg">{(["dty", "aty"] as const).map((k) => (
+        <button key={k} className={kind === k ? "on" : ""} disabled={!!busy} onClick={() => setKind(k)}>{k.toUpperCase()}</button>))}</div>
+      {!runs && !err && <p className="muted">{t("app.loading")}</p>}
+      {runs && !runs.length && <p className="muted">{t("yl.loadNone")}</p>}
+      {runs && !!runs.length && (
+        <div className="yl-table-wrap"><table className="yl-table yl-bmtable">
+          <thead><tr><th>{t("yl.bmTime")}</th><th>{t("yl.loadFile")}</th><th>m</th><th>{t("ms.sensor")}</th><th /></tr></thead>
+          <tbody>{runs.map((r) => (
+            <tr key={r.file} onClick={() => { if (!busy) void load(r); }}>
+              <td>{(r.at ?? "").replace("T", " ").slice(0, 16)}</td><td>{r.file}</td><td>{r.meters != null ? fmt(r.meters, 0) : "–"}</td>
+              <td>{(r.sensors ?? []).map((x) => `${headLabel(x.head ?? "")} ${x.connector ?? ""}`).join(", ")}</td>
+              <td className="small">{r.exact ? t("yl.loadExact") : t("yl.loadRebuild")}</td></tr>))}</tbody>
+        </table></div>)}
+      {busy && <div className="imp-progress" role="status"><div className={"imp-bar" + (busy.total ? "" : " indet")}>
+        <div className="imp-fill" style={busy.total ? { width: `${Math.max(pct, 3)}%` } : undefined} /></div>
+        <div className="small">{t("yl.loadBusy", { pct })}</div></div>}
+      {err && <div className="login-error">{err}</div>}
+      <div className="modal-buttons"><button className="btn-plain" onClick={onClose}>{t("cm.close")}</button></div>
     </Modal>
   );
 }
