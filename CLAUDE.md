@@ -468,6 +468,18 @@ alle `window_m` (30 m) eine Zeile: Knoten/m + CV (Start-zu-Start) pro Sensor mit
 nach `_manual` (`.part` während der Messung, Parameter-Tabelle als letztes Segment), höchstens `SAVE_LIMIT_M` 5000 m, danach nur Anzeige. Eine
 Live-Sitzung pro Prozess, hält `_measuring`. **Speed selbst messen** (Nutzerwunsch 2026-11-23, Häkchen, Standard an sobald 2. Sensor + Abstand): keine Geschwindigkeit eingeben - die Box liest mit fester Frequenz (`AUTO_RATE_MAX` 80 kHz/Kanal, mit 4 Kanälen weniger), jede Sekunde (`BLOCK_S`) Verzögerung -> Speed, damit jeder Sensor per `np.interp` auf genau 0.25 mm umgerechnet (Position über die Blöcke weitergeführt) -> Analyse und gespeicherte TDMS wie jede YarnScope-Datei, auch wenn die Maschine schwankt; Block ohne Übereinstimmung nimmt den letzten Speed. Datei: Geschwindigkeit = mittlerer gemessener Speed, `TrippleT.AutoSpeed`, `SampleRateHz`, `MeasuredSpeedMean`. Ohne 2. Sensor/Abstand -> 400 `auto_needs_two`. Simulation (700 -> 760 m/min, 160 mm): Speed exakt gefunden, Knoten/m 159.4-160.5 bei Wahrheit 159.7. Tests: Desktop `test_sensor_live.py` (simulierte Dauer-Box, Fenster, Konstruktoren), Web
 `test_sensor_live_api.py`.
+**Merken + Versuch aus dem Live-Dashboard** (2026-11-24, beide Apps, Nutzerwunsch: beim Einstellen einer Düse nichts eintippen): "📌 Merken" hält
+ohne Eingabe die letzten N m (`BOOKMARK_M` 100, `BOOKMARK_RANGE` 5-300, im Dashboard änderbar) aller Sensoren im Speicher fest (Ringpuffer
+`LiveSession._buffer`, float32, `BUFFER_M`; Auto-Speed schon auf 0.25 mm) + Knoten/m/CV dieser Strecke; höchstens `MAX_BOOKMARKS` 20, weg beim
+nächsten Live-Start / Neustart. Nichts wird geschrieben. An einer Merk-Zeile "Versuch anlegen…" = `ui/yarnscope/live_trial.create`: Vorlage der
+Serie (Vorgabe höchste Versuchsnummer) wird wie "Versuche kopieren" kopiert (`trial_actions.copy_trials`, nur die Standard-Kopierfelder: Düse,
+Druck, OF, Speed …; nur geänderte Werte, Prüfung `trial_copy.validate_overrides` - nutzt jetzt auch der Web-Kopierdialog), TDMS NUR wenn angehakt:
+`<Serie>_<Versuch>_<TTMMJJ_HHMM>.tdms` im DTY/ATY-Ordner der Live-Messung (alte Datei der Nummer -> `_replaced` über `sensor_measure.move_replaced`),
+2. Sensor wie "Messen" in `_C1|_C2`. "Als Datei…" = `live_trial.save_file` nach `_manual`. Serie: zuletzt geöffnete oder Nummer tippen
+(`live_trial.series_info`). Web: `/api/yarnscope-live/bookmark` (POST), `/bookmark/{id}/label|trial|file`, DELETE `/bookmark/{id}`,
+`/trial-setup?series=` (Recht Versuche bearbeiten); Seite: Merken-Leiste + Liste + Fähnchen in den Diagrammen, Dialoge `LiveTrialDialog`,
+`BookmarkFileDialog`. Desktop: Leiste + Tabelle im Live-Fenster, `LiveTrialDialog`. Tests: Desktop `test_live_trial.py`, Web
+`test_sensor_live_api.py::test_bookmark_and_trial_from_it` (Kopie ersetzt, keine DB-Schreibzugriffe).
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

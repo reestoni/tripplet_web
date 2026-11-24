@@ -2,11 +2,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Plot } from "../components/YarnScopeView";
+import { Modal } from "../components/SeriesTools";
 
 /* YarnScope Live (Nutzerwunsch 2026-11-23; desktop ui/widgets/sensor_live_window.py): continuous measurement with a
    small dashboard - start / stop by hand, every 30 m knots/m + CV per sensor and, with a second sensor + the distance,
    the measured speed. Optionally saved to the _manual folder while it runs. Server: backend/app/sensor_live_api.py on
-   ui/yarnscope/sensor_live.py (desktop repo); the server talks to the box, so it must run on the laptop with the box. */
+   ui/yarnscope/sensor_live.py (desktop repo); the server talks to the box, so it must run on the laptop with the box.
+   Bookmarks (Nutzerwunsch 2026-11-24): "Merken" keeps the last N m (default 100) on the server, no input while tuning;
+   on a bookmark "Versuch anlegen" copies a template trial with jet / pressure / OF / speed and, only if ticked, saves
+   the bookmark as that trial's TDMS (ui/yarnscope/live_trial.py); "Als Datei" writes it to _manual. */
 
 type Box = { name: string; product: string; serial: string };
 type Sensor = { key: string; head: string; connector: string; axes: number; title: string; date: string };
@@ -16,19 +20,29 @@ type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sens
 type SensorRow = { fpm: number | null; cv: number | null; mean_um: number | null };
 type Row = { i: number; from_m: number; to_m: number; t: number; sensors: SensorRow[]; corr?: number | null;
   delay_ms?: number | null; speed?: number | null; distance_from_speed_mm?: number | null };
+type Bookmark = { id: number; at: string; at_m: number; length_m: number; speed: number | null; sensors: SensorRow[];
+  label: string; trial: { series_id: number; vno: number; trial_id: number } | null; file: string | null };
 type View = { state: string; error: ErrJson | null; rows: Row[]; n_rows: number; meters?: number; seconds?: number;
   speed?: number; window_m?: number; rate?: number; sensors?: { head: string; connector: string; axes: number }[];
-  distance_mm?: number | null; save?: boolean; save_stopped?: boolean; files?: string[]; name?: string; user?: string };
+  distance_mm?: number | null; save?: boolean; save_stopped?: boolean; files?: string[]; name?: string; user?: string;
+  bookmarks?: Bookmark[]; bookmark_range?: [number, number]; bookmark_m?: number };
+type Recent = { series: number; eid: string; name: string };
+type TField = { key: string; label: string; rule: string | null; choices: [number, string][] | null };
+type TVal = { na?: boolean; v?: number | string | null; text?: string };
+type TSetup = { recent: Recent[]; series?: { id: number; name: string; eid: string }; next_no?: number; default?: number | null;
+  trials?: { id: number; vno: number }[]; fields?: TField[]; source?: Record<string, Record<string, TVal>> };
+type TResult = { trial_id: number; vno: number; series_id: number; file: string | null; replaced: string | null; tdms_error: string | null };
 
 const PREF = "tripplet.yarnscopeLive";
 type Prefs = { box?: string; sensor?: string; second?: string; distance?: string; speed?: string; window?: string;
-  save?: boolean; name?: string; kind?: "dty" | "aty"; auto?: boolean };
+  save?: boolean; name?: string; kind?: "dty" | "aty"; auto?: boolean; bmLen?: string; bmName?: string; bmSeries?: string };
 const loadPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREF) || "{}"); } catch { return {}; } };
 const savePrefs = (p: Prefs) => { try { localStorage.setItem(PREF, JSON.stringify(p)); } catch { /* storage blocked */ } };
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
 const fmt = (v: number | null | undefined, d = 1) => (v == null ? "–" : v.toFixed(d));
 const num = (s: string) => Number(String(s).replace(",", "."));
 const COLORS = ["#1d983a", "#2a78d6"];
+const vlabel = (vno: number) => `V${String(vno).padStart(3, "0")}`;
 
 export default function YarnScopeLive() {
   const { t } = useI18n();
@@ -48,6 +62,10 @@ export default function YarnScopeLive() {
   const [rows, setRows] = useState<Row[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [bmLen, setBmLen] = useState(prefs.current.bmLen ?? "100");
+  const [bmSel, setBmSel] = useState<number | null>(null);
+  const [bmMsg, setBmMsg] = useState<string | null>(null);
+  const [dlg, setDlg] = useState<{ kind: "trial" | "file"; bm: Bookmark } | null>(null);
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
@@ -121,6 +139,25 @@ export default function YarnScopeLive() {
       setView(v);
     } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
   };
+  const bookmarks = view?.bookmarks ?? [];
+  const refresh = async () => {
+    try { const v = await request<View>("GET", `/api/yarnscope-live/state?since=${nRows.current}`); if (alive.current && v.state !== "none") setView(v); } catch { /* next tick */ }
+  };
+  const mark = async () => {
+    prefs.current = { ...prefs.current, bmLen };
+    savePrefs(prefs.current);
+    setErr(null);
+    try {
+      const b = await request<Bookmark>("POST", "/api/yarnscope-live/bookmark", { length: num(bmLen) || undefined });
+      setBmMsg(t("yl.marked", { id: b.id, len: b.length_m.toFixed(0) }));
+      setBmSel(b.id);
+      await refresh();
+    } catch (e) { setErr(errMsg(e)); }
+  };
+  const unmark = async (b: Bookmark) => {
+    try { await request("DELETE", `/api/yarnscope-live/bookmark/${b.id}`); if (bmSel === b.id) setBmSel(null); await refresh(); }
+    catch (e) { setErr(errMsg(e)); }
+  };
   const stopIt = async () => {
     setBusy(true);
     try { setView(await request<View>("POST", "/api/yarnscope-live/stop")); } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
@@ -142,9 +179,13 @@ export default function YarnScopeLive() {
       const mid = (lo + hi) / 2, half = Math.max((hi - lo) / 2 * 1.15, Math.abs(v.reduce((a, b) => a + b, 0) / v.length) * rel);
       return [floor ? Math.max(floor[0], mid - half) : mid - half, mid + half];
     };
+    const shapes = (view?.bookmarks ?? []).map((b) => ({ type: "line", x0: b.at_m, x1: b.at_m, yref: "paper", y0: 0, y1: 1,
+      line: { color: "#e0a100", width: 2, dash: "dot" } }));
+    const notes = (view?.bookmarks ?? []).map((b) => ({ x: b.at_m, y: 1, yref: "paper", text: `📌${b.id}`, showarrow: false,
+      font: { size: 10 }, yanchor: "bottom" }));
     const lay = (title: string, yr?: [number, number]) => ({ margin: { l: 46, r: 8, t: 30, b: 34 },
       title: { text: title, font: { size: 12 }, y: 0.97 }, showlegend: two, legend: { orientation: "h", y: -0.28, font: { size: 10 } },
-      xaxis: { title: { text: "m", standoff: 2 } }, yaxis: yr ? { range: yr } : {} });
+      xaxis: { title: { text: "m", standoff: 2 } }, yaxis: yr ? { range: yr } : {}, shapes, annotations: notes });
     const names = (view?.sensors ?? []).map((s) => `${headLabel(s.head)} ${s.connector}`);
     const fpm = rows.flatMap((r) => r.sensors.map((s) => s.fpm));
     const cv = rows.flatMap((r) => r.sensors.map((s) => s.cv));
@@ -154,7 +195,7 @@ export default function YarnScopeLive() {
       { data: names.map((nm, i) => line(rows.map((r) => r.sensors[i]?.cv), i, nm)), layout: lay(t("yl.cv"), range(cv, 0, [0, 40])) },
       ...(two ? [{ data: [line(sp, 0, "m/min")], layout: { ...lay(t("yl.speed"), range(sp, 0.03)), showlegend: false } }] : []),
     ];
-  }, [rows, view?.sensors, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows, view?.sensors, view?.bookmarks, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const lock = running || busy;
   return (
@@ -232,6 +273,32 @@ export default function YarnScopeLive() {
                 {last?.speed == null && last?.distance_from_speed_mm != null ? ` · ${t("ms.pairDistance", { mm: last.distance_from_speed_mm.toFixed(1) })}` : ""}</div>
             </div>)}
           </div>
+          {view && (
+            <div className="yl-marks card">
+              <div className="yl-markbar">
+                <button className="btn-green" disabled={!setup?.can_write || !(running || view.state === "done")} onClick={() => void mark()}
+                  title={t("yl.markTip")}>📌 {t("yl.mark")}</button>
+                <span className="small">{t("yl.markLast")}</span>
+                <input type="text" inputMode="decimal" className="yl-marklen" value={bmLen} onChange={(e) => setBmLen(e.target.value)}
+                  aria-label={t("yl.markLen")} /> <span className="small">m</span>
+                {bmMsg && <span className="small muted">{bmMsg}</span>}
+              </div>
+              {!bookmarks.length ? <p className="muted small">{t("yl.bmNone")}</p> : (
+                <div className="yl-table-wrap"><table className="yl-table yl-bmtable">
+                  <thead><tr><th>#</th><th>{t("yl.bmTime")}</th><th>{t("yl.bmAt")}</th><th>{t("yl.bmLen")}</th><th>{t("yl.fpmUnit")}</th>
+                    <th>CV %</th><th>m/min</th><th>{t("yl.bmResult")}</th><th /></tr></thead>
+                  <tbody>{bookmarks.map((b) => (
+                    <tr key={b.id} className={bmSel === b.id ? "on" : ""} onClick={() => setBmSel(b.id)}>
+                      <td>📌{b.id}{b.label ? ` ${b.label}` : ""}</td><td>{b.at.slice(11, 16)}</td><td>{fmt(b.at_m, 0)}</td><td>{fmt(b.length_m, 0)} m</td>
+                      <td>{fmt(b.sensors[0]?.fpm, 1)}</td><td>{fmt(b.sensors[0]?.cv, 1)}</td><td>{fmt(b.speed, 1)}</td>
+                      <td className="small">{b.trial ? `${b.trial.series_id} ${vlabel(b.trial.vno)}` : ""}{b.file ? ` · ${b.file}` : ""}</td>
+                      <td className="yl-bmact">
+                        <button className="btn-plain" disabled={!setup?.can_write} onClick={(e) => { e.stopPropagation(); setDlg({ kind: "trial", bm: b }); }}>{t("yl.bmTrial")}</button>
+                        <button className="btn-plain" disabled={!setup?.can_write} onClick={(e) => { e.stopPropagation(); setDlg({ kind: "file", bm: b }); }}>{t("yl.bmFile")}</button>
+                        <button className="btn-plain" title={t("yl.bmDelete")} aria-label={t("yl.bmDelete")} onClick={(e) => { e.stopPropagation(); void unmark(b); }}>✕</button>
+                      </td></tr>))}</tbody>
+                </table></div>)}
+            </div>)}
           {rows.length > 0 && <div className="yl-charts">{charts.map((c, i) => <Plot key={i} data={c.data} layout={c.layout} />)}</div>}
           {rows.length > 0 && (
             <div className="yl-table-wrap"><table className="yl-table">
@@ -246,6 +313,144 @@ export default function YarnScopeLive() {
             </table></div>)}
         </div>
       </div>
+      {dlg?.kind === "trial" && <LiveTrialDialog bm={dlg.bm} prefs={prefs} errMsg={errMsg} onClose={() => setDlg(null)}
+        onDone={(msg) => { setDlg(null); setBmMsg(msg); void refresh(); }} />}
+      {dlg?.kind === "file" && <BookmarkFileDialog bm={dlg.bm} prefs={prefs} errMsg={errMsg} onClose={() => setDlg(null)}
+        onDone={(msg) => { setDlg(null); setBmMsg(msg); void refresh(); }} />}
     </div>
+  );
+}
+
+/** "Versuch anlegen": series (recent or typed), template trial (default: highest number), the copy fields shown by
+ *  default filled from the template; only changed values are sent. TDMS of the bookmark only if ticked. */
+function LiveTrialDialog({ bm, prefs, errMsg, onClose, onDone }: {
+  bm: Bookmark; prefs: { current: Prefs }; errMsg: (e: unknown) => string; onClose: () => void; onDone: (msg: string) => void }) {
+  const { t } = useI18n();
+  const [series, setSeries] = useState(prefs.current.bmSeries ?? "");
+  const [st, setSt] = useState<TSetup | null>(null);
+  const [tpl, setTpl] = useState<number | null>(null);
+  const [vals, setVals] = useState<Record<string, string>>({});
+  const [orig, setOrig] = useState<Record<string, string>>({});
+  const [tdms, setTdms] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const fill = (s: TSetup, id: number | null) => {
+    const src = id != null ? s.source?.[String(id)] ?? {} : {};
+    const o: Record<string, string> = {};
+    for (const f of s.fields ?? []) {
+      const v = src[f.key];
+      if (!v || v.na) continue;
+      o[f.key] = f.choices ? (v.v == null ? "" : String(v.v)) : (v.text ?? "");
+    }
+    setOrig(o); setVals(o);
+  };
+  const load = async (sid?: string) => {
+    const want = (sid ?? series).trim();
+    setErr(null);
+    try {
+      const s = await request<TSetup>("GET", `/api/yarnscope-live/trial-setup${/^\d+$/.test(want) ? `?series=${want}` : ""}`);
+      setSt(s);
+      if (s.series) {
+        const id = s.default ?? null;
+        setTpl(id); fill(s, id);
+        prefs.current = { ...prefs.current, bmSeries: String(s.series.id) };
+        savePrefs(prefs.current);
+      }
+    } catch (e) { setErr(errMsg(e)); setSt((cur) => cur ? { recent: cur.recent } : null); }
+  };
+  useEffect(() => { void load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const changed = Object.fromEntries(Object.entries(vals).filter(([k, v]) => v.trim() !== (orig[k] ?? "")).map(([k, v]) => [k, v.trim()]));
+  const create = async () => {
+    if (!st?.series || tpl == null) return;
+    setBusy(true); setErr(null);
+    try {
+      const r = await request<TResult>("POST", `/api/yarnscope-live/bookmark/${bm.id}/trial`,
+        { series_id: st.series.id, template_id: tpl, values: changed, save_tdms: tdms });
+      let msg = t("yl.created", { series: r.series_id, vno: vlabel(r.vno) });
+      if (r.file) msg += " " + t("yl.createdFile", { file: r.file }) + (r.replaced ? " " + t("yl.replaced", { dir: "_replaced" }) : "");
+      if (r.tdms_error) msg += " " + t("yl.tdmsFailed", { detail: r.tdms_error });
+      onDone(msg);
+    } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
+  };
+  const s0 = bm.sensors[0];
+  return (
+    <Modal title={t("yl.trialTitle", { id: bm.id })} onClose={onClose}>
+      <p className="muted small">{t("yl.trialInfo", { len: fmt(bm.length_m, 0), m: fmt(bm.at_m, 0), fpm: fmt(s0?.fpm, 1), cv: fmt(s0?.cv, 1), speed: fmt(bm.speed, 1) })}</p>
+      <div className="ms-form">
+        <label htmlFor="yl-series">{t("yl.series")}</label>
+        <div className="ms-row">
+          <input id="yl-series" type="text" inputMode="numeric" list="yl-recent" value={series} placeholder={t("yl.seriesPh")}
+            onChange={(e) => setSeries(e.target.value.split(" ")[0])} onKeyDown={(e) => { if (e.key === "Enter") void load(); }} />
+          <datalist id="yl-recent">{(st?.recent ?? []).map((r) => <option key={r.series} value={String(r.series)}>{`${r.eid} ${r.name}`}</option>)}</datalist>
+          <button className="btn-plain" onClick={() => void load()}>{t("yl.load")}</button>
+        </div>
+        {st?.series && (<>
+          <label />
+          <span className="small muted">{st.series.eid} · {st.series.name}</span>
+          <label htmlFor="yl-tpl">{t("yl.template")}</label>
+          {st.trials?.length ? (
+            <select id="yl-tpl" value={tpl ?? ""} onChange={(e) => { const id = Number(e.target.value); setTpl(id); fill(st, id); }}>
+              {st.trials.map((x) => <option key={x.id} value={x.id}>{vlabel(x.vno)}</option>)}
+            </select>) : <span className="ms-warn">{t("yl.noTemplate")}</span>}
+          {(st.fields ?? []).filter((f) => f.key in orig).map((f) => (<FieldRow key={f.key} f={f} value={vals[f.key] ?? ""}
+            changed={(vals[f.key] ?? "").trim() !== (orig[f.key] ?? "")} onChange={(v) => setVals((cur) => ({ ...cur, [f.key]: v }))} />))}
+          <label />
+          <label className="yl-check"><input type="checkbox" checked={tdms} onChange={(e) => setTdms(e.target.checked)} />
+            {t("yl.saveTdms", { len: fmt(bm.length_m, 0), vno: vlabel(st.next_no ?? 0) })}</label>
+        </>)}
+      </div>
+      {err && <div className="login-error">{err}</div>}
+      <div className="modal-buttons">
+        <button className="btn-plain" onClick={onClose}>{t("cm.cancel")}</button>
+        <button className="btn-green" disabled={busy || !st?.series || tpl == null} onClick={() => void create()}>{t("yl.create")}</button>
+      </div>
+    </Modal>
+  );
+}
+
+function FieldRow({ f, value, changed, onChange }: { f: TField; value: string; changed: boolean; onChange: (v: string) => void }) {
+  const id = `yl-f-${f.key.replace(/[^A-Za-z0-9]/g, "_")}`;
+  return (<>
+    <label htmlFor={id}>{f.label}</label>
+    {f.choices ? (
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={changed ? "yl-changed" : ""}>
+        <option value="" />
+        {f.choices.map(([k, n]) => <option key={k} value={String(k)}>{n}</option>)}
+      </select>
+    ) : <input id={id} type="text" value={value} onChange={(e) => onChange(e.target.value)} className={changed ? "yl-changed" : ""} />}
+  </>);
+}
+
+/** "Als Datei": the bookmark to _manual under a free name (counts up), no trial. */
+function BookmarkFileDialog({ bm, prefs, errMsg, onClose, onDone }: {
+  bm: Bookmark; prefs: { current: Prefs }; errMsg: (e: unknown) => string; onClose: () => void; onDone: (msg: string) => void }) {
+  const { t } = useI18n();
+  const [name, setName] = useState(prefs.current.bmName ?? "99999_1");
+  const [err, setErr] = useState<string | null>(null);
+  const save = async () => {
+    setErr(null);
+    try {
+      const r = await request<{ file: string; files: string[]; next_name: string }>("POST", `/api/yarnscope-live/bookmark/${bm.id}/file`, { name: name.trim() });
+      prefs.current = { ...prefs.current, bmName: r.next_name };
+      savePrefs(prefs.current);
+      onDone(t("yl.fileSaved", { files: r.files.join(", ") }));
+    } catch (e) { setErr(errMsg(e)); }
+  };
+  return (
+    <Modal title={t("yl.fileTitle", { id: bm.id })} onClose={onClose}>
+      <p className="muted small">{t("yl.fileHint", { dir: "_manual" })}</p>
+      <div className="ms-form">
+        <label htmlFor="yl-fname">{t("ms.name")}</label>
+        <input id="yl-fname" type="text" className="ms-name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") void save(); }} />
+      </div>
+      {err && <div className="login-error">{err}</div>}
+      <div className="modal-buttons">
+        <button className="btn-plain" onClick={onClose}>{t("cm.cancel")}</button>
+        <button className="btn-green" disabled={!name.trim()} onClick={() => void save()}>{t("yl.fileSave")}</button>
+      </div>
+    </Modal>
   );
 }

@@ -66,3 +66,56 @@ def test_live_auto_speed_needs_two_sensors(env):  # noqa: F811
     assert r.status_code == 400 and r.json()["code"] == "auto_needs_two"
     r = c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "save": False})
     assert r.json()["code"] == "bad_speed"                       # without auto a speed is still needed
+
+
+def test_bookmark_and_trial_from_it(env, monkeypatch):  # noqa: F811
+    """Merken while running, list in /state, trial from a bookmark (copy replaced: no database write), TDMS only when
+    asked, file only, label / delete, read-only users cannot. Real setup of a dev_local series for /trial-setup."""
+    from db import trial_actions as ta
+    from db import trial_copy as tc
+    from db.connection import fetch_all
+    from ui.yarnscope import dty_service
+    sm.set_daq(StreamDaq())
+    c = _client()
+    assert c.post("/api/yarnscope-live/bookmark", json={}).status_code in (200, 404)   # no session yet or an old one
+    c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "speed": 764, "window": 5,
+                                              "save": False})
+    _wait(lambda: c.get("/api/yarnscope-live/state").json()["meters"] >= 30)
+    assert _client(0, 1).post("/api/yarnscope-live/bookmark", json={}).status_code == 403
+    assert c.post("/api/yarnscope-live/bookmark", json={"length": 2}).json()["code"] == "bad_length"
+    b = c.post("/api/yarnscope-live/bookmark", json={"length": 20}).json()
+    assert b["length_m"] == 20 and b["sensors"][0]["fpm"] > 0 and "_axes" not in b
+    c.post("/api/yarnscope-live/stop")
+    v = c.get("/api/yarnscope-live/state").json()
+    assert [x["id"] for x in v["bookmarks"]] == [b["id"]] and v["bookmark_m"] == sl.BOOKMARK_M
+    assert c.post(f"/api/yarnscope-live/bookmark/{b['id']}/label", json={"label": "3.4 bar"}).json()["label"] == "3.4 bar"
+    # trial setup of a real dev_local series (read only)
+    rows = fetch_all("SELECT TOP 1 TrialSeriesID AS sid FROM tblTrial WHERE Versuchsnummer > 0 ORDER BY ID DESC") \
+        if False else fetch_all("SELECT TrialSeriesID AS sid FROM tblTrial WHERE Versuchsnummer > 0 ORDER BY ID DESC LIMIT 1")
+    sid = int(rows[0]["sid"])
+    st = c.get(f"/api/yarnscope-live/trial-setup?series={sid}").json()
+    assert st["series"]["id"] == sid and st["trials"] and st["default"] in [t["id"] for t in st["trials"]]
+    assert any(f["key"].endswith("AirPressure") for f in st["fields"]) and "recent" in st
+    assert c.get("/api/yarnscope-live/trial-setup?series=999999999").json()["code"] == "no_series"
+    # create: the copy itself is replaced (nothing written to the database)
+    made = []
+    monkeypatch.setattr(ta, "copy_trials", lambda series_id, plan, fields, user=None, lab_tables=None:
+                        (made.append((series_id, plan)) or [777], None))
+    import db.connection
+    monkeypatch.setattr(db.connection, "fetch_all", lambda sql, params=(): [{"Versuchsnummer": 9999}]
+                        if "Versuchsnummer FROM tblTrial WHERE ID" in sql else fetch_all(sql, params))
+    air = next(f["key"] for f in st["fields"] if f["key"].endswith("AirPressure"))
+    body = {"series_id": sid, "template_id": st["default"], "values": {air: "3.45"}}
+    assert _client(0, 1).post(f"/api/yarnscope-live/bookmark/{b['id']}/trial", json=body).status_code == 403
+    assert c.post(f"/api/yarnscope-live/bookmark/{b['id']}/trial",
+                  json={**body, "values": {air: "x"}}).json()["code"] == "invalid"
+    r = c.post(f"/api/yarnscope-live/bookmark/{b['id']}/trial", json=body).json()
+    assert r["vno"] == 9999 and r["file"] is None and made[-1][1][0][1] == {air: "3.45"}
+    r = c.post(f"/api/yarnscope-live/bookmark/{b['id']}/trial", json={**body, "save_tdms": True}).json()
+    assert r["file"].startswith(f"{sid}_9999_") and dty_service.find_tdms(sid, 9999).name == r["file"]
+    assert "path" not in r
+    f = c.post(f"/api/yarnscope-live/bookmark/{b['id']}/file", json={"name": "99999_90"}).json()
+    assert f["file"].startswith("99999_90_") and f["next_name"] == "99999_91"
+    assert c.delete(f"/api/yarnscope-live/bookmark/{b['id']}").json()["ok"]
+    assert c.get("/api/yarnscope-live/state").json()["bookmarks"] == []
+    assert tc.validate_overrides  # shared with the copy dialog

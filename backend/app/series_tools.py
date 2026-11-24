@@ -94,24 +94,10 @@ def copy_trials_ep(series_id: int, body: CopyBody, user: Dict[str, Any] = Depend
     for item in body.plan:
         if item.source not in known:
             return _err(400, "bad_trial", "A source trial is not part of this series.")
-        over: Dict[str, Any] = {}
-        for k, v in item.values.items():
-            f = by_key.get(k)
-            if f is None:
-                return _err(400, "bad_field", "Unknown field.")
-            if tc.NOT_AVAILABLE is s["source"].get(item.source, {}).get(k):
-                continue
-            if f.choices:
-                ids = {str(c[0]) for c in f.choices}
-                if v not in (None, "") and str(v) not in ids:
-                    return _err(400, "invalid", f"'{v}' is not a valid value for {f.label}.")
-                val = None if v in (None, "") else next(c[0] for c in f.choices if str(c[0]) == str(v))
-            else:
-                norm = tc.normalize_value(f.rule, v)
-                if norm is None:
-                    return _err(400, "invalid", f"'{v}' is not a valid value for {f.label}.")
-                val = norm if norm != "" else None
-            over[k] = val
+        try:                             # same rules as the live trial (db/trial_copy.validate_overrides)
+            over = tc.validate_overrides(fields, s["source"].get(item.source, {}), item.values)
+        except tc.OverrideError as e:
+            return _err(400, e.code, str(e))
         plan.append((item.source, over))
     labs = None
     if body.labs is not None:            # only lab machines of this series' trials (allow-list, never free table names)

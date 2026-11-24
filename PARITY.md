@@ -26,12 +26,12 @@ Recounted from the rows below on 2026-11-19 ("DONE (different/stricter)" counts 
 | 11. Yarn Stock | 16 | 0 | 0 | 0 | 0 | 16 |
 | 12. Manage User | 7 | 0 | 0 | 1 | 0 | 8 |
 | 13. Smart Chart / Dashboards | 21 | 1 | 0 | 0 | 1 | 23 |
-| 14. Tools | 12 | 0 | 0 | 0 | 0 | 12 |
+| 14. Tools | 13 | 0 | 0 | 0 | 0 | 13 |
 | 15. Admin master tables | 5 | 0 | 0 | 0 | 0 | 5 |
 | 16. Superuser pages | 1 | 0 | 0 | 2 | 0 | 3 |
 | Conclusion per series | 8 | 0 | 0 | 0 | 0 | 8 |
 | Jet Advisor | 2 | 0 | 0 | 0 | 0 | 2 |
-| **Total** | 344 | 5 | 2 | 8 | 4 | 363 |
+| **Total** | 345 | 5 | 2 | 8 | 4 | 364 |
 
 Open rows (2026-11-19), none blocking:
 - PARTIAL Show Experiment: leaving with unsaved changes asks OK/Cancel instead of Save/Discard/Cancel, browser back not guarded.
@@ -486,6 +486,7 @@ as the desktop (and English, like the desktop). The Qt bridge logic was moved to
 | TDMS Inspector (any .tdms file, DTY + ATY YarnScope, no DB; no save/batch/compare) | `ui/screen_tdms_inspector.py` | **DONE** | `be/tdms_inspector.py` (upload) + the YarnScope routes for negative series numbers |
 | TDMS Inspector "📏 Measure…": free measurement with own name + speed (no series/DB), file to `_manual`, opened at once, name counts up | `TdmsInspectorScreen._on_measure` / `SensorMeasureDialog(free=True)` | **DONE** | `sensor_measure.measure_free` (2026-11-23, both apps), `/api/tdms-inspector/sensor/...` |
 | YarnScope Live: continuous measurement, start/stop, every 30 m knots/m + CV (+ speed with 2 sensors), optional saving | `ui/widgets/sensor_live_window.py` (own window, sidebar Tools) | **DONE** | `/tools/yarnscope-live`, `sensor_live.py` (2026-11-23) |
+| YarnScope Live bookmarks: "Bookmark" keeps the last N m (default 100, 5-300) in memory, no input; on a bookmark "Create trial..." = copy of a template trial with jet / pressure / OF / speed (copy fields shown by default, only changed values), TDMS of the bookmark only if ticked (trial folder, <series>_<trial>_..., old file to _replaced); "As file..." to _manual | `SensorLiveWindow` (bookmark bar + table), `LiveTrialDialog` | **DONE** | `ui/yarnscope/live_trial.py`, `LiveSession.bookmark`, `/api/yarnscope-live/bookmark...`, `trial_copy.validate_overrides` (also the web copy dialog) (2026-11-24) |
 | Canvas (free board, series images + PDFs + local files, move / scale / rotate, annotation tools, undo, grid, background colour, PNG export, project files, paste, Del) | `ui/screen_canvas.py` | **DONE** | `fe/pages/Canvas.tsx` on the Image Compare routes; rotation around the centre |
 | Canvas boards in the DB (title, series, shared, autosave, version check, files stored with the board) - new 2026-11-14 in both apps | `db/canvas_boards.py`, board bar in `ui/screen_canvas.py` | **DONE** | `be/canvas_api.py`, `fe/pages/Canvas.tsx`; "Board" button in Show Experiment (both); web imports old .ttcanvas files |
 | Process Playground (yarn/jet list with search + sort, start from a trial or typed with range notes, sliders, statements per lab value, warnings, goals + Find settings, suggestions, chart with model curve + band, Reload/F5, open from Show Experiment) | `ui/screen_process_playground.py` | **DONE** | `be/process_playground_api.py` on `ui/dty_whatif.py` + `ui/process_playground_core.py`; statements / based-on / start notes English (shared module) |

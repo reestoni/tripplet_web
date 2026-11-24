@@ -408,6 +408,8 @@ html[data-night] .yl-big span { color: #a6adb9; }
 html[data-night] .yl-table-wrap { border: 1px solid #28303f; }
 html[data-night] .yl-table th, html[data-night] .yl-table td { border-bottom: 1px solid #262d3b; }
 html[data-night] .yl-table th { background: #191d27; }
+html[data-night] .yl-bmtable tbody tr.on td { background: #1d232e; }
+html[data-night] .yl-changed { background: #473e18; }
 
 /* ---- dark twins of theme-modern.css ---- */
 html[data-theme="modern"][data-night] ::-webkit-scrollbar-thumb { background: #3a4250; }

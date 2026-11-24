@@ -1807,6 +1807,16 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
 .yl-table th, .yl-table td { padding: 3px 8px; border-bottom: 1px solid #eef0f2; text-align: right; white-space: nowrap; }
 .yl-table th { position: sticky; top: 0; background: #f4f6f8; }
 .yl-table td:first-child, .yl-table th:first-child { text-align: left; }
+/* bookmarks of YarnScope Live (2026-11-24) */
+.yl-marks { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+.yl-markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.yl-marklen { width: 64px; }
+.yl-bmtable tbody tr { cursor: pointer; }
+.yl-bmtable tbody tr.on td { background: #e7efe8; }
+.yl-bmact { display: flex; gap: 4px; justify-content: flex-end; }
+.yl-bmact .btn-plain { padding: 2px 8px; font-size: 12px; }
+.yl-changed { background: #fff6cc; }
+.yl-check { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
 .btn-red { background: #c0392b; color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-weight: 600; cursor: pointer; }
 .btn-red:disabled { opacity: .5; cursor: default; }
 @media (max-width: 1023px) { .yl-grid { grid-template-columns: 1fr; } }
