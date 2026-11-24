@@ -145,6 +145,7 @@ class MeasureBody(SensorChoice):
     replace: bool = False
     zero: Optional[Dict[str, Any]] = None
     distance: Optional[float] = None       # mm between the two sensors -> measured speed
+    analyse: bool = False                  # automatic measurement: analyse + save right after (2026-11-24)
 
 
 def _run(job: Dict[str, Any], kwargs: Dict[str, Any], user: Dict[str, Any], fn=None, on_done=None) -> None:
@@ -184,8 +185,16 @@ def measure_start(series_id: int, body: MeasureBody, user: Dict[str, Any] = Depe
     kwargs = dict(series_id=series_id, trial_id=trial["trial_id"], vno=trial["vno"], box=body.box,
                   head_name=p["head"], connector=p["connector"], speed_m_min=body.speed, length_m=body.length,
                   kind=body.kind, replace=body.replace, user={"id": user.get("id"), "username": user.get("username")},
-                  zero=body.zero if isinstance(body.zero, dict) else None, distance_mm=body.distance, **_second_kw(p2))
-    return _start_job(series_id, user, trial["vno"], kwargs, on_done=_no_paths)
+                  zero=body.zero if isinstance(body.zero, dict) else
+                  sm.remembered_zero(body.box, p["head"], p["connector"], _second_kw(p2).get("second")),
+                  distance_mm=body.distance, **_second_kw(p2))
+
+    def done(res: Dict[str, Any]) -> Dict[str, Any]:
+        if body.analyse:                         # the same analysis + save as "Save to DB" in the YarnScope tab
+            from ui.yarnscope import auto_measure
+            res["analysis"] = auto_measure.analyse_and_save(res["path"], trial["trial_id"], body.kind, dict(user))
+        return _no_paths(res)
+    return _start_job(series_id, user, trial["vno"], kwargs, on_done=done)
 
 
 def _start_job(scope: int, user: Dict[str, Any], vno: Any, kwargs: Dict[str, Any], fn=None, on_done=None):

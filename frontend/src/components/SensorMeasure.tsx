@@ -24,7 +24,10 @@ type Pair = { reliable: boolean; corr: number | null; delay_ms?: number; speed?:
   knots?: { knots_a: number; knots_b: number; matched: number; pct_a?: number; pct_b?: number; only_a?: number;
     only_b?: number; len_diff_mm?: number | null; len_diff_sd_mm?: number | null } };
 type Second = { file: string; connector: string; head: string; axes: Axis[]; series_id?: number };
-type Result = { file: string; points: number; rate: number; axes: Axis[]; replaced: string | null; second?: Second; pair?: Pair | null };
+type Result = { file: string; points: number; rate: number; axes: Axis[]; replaced: string | null; second?: Second; pair?: Pair | null;
+  /** automatic measurement: analysed + saved right after (2026-11-24) */
+  analysis?: { saved: boolean; fpm: number | null; error: string | null } };
+export type AutoResult = Result & { vno: number };
 type Job = { id: string; vno: number; done: number; total: number; queued: boolean; finished: boolean;
   result: Result | null; error: ErrJson | null };
 
@@ -120,10 +123,12 @@ function PairResult({ pair, second }: { pair: Pair | null | undefined; second?: 
 /** "PXL_3_121_W" -> "PXL 3-121" (type, serial number of the head) */
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
 
-export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto }: {
+export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto, onAutoDone }: {
   seriesId: number; onClose: () => void; onMeasured: () => void;
   /** set by Show Experiment after the jet tension of a trial was saved: measure that trial (n = a new request) */
-  auto?: AutoStart | null }) {
+  auto?: AutoStart | null;
+  /** the automatic measurement is measured, analysed and saved: Show Experiment closes the window (2026-11-24) */
+  onAutoDone?: (r: AutoResult) => void }) {
   const { t } = useI18n();
   const prefs = useRef(loadPrefs());
   const [setup, setSetup] = useState<Setup | null>(null);
@@ -197,7 +202,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto }: {
     } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
   };
 
-  const doMeasure = async (replace: boolean, tid?: number) => {
+  const doMeasure = async (replace: boolean, tid?: number, isAuto = false) => {
     const trial = setup?.trials.find((x) => x.trial_id === (tid ?? trialId));
     if (!trial || !setup) return;
     const [lo, hi] = setup.speed_range;
@@ -208,7 +213,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto }: {
     setBusy("measure"); setErr(null); setAsk(null); setResult(null); setJob(null);
     try {
       const { job_id } = await request<{ job_id: string }>("POST", `/api/series/${seriesId}/sensor/measure`, {
-        box, sensor, trial_id: trial.trial_id, speed: num(speed), length: num(length), kind, replace, zero,
+        box, sensor, trial_id: trial.trial_id, speed: num(speed), length: num(length), kind, replace, zero, analyse: isAuto,
         second: sec || undefined, distance: num(distance) > 0 ? num(distance) : undefined });
       jobId.current = job_id;
       for (;;) {
@@ -219,7 +224,10 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto }: {
         setJob(j);
         if (j.finished) {
           if (j.error) setErr(errMsg(j.error));
-          else if (j.result) { setResult(j.result); onMeasured(); await load(trial.vno); }
+          else if (j.result) {
+            setResult(j.result); onMeasured(); await load(trial.vno);
+            if (isAuto && onAutoDone) onAutoDone({ ...j.result, vno: trial.vno });
+          }
           break;
         }
       }
@@ -246,7 +254,7 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto }: {
     if (busy) { setErr(t("ms.autoBusy")); return; }
     if (!setup.trials.some((x) => x.trial_id === auto.trial_id)) return;
     pick(setup, auto.trial_id);
-    void doMeasure(auto.replace, auto.trial_id);
+    void doMeasure(auto.replace, auto.trial_id, true);
   }, [auto?.n, setup]); // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => { if (busy === "measure") { if (!window.confirm(t("ms.cancelAsk"))) return; cancel(); } onClose(); };
 

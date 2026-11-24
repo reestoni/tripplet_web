@@ -62,6 +62,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv(sm.ENV_SENSOFT_DIR, str(tmp_path / "Sensoft"))
     monkeypatch.setenv(dty_service.ENV_TDMS_DIR, str(tmp_path / "dty"))
     monkeypatch.setenv(aty_service.ENV_TDMS_DIR, str(tmp_path / "aty"))
+    monkeypatch.setenv(sm.ENV_ZERO_PATH, str(tmp_path / "sensor_zero.json"))     # never the user's real file
     sm.set_daq(FakeDaq())
     sm.forget_zeros()
     rows = fetch_all("SELECT s.ID FROM tblTrialSeries s WHERE (SELECT COUNT(*) FROM tblTrial t WHERE "
@@ -208,3 +209,22 @@ def test_auto_decision_after_tension_save(env, monkeypatch):  # noqa: F811
     d = c.get(f"/api/series/{env.sid}/sensor/auto?trials={t1}").json()
     assert d["action"] == "ask" and d["file"].startswith(f"{env.sid}_{trials[0]['vno']}_")
     assert c.get(f"/api/series/{env.sid}/sensor/auto?trials=999999999").json()["reason"] in ("no_trial", "no_dtyomat")
+
+
+def test_auto_measure_analyses_and_uses_the_kept_empty_value(env, monkeypatch):  # noqa: F811
+    """Automatic measurement (2026-11-24): analysed + saved right after (analyse=true), and the empty value checked earlier
+    (kept on disk) goes into the file without the page sending it."""
+    from nptdms import TdmsFile
+    from ui.yarnscope import auto_measure
+    seen = []
+    monkeypatch.setattr(auto_measure, "analyse_and_save", lambda path, trial_id, kind="dty", user=None:
+                        seen.append((trial_id, kind)) or {"saved": True, "fpm": 150.0, "error": None})
+    c = _client()
+    z = c.post(f"/api/series/{env.sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1"}).json()
+    trial = c.get(f"/api/series/{env.sid}/sensor/setup").json()["trials"][0]
+    body = {"box": "Dev2", "sensor": "PXL_3_121_W@C1", "trial_id": trial["trial_id"], "speed": 600, "length": 3,
+            "analyse": True}
+    j = _wait(c, env.sid, c.post(f"/api/series/{env.sid}/sensor/measure", json=body).json()["job_id"])
+    assert j["error"] is None and j["result"]["analysis"]["saved"] and seen == [(trial["trial_id"], "dty")]
+    f = next(env.dty.glob(f"{env.sid}_{trial['vno']}_*.tdms"))
+    assert TdmsFile.read(f).properties["TrippleT.EmptyX_um"] == z["axes"][0]["mean_um"]

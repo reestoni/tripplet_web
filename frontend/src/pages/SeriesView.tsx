@@ -13,7 +13,7 @@ import YarnScopeAty from "../components/YarnScopeAty";
 import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
-import { SensorMeasureDialog, autoMeasureOn, autoMeasureKind, type AutoStart } from "../components/SensorMeasure";
+import { SensorMeasureDialog, autoMeasureOn, autoMeasureKind, type AutoStart, type AutoResult } from "../components/SensorMeasure";
 import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
 import { copyText, flashTrial, seriesLink } from "../links";
@@ -272,6 +272,13 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
           scroll position; YarnScope tabs appear) and an open YarnScope tab lists the new file. No rebuild on close:
           that threw the user back to the top of the table (2026-11-23). */}
       {tool?.kind === "measure" && <SensorMeasureDialog seriesId={s.id} auto={autoStart}
+        onAutoDone={(r: AutoResult) => {
+          // measured + analysed + saved: close the window for the next tension (2026-11-24)
+          setTool(null); setAutoStart(null);
+          const vno = `V${String(r.vno).padStart(3, "0")}`;
+          setToast(r.analysis?.saved ? t("ms.autoDone", { trial: vno, fpm: r.analysis.fpm != null ? r.analysis.fpm.toFixed(1) : "–" })
+            : t("ms.autoNotSaved", { trial: vno, detail: r.analysis?.error ?? "" }));
+        }}
         onClose={() => { setTool(null); setAutoStart(null); }}
         onMeasured={() => { setReload((x) => x + 1); setYsKey((x) => x + 1); }} />}
       {tool?.kind === "ref-add" &&<RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}

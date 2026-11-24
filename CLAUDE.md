@@ -429,7 +429,7 @@ Vorschlag). Nach einer Messung ist der nächste Versuch gewählt, der Knopf heis
 **Messfenster nicht modal + Leerwert gemerkt** (2026-11-23, beide Apps, Nutzerwunsch: zwischen den Versuchen in die Tabelle tippen, nicht jedes
 Mal neu nullen): Desktop `dlg.show()` (ein Fenster pro Serie, `_RUNNING` hält laufende Mess-Threads am Leben, auch wenn der Screen zugeht), Web
 `FloatingWindow` (Klasse `ms-float`). `sensor_measure.zero_check` merkt sich jeden Leerwert pro (Box, Kopf, Anschluss) im Prozess,
-`remembered_zero(box, head, connector, second)` gibt ihn zurück, bis neu geprüft wird oder `ZERO_MAX_AGE_H` (12 h) um ist; Web: `zeros` in den
+`remembered_zero(box, head, connector, second)` gibt ihn zurück, bis neu geprüft wird oder die Box getrennt war (seit 2026-11-24 auf der Platte, s. u.); Web: `zeros` in den
 Setup-Antworten, `useKeptZero` wählt den passenden. Auch im TDMS Inspector. Nach einer Messung wird NICHT neu aufgebaut (Tabelle sprang an den Anfang): Desktop
 `on_measured` -> nur `_build_yarnscope_tab`/`_build_aty_yarnscope_tab`, Web nur die Seitendaten (`reload`, wie nach dem Speichern) + `ysKey` für offene YarnScope-Reiter; Schliessen tut nichts mehr.
 **Automatisch messen beim Speichern der Spannung** (2026-11-24, beide Apps, Nutzerwunsch): Häkchen im Messfenster (aus als Standard; Desktop
@@ -488,6 +488,14 @@ Druck, OF, Speed …; nur geänderte Werte, Prüfung `trial_copy.validate_overri
 `/trial-setup?series=` (Recht Versuche bearbeiten); Seite: Merken-Leiste + Liste + Fähnchen in den Diagrammen, Dialoge `LiveTrialDialog`,
 `BookmarkFileDialog`. Desktop: Leiste + Tabelle im Live-Fenster, `LiveTrialDialog`. Tests: Desktop `test_live_trial.py`, Web
 `test_sensor_live_api.py::test_bookmark_and_trial_from_it` (Kopie ersetzt, keine DB-Schreibzugriffe).
+**Leerwert dauerhaft + automatische Messung wertet aus** (2026-11-24, beide Apps, Nutzerwunsch): der letzte Leerwert pro (Box, Kopf, Anschluss) liegt in
+`%LOCALAPPDATA%\TrippleT\sensor_zero.json` (`sensor_measure._zero_path`, Tests: `TRIPPLET_SENSOR_ZERO_PATH`), egal ob Messfenster, Live, Desktop oder
+Web-Server; keine Altersgrenze mehr. Ungültig, wenn `list_boxes()` die Box nicht mehr findet oder eine andere Seriennummer sieht (`note_boxes` -> "lost");
+ein abgesteckter Kopf an angeschlossener Box ist nicht erkennbar. Zeitstempel mit Mikrosekunden. Automatische Messung (Spannung gespeichert) wird danach
+sofort ausgewertet und gespeichert (`auto_measure.analyse_and_save` = DTY `analyse_trial`+`save_analysis`, ATY `analyse_core_file`+`save_db_row`),
+das Messfenster schliesst sich: Desktop `SensorMeasureDialog._pending_analysis` -> `_auto_finished` -> `on_auto_done` (DTYoMat-Reiter neu, ausser
+ungespeichert), Web `analyse: true` im Mess-Job -> `result.analysis`, `onAutoDone` (Meldung, Fenster zu). Web nimmt den gemerkten Leerwert auch ohne
+`zero` aus dem Browser.
 **Live: volle Grösse, CV-Kachel, Leerwert** (2026-11-24, beide Apps, Nutzerwunsch): jedes Diagramm hat ⤢ -> volle Grösse (Web Overlay
 `.yl-bigchart`, Esc/✕; Desktop `_set_focus(key)` blendet Kacheln/Tabellen aus, auch Doppelklick aufs Diagramm), CV pro Sensor als eigene Kachel
 (Desktop-Kacheln: 2 pro Sensor + Speed an Index 2n). Leerwert vor dem Start: Web `POST /api/yarnscope-live/zero` + `zeros` in `/setup`
