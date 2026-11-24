@@ -47,18 +47,34 @@ const zeroText = (z: Zero) => z.axes.map((a) => `${a.connector && z.axes.some((b
 /** The empty value stays valid until it is checked again (Nutzerwunsch 2026-11-23: the window is closed between the
  *  trials to type into the table - zeroing again each time is not workable). The server remembers every check per
  *  box + head + connector (setup -> zeros); here the one for the current choice (both sensors, if two) is picked. */
+/** The empty value of the current choice out of a list of kept ones (both sensors, if two), or null. */
+export function pickZero(list: Kept[], box: string, main: { head: string; connector: string } | undefined,
+  second?: { head: string; connector: string }): Zero | null {
+  if (!box || !main) return null;
+  const find = (s: { head: string; connector: string }) => list.find((k) => k.box === box && k.head === s.head && k.connector === s.connector);
+  const parts = [find(main), ...(second ? [find(second)] : [])];
+  if (parts.some((p) => !p)) return null;
+  const ok = parts as Kept[];
+  return { box, head: main.head, connector: main.connector, at: ok.map((p) => p.at).sort()[0],
+    axes: ok.flatMap((p) => p.axes.map((a) => ({ ...a, connector: a.connector ?? p.connector }))) };
+}
+
+/** Before asking "empty value not checked?": the server may know one checked elsewhere since (YarnScope Live, desktop,
+ *  another tab) - it keeps the last one per box/head/connector on disk while the box stays connected (2026-11-24). */
+export async function serverZero(setupUrl: string, box: string, main: { head: string; connector: string } | undefined,
+  second?: { head: string; connector: string }): Promise<Zero | null> {
+  try {
+    const s = await request<{ zeros?: Kept[] }>("GET", setupUrl);
+    return pickZero(s.zeros ?? [], box, main, second);
+  } catch { return null; }
+}
+
 export function useKeptZero(fromServer: Kept[] | undefined, box: string, main: Sensor | undefined, second: Sensor | undefined) {
   const [kept, setKept] = useState<Kept[]>([]);
   useEffect(() => { if (fromServer) setKept(fromServer); }, [fromServer]);
-  const zero = useMemo<Zero | null>(() => {
-    if (!box || !main) return null;
-    const find = (s: Sensor) => kept.find((k) => k.box === box && k.head === s.head && k.connector === s.connector);
-    const parts = [find(main), ...(second ? [find(second)] : [])];
-    if (parts.some((p) => !p)) return null;
-    const ok = parts as Kept[];
-    return { box, head: main.head, connector: main.connector, at: ok.map((p) => p.at).sort()[0],
-      axes: ok.flatMap((p) => p.axes.map((a) => ({ ...a, connector: a.connector ?? p.connector }))) };
-  }, [kept, box, main, second]);
+  // the server's list counts in the SAME render (an automatic start right after loading must not see "no empty value")
+  const zero = useMemo<Zero | null>(() => pickZero([...kept, ...(fromServer ?? [])], box, main, second),
+    [kept, fromServer, box, main, second]);
   const store = (z: Zero) => {
     const sensors = [main, second].filter(Boolean) as Sensor[];
     const fresh: Kept[] = sensors.map((s) => ({ box: z.box, head: s.head, connector: s.connector, at: z.at,
@@ -207,7 +223,8 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto, onAut
     if (!trial || !setup) return;
     const [lo, hi] = setup.speed_range;
     if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
-    if (!zero && !replace && !window.confirm(t("ms.noZeroAsk"))) return;
+    const zNow = zero ?? await serverZero(`/api/series/${seriesId}/sensor/setup`, box, sens, setup.sensors.find((x) => x.key === sec));
+    if (!zNow && !replace && !window.confirm(t("ms.noZeroAsk"))) return;
     prefs.current = { box, sensor, kind, length: num(length), second, distance, auto: autoOn };
     savePrefs(prefs.current);
     setBusy("measure"); setErr(null); setAsk(null); setResult(null); setJob(null);
@@ -429,7 +446,8 @@ export function FreeMeasureDialog({ onClose, onMeasured }: { onClose: () => void
     const [lo, hi] = setup.speed_range;
     if (!name.trim()) { setErr(t("ms.err.bad_name", { name })); return; }
     if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
-    if (!zero && !window.confirm(t("ms.noZeroAsk"))) return;
+    const zNow = zero ?? await serverZero("/api/tdms-inspector/sensor/setup", box, sens, setup.sensors.find((x) => x.key === sec));
+    if (!zNow && !window.confirm(t("ms.noZeroAsk"))) return;
     prefs.current = { box, sensor, kind, length: num(length), second, distance };
     savePrefs(prefs.current);
     setBusy("measure"); setErr(null); setResult(null); setJob(null);

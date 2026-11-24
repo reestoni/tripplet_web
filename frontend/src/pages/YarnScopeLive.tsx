@@ -3,7 +3,7 @@ import { request, ApiError } from "../api";
 import { useI18n } from "../i18n";
 import { Plot } from "../components/YarnScopeView";
 import { Modal } from "../components/SeriesTools";
-import { useKeptZero, ZeroInfo, type Kept, type Zero } from "../components/SensorMeasure";
+import { useKeptZero, ZeroInfo, serverZero, type Kept, type Zero } from "../components/SensorMeasure";
 
 /* YarnScope Live (Nutzerwunsch 2026-11-23; desktop ui/widgets/sensor_live_window.py): continuous measurement with a
    small dashboard - start / stop by hand, every 30 m knots/m + CV per sensor and, with a second sensor + the distance,
@@ -159,7 +159,8 @@ export default function YarnScopeLive() {
     if (!setup) return;
     const [lo, hi] = setup.speed_range;
     if (!autoOn && !(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
-    if (!zero && !window.confirm(t("yl.noZeroAsk"))) return;
+    const zNow = zero ?? await serverZero("/api/yarnscope-live/setup", box, sens, setup.sensors.find((x) => x.key === sec));
+    if (!zNow && !window.confirm(t("yl.noZeroAsk"))) return;
     prefs.current = { box, sensor, second, distance, speed, window: win, save, name, kind, auto };
     savePrefs(prefs.current);
     setBusy(true); setErr(null);
