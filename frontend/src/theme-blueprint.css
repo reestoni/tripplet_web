@@ -408,6 +408,7 @@ html[data-blueprint] .yl-big span { color: #94afcc; }
 html[data-blueprint] .yl-table-wrap { border: 1px solid #2662a2; }
 html[data-blueprint] .yl-table th, html[data-blueprint] .yl-table td { border-bottom: 1px solid #255f9d; }
 html[data-blueprint] .yl-table th { background: #15375b; }
+html[data-blueprint] .ms-autodot { color: var(--accent, #6de389); }
 html[data-blueprint] .yl-bmtable tbody tr.on td { background: #183d64; }
 html[data-blueprint] .yl-changed { background: #6b5e24; }
 

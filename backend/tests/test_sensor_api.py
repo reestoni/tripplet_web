@@ -189,3 +189,22 @@ def test_same_head_twice_refused(env):
     r = c.post(f"/api/series/{env.sid}/sensor/zero", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1",
                                                            "second": "PXL_3_121_W@C2"})
     assert r.status_code == 400 and r.json()["code"] == "same_head"
+
+
+def test_auto_decision_after_tension_save(env, monkeypatch):  # noqa: F811
+    """/sensor/auto (ui/yarnscope/auto_measure.decide): nothing / several / DTYoMat / ask when a TDMS exists."""
+    from ui.yarnscope import auto_measure
+    c = _client()
+    trials = c.get(f"/api/series/{env.sid}/sensor/setup").json()["trials"]
+    t1, t2 = trials[0]["trial_id"], trials[1]["trial_id"]
+    assert c.get(f"/api/series/{env.sid}/sensor/auto?trials=").json()["action"] == "none"
+    assert c.get(f"/api/series/{env.sid}/sensor/auto?trials=x,{t1},{t2}").json() == {"action": "skip", "reason": "several", "n": 2}
+    monkeypatch.setattr(auto_measure, "has_dtyomat", lambda tid: False)
+    assert c.get(f"/api/series/{env.sid}/sensor/auto?trials={t1}").json()["reason"] == "no_dtyomat"
+    monkeypatch.setattr(auto_measure, "has_dtyomat", lambda tid: True)
+    d = c.get(f"/api/series/{env.sid}/sensor/auto?trials={t1}&kind=nope").json()
+    assert d["action"] == "measure" and d["trial_id"] == t1 and d["kind"] == "dty"
+    (env.dty / f"{env.sid}_{trials[0]['vno']}_010126_0800.tdms").write_bytes(b"x")
+    d = c.get(f"/api/series/{env.sid}/sensor/auto?trials={t1}").json()
+    assert d["action"] == "ask" and d["file"].startswith(f"{env.sid}_{trials[0]['vno']}_")
+    assert c.get(f"/api/series/{env.sid}/sensor/auto?trials=999999999").json()["reason"] in ("no_trial", "no_dtyomat")

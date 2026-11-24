@@ -13,7 +13,7 @@ import YarnScopeAty from "../components/YarnScopeAty";
 import { useSeriesMenus, type Trial } from "../components/seriesMenus";
 import type { MenuItem } from "../components/ContextMenu";
 import { CopyTrialsDialog, LabelsDialog, PdfImportDialog, RefCompareDialog, RefNameDialog, YarnsDialog } from "../components/SeriesTools";
-import { SensorMeasureDialog } from "../components/SensorMeasure";
+import { SensorMeasureDialog, autoMeasureOn, autoMeasureKind, type AutoStart } from "../components/SensorMeasure";
 import { HelpButton } from "../components/Help";
 import { StockDialog } from "./CreateExperiment";
 import { copyText, flashTrial, seriesLink } from "../links";
@@ -45,8 +45,16 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const small = useMedia(TABLET);
   const [headOpen, setHeadOpen] = useState(false);
   const [reload, setReload] = useState(0);
-  const [fresh, setFresh] = useState(0);
-  const [ysKey, setYsKey] = useState(0);          // new measurement: YarnScope tabs reload their file list          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
+  const [fresh, setFresh] = useState(0);          // "↻" / F5: rebuilds every table of the page (desktop btn_refresh)
+  const [ysKey, setYsKey] = useState(0);          // new measurement: YarnScope tabs reload their file list
+  // automatic TDMS measurement after the jet tension was saved (2026-11-24, ui/yarnscope/auto_measure.py)
+  const [autoOn, setAutoOn] = useState(autoMeasureOn());
+  const [autoStart, setAutoStart] = useState<AutoStart | null>(null);
+  useEffect(() => {
+    const f = () => setAutoOn(autoMeasureOn());
+    window.addEventListener("tripplet:auto-measure", f);
+    return () => window.removeEventListener("tripplet:auto-measure", f);
+  }, []);
   const [rights, setRights] = useState<SeriesRights | null>(null);
   const [tool, setTool] = useState<Tool | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -129,6 +137,19 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
   const copyLink = async (url: string) => setToast(t(await copyText(url) ? "lk.copied" : "lk.failed"));
   // after copying trials, Yarns…, reference samples: series data AND every table again (fresh), so new trials /
   // changed plies show at once - like the desktop's reload after a copy (user 2026-11-20: copies did not appear)
+  const autoAfterSave = async (ids: number[]) => {
+    if (!autoMeasureOn() || !data) return;
+    try {
+      const d = await request<{ action: string; reason?: string; n?: number; trial_id?: number; vno?: number; file?: string }>(
+        "GET", `/api/series/${data.series.id}/sensor/auto?trials=${ids.join(",")}&kind=${autoMeasureKind()}`);
+      if (d.action === "skip" && d.reason === "several") { setToast(t("ms.autoSeveral", { n: d.n ?? ids.length })); return; }
+      if (d.action !== "measure" && d.action !== "ask") return;
+      const vno = `V${String(d.vno ?? 0).padStart(3, "0")}`;
+      if (d.action === "ask" && !window.confirm(t("ms.autoAsk", { trial: vno, file: d.file ?? "" }))) return;
+      setAutoStart((cur) => ({ trial_id: d.trial_id as number, replace: d.action === "ask", n: (cur?.n ?? 0) + 1 }));
+      setTool({ kind: "measure" });
+    } catch { /* the save itself is done; no automatic measurement */ }
+  };
   const reloadAll = (msg?: string) => { setTool(null); setFresh((x) => x + 1); setReload((x) => x + 1); if (msg) setToast(msg); };
   // tools that add/change trials reload the page - unsaved values would be lost (desktop asks the same)
   const openTool = (x: Tool) => { if (confirmLeave()) setTool(x); };
@@ -188,7 +209,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
               <button className="tb-btn" disabled={!canWrite} title={canWrite ? t("tl.pdfTip") : t("tl.writeNeeded")}
                 onClick={() => openTool({ kind: "import" })}>{t("tl.pdfImport")}</button>
               <button className="tb-btn" disabled={!canWrite} title={canWrite ? t("ms.btnTip") : t("tl.writeNeeded")}
-                onClick={() => setTool({ kind: "measure" })}>{t("ms.btn")}</button>
+                onClick={() => setTool({ kind: "measure" })}>{t("ms.btn")}{autoOn && <span className="ms-autodot"> · {t("ms.autoBadge")} ●</span>}</button>
             </>
           )}
           <span className="tb-sep" />
@@ -207,7 +228,7 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       </div>
       {showNotes && s.notes && <div className="card se-notes">{s.notes}</div>}
 
-      <EditProvider key={`${s.id}:${fresh}`} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={() => setReload((x) => x + 1)}
+      <EditProvider key={`${s.id}:${fresh}`} seriesId={s.id} canWrite={accessLevel >= 2} onSaved={(info) => { setReload((x) => x + 1); if (info?.tension_trials?.length) void autoAfterSave(info.tension_trials); }}
         machineMode={() => localStorage.getItem("tripplet.machine.mode") || "single"}
         jetUnit={() => localStorage.getItem("tripplet.jetair.unit") || "Nm3h"}>
         <SeriesBody ysKey={ysKey} data={data} tab={tab} choose={choose} tr={tr} accessLevel={accessLevel} rights={preview ? null : rights} copyLink={copyLink}
@@ -250,8 +271,8 @@ export default function SeriesView({ accessLevel: userLevel = 0 }: { accessLevel
       {/* new TDMS files: after each measurement only the series data again (like after saving - the tables keep their
           scroll position; YarnScope tabs appear) and an open YarnScope tab lists the new file. No rebuild on close:
           that threw the user back to the top of the table (2026-11-23). */}
-      {tool?.kind === "measure" && <SensorMeasureDialog seriesId={s.id}
-        onClose={() => setTool(null)}
+      {tool?.kind === "measure" && <SensorMeasureDialog seriesId={s.id} auto={autoStart}
+        onClose={() => { setTool(null); setAutoStart(null); }}
         onMeasured={() => { setReload((x) => x + 1); setYsKey((x) => x + 1); }} />}
       {tool?.kind === "ref-add" &&<RefNameDialog title={t("tl.addRefTitle")} initial="" onClose={() => setTool(null)}
         onOk={(name) => refAction(`/api/series/${s.id}/references`, { name }, t("tl.refAdded"))} />}

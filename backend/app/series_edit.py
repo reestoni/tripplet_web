@@ -168,4 +168,7 @@ def save(series_id: int, body: SaveBody, user: Dict[str, Any] = Depends(current_
 
     res = ss.save_series_edits(user, series_id, by_model, unit_scales=extra.get("unit_scales"))
     log_usage_event("feature", "show_experiment_save", f"web {sum(len(v) for v in by_model.values())}")
-    return {"kind": "saved", "saved": res.get("saved", 0), "failed": res.get("failed", [])}
+    # tension_trials: jet tension saved for these trials -> the page may start the automatic TDMS measurement
+    # (ui/yarnscope/auto_measure.py, /api/series/{id}/sensor/auto)
+    return {"kind": "saved", "saved": res.get("saved", 0), "failed": res.get("failed", []),
+            "tension_trials": res.get("tension_trials", [])}

@@ -211,6 +211,22 @@ def _job(series_id: int, job_id: str, user: Dict[str, Any]) -> Optional[Dict[str
     return job
 
 
+@router.get("/{series_id}/sensor/auto")
+def auto_decision(series_id: int, trials: str = "", kind: str = "dty", user: Dict[str, Any] = Depends(current_user)):
+    """After a save with jet tension (save answer "tension_trials"): measure at once, ask first (a TDMS exists) or
+    nothing (several trials, no DTYoMat, not a trial of this series) - ui/yarnscope/auto_measure.decide."""
+    from ui.yarnscope import auto_measure
+    ids = []
+    for x in trials.split(",")[:20]:
+        try:
+            ids.append(int(x))
+        except ValueError:
+            pass
+    if kind not in sm.KINDS:
+        kind = "dty"
+    return auto_measure.decide(series_id, ids, kind)
+
+
 @router.get("/{series_id}/sensor/job/{job_id}")
 def measure_job(series_id: int, job_id: str, user: Dict[str, Any] = Depends(current_user)):
     job = _job(series_id, job_id, user)

@@ -96,7 +96,7 @@ function rectCells(a: HTMLElement, b: HTMLElement): HTMLElement[] {
 
 export function EditProvider({ seriesId, canWrite, children, machineMode, jetUnit, onSaved }: {
   seriesId: number; canWrite: boolean; children: ReactNode; machineMode: () => string; jetUnit: () => string;
-  onSaved?: () => void;
+  onSaved?: (info?: { tension_trials?: number[] }) => void;
 }) {
   const { t } = useI18n();
   const [dirty, setDirty] = useState<Map<string, Pending>>(new Map());
@@ -206,7 +206,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
     if (!edits.length || busy) return;
     setBusy(true); setMsg(null);
     try {
-      const res = await request<{ kind: string; saved?: number; warnings?: string[]; failed?: string[]; cells?: Conflict[] }>(
+      const res = await request<{ kind: string; saved?: number; warnings?: string[]; failed?: string[]; cells?: Conflict[]; tension_trials?: number[] }>(
         "POST", `/api/series/${seriesId}/save`,
         { edits, mode: machineMode(), unit: jetUnit(), confirmed, overwrite: overwriteRef.current });
       if (res.kind === "conflict") { setWarn(null); setConflicts(res.cells ?? []); return; }
@@ -215,7 +215,7 @@ export function EditProvider({ seriesId, canWrite, children, machineMode, jetUni
       setDirty(new Map()); setUndo([]); setRedo([]); setBad(new Set());
       setMsg(res.failed?.length ? { kind: "err", text: t("ed.partly", { tabs: res.failed.join(", ") }) } : { kind: "ok", text: t("ed.saved") });
       setReloadKey((k) => k + 1);
-      onSaved?.();
+      onSaved?.({ tension_trials: res.tension_trials ?? [] });
       // the tables stay mounted while they reload (scroll position kept); give the cell its focus back -
       // now and once more after the reload has re-rendered
       window.setTimeout(refocus, 0);

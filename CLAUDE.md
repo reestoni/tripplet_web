@@ -432,6 +432,14 @@ Mal neu nullen): Desktop `dlg.show()` (ein Fenster pro Serie, `_RUNNING` hält l
 `remembered_zero(box, head, connector, second)` gibt ihn zurück, bis neu geprüft wird oder `ZERO_MAX_AGE_H` (12 h) um ist; Web: `zeros` in den
 Setup-Antworten, `useKeptZero` wählt den passenden. Auch im TDMS Inspector. Nach einer Messung wird NICHT neu aufgebaut (Tabelle sprang an den Anfang): Desktop
 `on_measured` -> nur `_build_yarnscope_tab`/`_build_aty_yarnscope_tab`, Web nur die Seitendaten (`reload`, wie nach dem Speichern) + `ysKey` für offene YarnScope-Reiter; Schliessen tut nichts mehr.
+**Automatisch messen beim Speichern der Spannung** (2026-11-24, beide Apps, Nutzerwunsch): Häkchen im Messfenster (aus als Standard; Desktop
+QSettings `SensorMeasure/auto_tension`, Web localStorage `tripplet.sensorMeasure.auto`, Knopf zeigt "· Auto ●"). Speichern mit Spannung vor/nach der
+Düse (`series_save.jet_tension_trial_ids`, nur wenn Machine Data wirklich gespeichert -> `tension_trials` in `save_series_edits`/Web-Speicherantwort)
+-> `ui/yarnscope/auto_measure.decide`: genau EIN Versuch, mit DTYoMat-Zeile (`tblLaborDTYoMat`); keine TDMS -> sofort messen, TDMS da -> zuerst fragen
+(dann `replace`, alte Datei nach `_replaced`); mehrere Versuche -> Hinweis, nichts gemessen. Das Speichern wird nie blockiert. Desktop
+`ShowExperimentScreen._auto_measure_after_save` -> `SensorMeasureDialog.auto_measure(trial_id, replace)`; Web `GET /api/series/{id}/sensor/auto?trials=&kind=`,
+`SeriesView.autoAfterSave` -> Messfenster mit `auto` (n = neue Anforderung). Leerwert vorher prüfen (sonst fragt das Fenster wie gewohnt).
+Tests: Desktop `test_auto_measure.py`, `test_series_save.py`; Web `test_sensor_api.py::test_auto_decision_after_tension_save`.
 Web `app/sensor_api.py` (`/api/series/{id}/sensor/setup|zero|measure|job/<id>[/cancel]`, ein Job gleichzeitig, Browser schickt nur Versuchs-ID,
 Sensor-Schlüssel, Box-Name): **der Server misst** - geht nur, solange er auf dem Laptop mit der Box läuft (auf der VM: später ein Helfer).
 Frontend `components/SensorMeasure.tsx`. Desktop `ui/widgets/sensor_measure_dialog.py`. Tests: Desktop `test_sensor_measure.py`, Web

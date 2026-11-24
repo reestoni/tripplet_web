@@ -29,9 +29,13 @@ type Job = { id: string; vno: number; done: number; total: number; queued: boole
   result: Result | null; error: ErrJson | null };
 
 const PREF = "tripplet.sensorMeasure";
-type Prefs = { box?: string; sensor?: string; kind?: "dty" | "aty"; length?: number; second?: string; distance?: string };
+type Prefs = { box?: string; sensor?: string; kind?: "dty" | "aty"; length?: number; second?: string; distance?: string; auto?: boolean };
 const loadPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREF) || "{}"); } catch { return {}; } };
 const savePrefs = (p: Prefs) => { try { localStorage.setItem(PREF, JSON.stringify(p)); } catch { /* storage blocked */ } };
+/** "Measure automatically when the jet tension is saved" (2026-11-24, ui/yarnscope/auto_measure.py) - per browser */
+export const autoMeasureOn = () => !!loadPrefs().auto;
+export const autoMeasureKind = (): "dty" | "aty" => loadPrefs().kind ?? "dty";
+export type AutoStart = { trial_id: number; replace: boolean; n: number };
 const vlabel = (vno: number) => `V${String(vno).padStart(3, "0")}`;
 /** Zero result: per sensor (connector) its axes, e.g. "C1 X: -88.9 µm (± 2.0)" */
 const zeroText = (z: Zero) => z.axes.map((a) => `${a.connector && z.axes.some((b) => b.connector !== a.connector) ? a.connector + " " : ""}`
@@ -116,8 +120,10 @@ function PairResult({ pair, second }: { pair: Pair | null | undefined; second?: 
 /** "PXL_3_121_W" -> "PXL 3-121" (type, serial number of the head) */
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
 
-export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
-  seriesId: number; onClose: () => void; onMeasured: () => void }) {
+export function SensorMeasureDialog({ seriesId, onClose, onMeasured, auto }: {
+  seriesId: number; onClose: () => void; onMeasured: () => void;
+  /** set by Show Experiment after the jet tension of a trial was saved: measure that trial (n = a new request) */
+  auto?: AutoStart | null }) {
   const { t } = useI18n();
   const prefs = useRef(loadPrefs());
   const [setup, setSetup] = useState<Setup | null>(null);
@@ -134,8 +140,10 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   const [result, setResult] = useState<Result | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [ask, setAsk] = useState<string | null>(null);   // "exists": file name, waiting for "measure again"
+  const [autoOn, setAutoOn] = useState(!!prefs.current.auto);
   const alive = useRef(true);
   const jobId = useRef<string | null>(null);
+  const autoDone = useRef<number | null>(null);
   useEffect(() => () => { alive.current = false; }, []);
 
   const errMsg = (e: ErrJson | unknown): string => {
@@ -189,12 +197,13 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
     } catch (e) { if (alive.current) setErr(errMsg(e)); } finally { if (alive.current) setBusy(""); }
   };
 
-  const doMeasure = async (replace: boolean) => {
+  const doMeasure = async (replace: boolean, tid?: number) => {
+    const trial = setup?.trials.find((x) => x.trial_id === (tid ?? trialId));
     if (!trial || !setup) return;
     const [lo, hi] = setup.speed_range;
     if (!(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
     if (!zero && !replace && !window.confirm(t("ms.noZeroAsk"))) return;
-    prefs.current = { box, sensor, kind, length: num(length), second, distance };
+    prefs.current = { box, sensor, kind, length: num(length), second, distance, auto: autoOn };
     savePrefs(prefs.current);
     setBusy("measure"); setErr(null); setAsk(null); setResult(null); setJob(null);
     try {
@@ -224,6 +233,21 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
   const cancel = () => {
     if (jobId.current) void request("POST", `/api/series/${seriesId}/sensor/job/${jobId.current}/cancel`).catch(() => undefined);
   };
+  const toggleAuto = (on: boolean) => {
+    setAutoOn(on);
+    prefs.current = { ...loadPrefs(), auto: on };
+    savePrefs(prefs.current);
+    window.dispatchEvent(new Event("tripplet:auto-measure"));
+  };
+  // automatic start after the jet tension was saved (once per request)
+  useEffect(() => {
+    if (!auto || !setup || autoDone.current === auto.n) return;
+    autoDone.current = auto.n;
+    if (busy) { setErr(t("ms.autoBusy")); return; }
+    if (!setup.trials.some((x) => x.trial_id === auto.trial_id)) return;
+    pick(setup, auto.trial_id);
+    void doMeasure(auto.replace, auto.trial_id);
+  }, [auto?.n, setup]); // eslint-disable-line react-hooks/exhaustive-deps
   const close = () => { if (busy === "measure") { if (!window.confirm(t("ms.cancelAsk"))) return; cancel(); } onClose(); };
 
   const pct = job && job.total > 0 ? Math.round((job.done / job.total) * 100) : 0;
@@ -280,6 +304,9 @@ export function SensorMeasureDialog({ seriesId, onClose, onMeasured }: {
           <label>{t("ms.length")}</label>
           <div className="ms-row"><input type="text" inputMode="decimal" value={length} disabled={!!busy}
             onChange={(e) => setLength(e.target.value)} /> <span>m</span></div>
+          <label />
+          <label className="ms-auto"><input type="checkbox" checked={autoOn} onChange={(e) => toggleAuto(e.target.checked)} />
+            <span>{t("ms.auto")}<br /><span className="muted small">{t("ms.autoHint")}</span></span></label>
         </div>
       )}
       {!setup?.can_write && setup && <p className="ms-warn">{t("tl.writeNeeded")}</p>}

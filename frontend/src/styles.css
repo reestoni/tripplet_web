@@ -1807,6 +1807,9 @@ tr.rq-review td:first-child { box-shadow: inset 4px 0 0 #e0a800; }
 .yl-table th, .yl-table td { padding: 3px 8px; border-bottom: 1px solid #eef0f2; text-align: right; white-space: nowrap; }
 .yl-table th { position: sticky; top: 0; background: #f4f6f8; }
 .yl-table td:first-child, .yl-table th:first-child { text-align: left; }
+/* automatic measurement when the jet tension is saved (2026-11-24) */
+.ms-auto { display: flex; gap: 8px; align-items: flex-start; font-weight: 400; }
+.ms-autodot { color: var(--accent, #1d983a); font-weight: 700; }
 /* bookmarks of YarnScope Live (2026-11-24) */
 .yl-marks { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
 .yl-markbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
