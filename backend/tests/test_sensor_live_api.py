@@ -178,3 +178,53 @@ def test_load_saved_run(env):  # noqa: F811
     assert c.post("/api/yarnscope-live/saved/load", json={"file": "../x.tdms", "kind": "dty"}).json()["code"] == "bad_file"
     assert c.post("/api/yarnscope-live/saved/load", json={"file": "nope.tdms", "kind": "dty"}).json()["code"] == "no_file"
     assert c.get("/api/yarnscope-live/saved?kind=x").json()["code"] == "bad_kind"
+
+
+def test_pause_and_change_log(env, monkeypatch):  # noqa: F811
+    """Pause / go on in the same run, machine choice, change log entries (old -> new), wrong values refused, read-only
+    users cannot log; the loaded run shows log and pauses again (2026-11-25)."""
+    from ui.yarnscope import live_log
+    cat = [{"key": "air", "label": "Air Pressure (bar)", "rd": False, "rule": "air", "choices": None},
+           {"key": "jet", "label": "Jet", "rd": False, "rule": None, "choices": [[5, "LB-04"]]}]
+    monkeypatch.setattr(live_log, "machines", lambda: [{"id": 7, "name": "RPR 3SDS"}])
+    monkeypatch.setattr(live_log, "field_catalog", lambda mid: list(cat))
+
+    class SlowDaq(StreamDaq):
+        def stream(self, box, channels, rate, on_chunk, should_stop, chunk_s=0.25):
+            def slow(volts, actual):
+                on_chunk(volts, actual)
+                time.sleep(0.05)
+            return StreamDaq.stream(self, box, channels, rate, slow, should_stop, chunk_s)
+    sm.set_daq(SlowDaq())
+    c = _client()
+    assert c.post("/api/yarnscope-live/pause").json()["code"] in ("not_running", "no_session")
+    assert c.get("/api/yarnscope-live/setup").json()["machines"] == [{"id": 7, "name": "RPR 3SDS"}]
+    r = c.post("/api/yarnscope-live/start", json={"box": "Dev2", "sensor": "PXL_3_121_W@C1", "speed": 764,
+                                                  "window": 5, "save": True, "name": "99999_doc", "machine_id": 7})
+    assert r.status_code == 200 and r.json()["machine"]["id"] == 7
+    assert c.get("/api/yarnscope-live/fields?machine=7").json()["fields"][0]["key"] == "air"
+    e = c.post("/api/yarnscope-live/change", json={"items": [{"key": "air", "value": "3,0"}], "note": "start"}).json()
+    assert e["items"][0]["new"] == "3" and e["items"][0]["old"] is None
+    assert c.post("/api/yarnscope-live/change", json={"items": [{"key": "jet", "value": "99"}]}).json()["code"] == "invalid"
+    assert c.post("/api/yarnscope-live/change", json={}).json()["code"] == "empty_change"
+    assert _client(0, 1).post("/api/yarnscope-live/change", json={"note": "x"}).status_code == 403
+    v = c.post("/api/yarnscope-live/pause").json()
+    assert v["paused"] and v["pauses"][0]["until"] is None
+    e2 = c.post("/api/yarnscope-live/change", json={"items": [{"key": "air", "value": "3.6"}],
+                                                    "free": [{"name": "Heater", "value": "on"}]}).json()
+    assert e2["items"][0]["old"] == "3" and e2["items"][1]["key"] == "free:Heater"
+    v = c.post("/api/yarnscope-live/resume").json()
+    assert not v["paused"] and v["pauses"][0]["until"]
+    _wait(lambda: c.get("/api/yarnscope-live/state").json()["n_rows"] >= 2)
+    v = c.post("/api/yarnscope-live/stop").json()
+    assert v["state"] == "done"
+    assert c.delete(f"/api/yarnscope-live/change/{e['id']}").json()["ok"]        # after the run: side file rewritten
+    _wait(lambda: c.get("/api/yarnscope-live/saved?kind=dty").status_code == 200)
+    r = c.post("/api/yarnscope-live/saved/load", json={"file": v["files"][0], "kind": "dty"}).json()
+    if "job_id" in r:
+        _wait(lambda: c.get(f"/api/yarnscope-live/saved/job/{r['job_id']}").json().get("state") == "done")
+        r = c.get(f"/api/yarnscope-live/saved/job/{r['job_id']}").json()["view"]
+    else:
+        r = r["view"]
+    assert [ch["items"][0]["old"] for ch in r["changes"]] == [None] and len(r["pauses"]) == 1
+    assert r["machine"]["name"] == "RPR 3SDS"

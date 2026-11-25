@@ -18,7 +18,7 @@ type Sensor = { key: string; head: string; connector: string; axes: number; titl
 type ErrJson = { code: string; detail: string; vars?: Record<string, string | number> };
 type Setup = { can_write: boolean; boxes: Box[]; box_error: ErrJson | null; sensors: Sensor[]; window_m: number;
   window_range: [number, number]; speed_range: [number, number]; manual_dir: string; save_limit_m: number; running: boolean; default_distance_mm?: number;
-  zeros?: Kept[] };
+  zeros?: Kept[]; machines?: { id: number; name: string }[] };
 type SensorRow = { fpm: number | null; cv: number | null; mean_um: number | null;
   /** thickness minus the empty value (2026-11-24): whole window, open (bulky) parts, knots - null without an empty value */
   d_um?: number | null; d_bulk?: number | null; d_knot?: number | null };
@@ -31,7 +31,16 @@ type View = { state: string; error: ErrJson | null; rows: Row[]; n_rows: number;
   distance_mm?: number | null; save?: boolean; save_stopped?: boolean; files?: string[]; name?: string; user?: string;
   bookmarks?: Bookmark[]; bookmark_range?: [number, number]; bookmark_m?: number;
   /** a saved run loaded again (2026-11-24): file, when it was measured, exact = rows from its side file */
-  loaded?: string; loaded_at?: string | null; exact?: boolean };
+  loaded?: string; loaded_at?: string | null; exact?: boolean;
+  /** pause / change log (2026-11-25) */
+  paused?: boolean; pauses?: LivePause[]; machine?: { id: number; name: string } | null; changes?: LiveChange[] };
+type LivePause = { at: string; at_m: number; until: string | null };
+type LiveChange = { id: number; at: string; at_m: number; note: string;
+  items: { key: string; label: string; old: string | null; new: string }[] };
+type LField = { key: string; label: string; rd: boolean; rule: string | null; choices: [number, string][] | null };
+/** "Air Pressure (bar) 3 → 3.4 · Jet LB-04 · note" (= ui/yarnscope/live_log.summary) */
+const changeText = (c: LiveChange) => [...c.items.map((it) => it.old != null && it.old !== "" ? `${it.label} ${it.old} → ${it.new}` : `${it.label} ${it.new}`),
+  ...(c.note ? [c.note] : [])].join(" · ");
 type SavedRun = { file: string; at: string | null; meters: number | null; sensors: { head: string; connector: string }[] | null;
   window_m: number | null; exact: boolean; n_rows: number | null };
 type Recent = { series: number; eid: string; name: string };
@@ -43,7 +52,8 @@ type TResult = { trial_id: number; vno: number; series_id: number; file: string 
 
 const PREF = "tripplet.yarnscopeLive";
 type Prefs = { box?: string; sensor?: string; second?: string; distance?: string; speed?: string; window?: string;
-  save?: boolean; name?: string; kind?: "dty" | "aty"; auto?: boolean; bmLen?: string; bmName?: string; bmSeries?: string };
+  save?: boolean; name?: string; kind?: "dty" | "aty"; auto?: boolean; bmLen?: string; bmName?: string; bmSeries?: string;
+  machine?: string };
 const loadPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREF) || "{}"); } catch { return {}; } };
 const savePrefs = (p: Prefs) => { try { localStorage.setItem(PREF, JSON.stringify(p)); } catch { /* storage blocked */ } };
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
@@ -71,6 +81,8 @@ export default function YarnScopeLive() {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [bmLen, setBmLen] = useState(prefs.current.bmLen ?? "100");
+  const [machine, setMachine] = useState(prefs.current.machine ?? "");
+  const [changeOpen, setChangeOpen] = useState(false);
   const [bmSel, setBmSel] = useState<number | null>(null);
   const [bmMsg, setBmMsg] = useState<string | null>(null);
   const [dlg, setDlg] = useState<{ kind: "trial"; bm: Bookmark | null } | { kind: "file"; bm: Bookmark } | null>(null);
@@ -161,13 +173,13 @@ export default function YarnScopeLive() {
     if (!autoOn && !(num(speed) >= lo && num(speed) <= hi)) { setErr(t("ms.err.bad_speed", { lo, hi })); return; }
     const zNow = zero ?? await serverZero("/api/yarnscope-live/setup", box, sens, setup.sensors.find((x) => x.key === sec));
     if (!zNow && !window.confirm(t("yl.noZeroAsk"))) return;
-    prefs.current = { box, sensor, second, distance, speed, window: win, save, name, kind, auto };
+    prefs.current = { ...prefs.current, box, sensor, second, distance, speed, window: win, save, name, kind, auto, machine };
     savePrefs(prefs.current);
     setBusy(true); setErr(null);
     try {
       const v = await request<View>("POST", "/api/yarnscope-live/start", { box, sensor, second: sec || undefined,
         speed: autoOn ? undefined : num(speed), auto_speed: autoOn, distance: num(distance) > 0 ? num(distance) : undefined,
-        window: num(win) || 30, save, name: name.trim(), kind });
+        window: num(win) || 30, save, name: name.trim(), kind, machine_id: machine ? Number(machine) : undefined });
       nRows.current = 0;
       setRows([]);
       setView(v);
@@ -192,6 +204,13 @@ export default function YarnScopeLive() {
     try { await request("DELETE", `/api/yarnscope-live/bookmark/${b.id}`); if (bmSel === b.id) setBmSel(null); await refresh(); }
     catch (e) { setErr(errMsg(e)); }
   };
+  const pauseIt = async (on: boolean) => {
+    try { setView(await request<View>("POST", on ? "/api/yarnscope-live/pause" : "/api/yarnscope-live/resume")); await refresh(); }
+    catch (e) { setErr(errMsg(e)); }
+  };
+  const delChange = async (c: LiveChange) => {
+    try { await request("DELETE", `/api/yarnscope-live/change/${c.id}`); await refresh(); } catch (e) { setErr(errMsg(e)); }
+  };
   const stopIt = async () => {
     setBusy(true);
     try { setView(await request<View>("POST", "/api/yarnscope-live/stop")); } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
@@ -213,10 +232,18 @@ export default function YarnScopeLive() {
       const mid = (lo + hi) / 2, half = Math.max((hi - lo) / 2 * 1.15, Math.abs(v.reduce((a, b) => a + b, 0) / v.length) * rel);
       return [floor ? Math.max(floor[0], mid - half) : mid - half, mid + half];
     };
-    const shapes = (view?.bookmarks ?? []).map((b) => ({ type: "line", x0: b.at_m, x1: b.at_m, yref: "paper", y0: 0, y1: 1,
-      line: { color: "#e0a100", width: 2, dash: "dot" } }));
-    const notes = (view?.bookmarks ?? []).map((b) => ({ x: b.at_m, y: 1, yref: "paper", text: `📌${b.id}`, showarrow: false,
-      font: { size: 10 }, yanchor: "bottom" }));
+    const vline = (xv: number, color: string, dash: string) => ({ type: "line", x0: xv, x1: xv, yref: "paper", y0: 0, y1: 1,
+      line: { color, width: 2, dash } });
+    const shapes = [...(view?.bookmarks ?? []).map((b) => vline(b.at_m, "#e0a100", "dot")),
+      ...(view?.changes ?? []).map((c) => vline(c.at_m, "#2a78d6", "solid")),
+      ...(view?.pauses ?? []).map((pz) => vline(pz.at_m, "#999999", "dash"))];
+    const short = (txt: string) => txt.length > 28 ? txt.slice(0, 27) + "…" : txt;
+    const notes = [...(view?.bookmarks ?? []).map((b) => ({ x: b.at_m, y: 1, yref: "paper", text: `📌${b.id}`, showarrow: false,
+      font: { size: 10 }, yanchor: "bottom" })),
+      ...(view?.changes ?? []).map((c, k) => ({ x: c.at_m, y: 0.98 - (k % 3) * 0.09, yref: "paper", text: short(changeText(c)), showarrow: false,
+        font: { size: 10, color: "#2a78d6" }, xanchor: "left", bgcolor: "rgba(255,255,255,0.75)", hovertext: changeText(c) })),
+      ...(view?.pauses ?? []).map((pz) => ({ x: pz.at_m, y: 0.02, yref: "paper", text: "⏸", showarrow: false, font: { size: 11 },
+        yanchor: "bottom" }))];
     const lay = (title: string, yr?: [number, number]) => ({ margin: { l: 46, r: 8, t: 30, b: 34 },
       title: { text: title, font: { size: 12 }, y: 0.97 }, showlegend: two, legend: { orientation: "h", y: -0.28, font: { size: 10 } },
       xaxis: { title: { text: "m", standoff: 2 } }, yaxis: yr ? { range: yr } : {}, shapes, annotations: notes });
@@ -237,7 +264,7 @@ export default function YarnScopeLive() {
         dline(rows.map((r) => r.sensors[i]?.d_knot), i, `${nm} ${t("yl.knot")}`, true)]),
         layout: { ...lay(`${t("yl.thick")} µm`, range(dv, 0.05)), showlegend: true } }] : []),
     ];
-  }, [rows, view?.sensors, view?.bookmarks, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows, view?.sensors, view?.bookmarks, view?.changes, view?.pauses, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const lock = running || busy;
   return (
@@ -251,6 +278,8 @@ export default function YarnScopeLive() {
           <button className="btn-plain" onClick={backToLive}>{t("yl.backLive")}</button>
         </div>)}
       {loadOpen && <LoadDialog kind={kind} errMsg={errMsg} onClose={() => setLoadOpen(false)} onLoaded={showLoaded} />}
+      {changeOpen && view && <ChangeDialog view={view} machines={setup?.machines ?? []} errMsg={errMsg} onClose={() => setChangeOpen(false)}
+        onDone={() => { setChangeOpen(false); void refresh(); }} />}
       <p className="muted">{t("yl.info")}</p>
       <div className="yl-grid">
         <div className="card yl-form">
@@ -289,6 +318,11 @@ export default function YarnScopeLive() {
               {save && <><input type="text" className="ms-name" value={name} disabled={lock} maxLength={60} onChange={(e) => setName(e.target.value)} />
                 <span className="jr-seg">{(["dty", "aty"] as const).map((k) => <button key={k} className={kind === k ? "on" : ""} disabled={lock} onClick={() => setKind(k)}>{k.toUpperCase()}</button>)}</span></>}
             </div>
+            <label>{t("yl.machine")}</label>
+            <select value={machine} disabled={lock} onChange={(e) => setMachine(e.target.value)} title={t("yl.machineHint")}>
+              <option value="">{t("yl.machineNone")}</option>
+              {(setup.machines ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
           </div>)}
           {save && setup && <p className="muted small">{t("yl.saveHint", { dir: setup.manual_dir, max: setup.save_limit_m })}</p>}
           {setup && (<div className="ms-step">
@@ -298,7 +332,11 @@ export default function YarnScopeLive() {
           </div>)}
           <div className="modal-buttons">
             {!running ? <button className="btn-green" disabled={!setup?.can_write || !box || !sens || busy} onClick={() => void start()}>▶ {t("yl.start")}</button>
-              : <button className="btn-red" disabled={busy || view?.state === "stopping"} onClick={() => void stopIt()}>■ {t("yl.stop")}</button>}
+              : <>
+                <button className="btn-plain" disabled={busy || view?.state === "stopping"} onClick={() => void pauseIt(!view?.paused)}>
+                  {view?.paused ? `▶ ${t("yl.resume")}` : `⏸ ${t("yl.pause")}`}</button>
+                <button className="btn-red" disabled={busy || view?.state === "stopping"} onClick={() => void stopIt()}>■ {t("yl.stop")}</button>
+              </>}
           </div>
           {setup && !setup.can_write && <p className="ms-warn">{t("tl.writeNeeded")}</p>}
           {err && <div className="login-error">{err}</div>}
@@ -308,7 +346,9 @@ export default function YarnScopeLive() {
         <div className="yl-dash">
           <div className="yl-status small">
             {view ? <>
-              <b>{t(`yl.state.${view.state}`)}</b> · {fmt(view.meters, 0)} m · {fmt(view.seconds, 0)} s · {fmt(view.rate, 1)} Hz
+              <b>{t(`yl.state.${view.state}`)}</b>{view.paused && <b className="yl-paused"> · ⏸ {t("yl.pausedState")}</b>}
+              {" · "}{fmt(view.meters, 0)} m · {fmt(view.seconds, 0)} s · {fmt(view.rate, 1)} Hz
+              {view.machine && <> · {view.machine.name}</>}
               {view.user ? ` · ${view.user}` : ""}
               {view.save_stopped && <span className="ms-warn"> · {t("yl.saveStopped")}</span>}
               {!!view.files?.length && <div>{t("yl.saved", { files: view.files.join(", ") })}</div>}
@@ -367,6 +407,27 @@ export default function YarnScopeLive() {
                         <button className="btn-plain" title={t("yl.bmDelete")} aria-label={t("yl.bmDelete")} disabled={view?.state === "loaded"} onClick={(e) => { e.stopPropagation(); void unmark(b); }}>✕</button>
                       </td></tr>))}</tbody>
                 </table></div>)}
+            </div>)}
+          {view && (
+            <div className="yl-log card">
+              <div className="yl-markbar">
+                <b>{t("yl.log")}</b>
+                <button className="btn-plain" disabled={!setup?.can_write || view.state === "loaded" || !(running || view.state === "done")}
+                  onClick={() => setChangeOpen(true)}>✎ {t("yl.change")}</button>
+                <span className="small muted">{t("yl.logHint")}</span>
+              </div>
+              {!(view.changes?.length || view.pauses?.length) ? <p className="muted small">{t("yl.logNone")}</p> : (
+                <div className="yl-table-wrap"><table className="yl-table yl-logtable"><tbody>
+                  {[...(view.changes ?? []).map((c) => ({ at: c.at, m: c.at_m, c, pz: null as LivePause | null })),
+                    ...(view.pauses ?? []).map((pz) => ({ at: pz.at, m: pz.at_m, c: null as LiveChange | null, pz }))]
+                    .sort((a, b) => a.at.localeCompare(b.at)).map((e, k) => (
+                      <tr key={k}><td>{e.at.slice(11, 16)}</td><td>{fmt(e.m, 0)} m</td>
+                        <td className={e.c ? "yl-logchange" : "muted"}>{e.c ? changeText(e.c)
+                          : t("yl.pauseRow", { from: e.pz!.at.slice(11, 16), to: e.pz!.until ? e.pz!.until.slice(11, 16) : "…" })}</td>
+                        <td>{e.c && view.state !== "loaded" && setup?.can_write && (
+                          <button className="btn-plain" title={t("yl.changeDelete")} aria-label={t("yl.changeDelete")} onClick={() => void delChange(e.c!)}>✕</button>)}</td>
+                      </tr>))}
+                </tbody></table></div>)}
             </div>)}
           {rows.length > 0 && <div className="yl-charts">{charts.map((c, i) => (
             <div key={i} className="yl-chart">
@@ -535,6 +596,97 @@ function LiveTrialDialog({ bm, bookmarks, prefs, errMsg, onClose, onDone }: {
 
 /** "Messung laden": the saved live runs of the DTY / ATY _manual folder; with a side file at once, otherwise analysed
  *  again on the server with progress (sensor_live.load_saved). */
+/** "✎ Änderung": what was changed, at the current metre - the machine's Machine Data fields (+ free ones) and a note.
+ *  Does not pause the recording (user's choice 2026-11-25). Server: live_log via /api/yarnscope-live/change. */
+type CRow = { key: string; value: string };
+function ChangeDialog({ view, machines, errMsg, onClose, onDone }: {
+  view: View; machines: { id: number; name: string }[]; errMsg: (e: unknown) => string; onClose: () => void; onDone: () => void }) {
+  const { t } = useI18n();
+  const [fields, setFields] = useState<LField[] | null>(null);
+  const [machineId, setMachineId] = useState(view.machine ? String(view.machine.id) : "");
+  const [rows, setRows] = useState<CRow[]>([{ key: "", value: "" }]);
+  const [free, setFree] = useState<{ name: string; value: string }[]>([]);
+  const [note, setNote] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const cur: Record<string, string> = {};
+  for (const c of view.changes ?? []) for (const it of c.items) cur[it.key] = it.new;
+  useEffect(() => {
+    if (!machineId) { setFields([]); return; }
+    setFields(null);
+    request<{ fields: LField[] }>("GET", `/api/yarnscope-live/fields?machine=${machineId}`).then((r) => setFields(r.fields))
+      .catch((e) => { setErr(errMsg(e)); setFields([]); });
+  }, [machineId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const chooseMachine = async (v: string) => {
+    setMachineId(v); setErr(null);
+    try { await request("POST", "/api/yarnscope-live/machine", { machine_id: v ? Number(v) : null }); } catch (e) { setErr(errMsg(e)); }
+  };
+  const save = async () => {
+    setBusy(true); setErr(null);
+    try {
+      await request("POST", "/api/yarnscope-live/change", { items: rows.filter((r) => r.key), free: free.filter((f) => f.name.trim() || f.value.trim()), note });
+      onDone();
+    } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
+  };
+  const fld = (k: string) => (fields ?? []).find((f) => f.key === k);
+  return (
+    <Modal title={t("yl.changeTitle")} onClose={onClose} wide>
+      <p className="muted small">{t("yl.changeHint", { m: fmt(view.meters, 0) })}</p>
+      <div className="ms-form">
+        <label htmlFor="yl-cm">{t("yl.machine")}</label>
+        <select id="yl-cm" value={machineId} onChange={(e) => void chooseMachine(e.target.value)}>
+          <option value="">{t("yl.machineNone")}</option>
+          {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+        </select>
+      </div>
+      {machineId && fields === null && <p className="muted">{t("app.loading")}</p>}
+      <div className="yl-cols-wrap"><table className="yl-cols"><tbody>
+        {!!machineId && rows.map((r, i) => {
+          const f = fld(r.key);
+          return (
+            <tr key={i}>
+              <td><select aria-label={t("yl.changeField")} value={r.key}
+                onChange={(e) => setRows((cur2) => cur2.map((x, k) => k === i ? { key: e.target.value, value: "" } : x))}>
+                <option value="">{t("yl.changeField")}…</option>
+                {(fields ?? []).map((ff) => <option key={ff.key} value={ff.key}>{ff.label}{ff.rd ? " (R&D)" : ""}</option>)}
+              </select></td>
+              <td>{f?.choices ? (
+                <select aria-label={t("yl.changeValue")} value={r.value} onChange={(e) => setRows((cur2) => cur2.map((x, k) => k === i ? { ...x, value: e.target.value } : x))}>
+                  <option value="" />{f.choices.map(([k, n]) => <option key={k} value={String(k)}>{n}</option>)}
+                </select>) : <input aria-label={t("yl.changeValue")} type="text" value={r.value} placeholder={t("yl.changeValue")} disabled={!r.key}
+                  onChange={(e) => setRows((cur2) => cur2.map((x, k) => k === i ? { ...x, value: e.target.value } : x))} />}</td>
+              <td className="small muted">{r.key && cur[r.key] != null ? `${t("yl.changeNow")}: ${cur[r.key]}` : ""}</td>
+              <td>{rows.length > 1 && <button className="yl-colx" aria-label={t("yl.changeDelete")}
+                onClick={() => setRows((cur2) => cur2.filter((_x, k) => k !== i))}>✕</button>}</td>
+            </tr>);
+        })}
+        {free.map((f, i) => (
+          <tr key={"f" + i}>
+            <td><input aria-label={t("yl.freeName")} type="text" maxLength={40} value={f.name} placeholder={t("yl.freeName")}
+              onChange={(e) => setFree((cur2) => cur2.map((x, k) => k === i ? { ...x, name: e.target.value } : x))} /></td>
+            <td><input aria-label={t("yl.changeValue")} type="text" maxLength={60} value={f.value} placeholder={t("yl.changeValue")}
+              onChange={(e) => setFree((cur2) => cur2.map((x, k) => k === i ? { ...x, value: e.target.value } : x))} /></td>
+            <td className="small muted">{f.name && cur["free:" + f.name.trim()] != null ? `${t("yl.changeNow")}: ${cur["free:" + f.name.trim()]}` : ""}</td>
+            <td><button className="yl-colx" aria-label={t("yl.changeDelete")} onClick={() => setFree((cur2) => cur2.filter((_x, k) => k !== i))}>✕</button></td>
+          </tr>))}
+      </tbody></table></div>
+      <div className="ms-row">
+        {!!machineId && <button className="btn-plain" onClick={() => setRows((cur2) => [...cur2, { key: "", value: "" }])}>{t("yl.changeAdd")}</button>}
+        <button className="btn-plain" onClick={() => setFree((cur2) => [...cur2, { name: "", value: "" }])}>{t("yl.changeFree")}</button>
+      </div>
+      <div className="ms-form">
+        <label htmlFor="yl-cnote">{t("yl.changeNote")}</label>
+        <textarea id="yl-cnote" rows={2} maxLength={300} value={note} onChange={(e) => setNote(e.target.value)} />
+      </div>
+      {err && <div className="login-error">{err}</div>}
+      <div className="modal-buttons">
+        <button className="btn-plain" onClick={onClose}>{t("cm.cancel")}</button>
+        <button className="btn-green" disabled={busy} onClick={() => void save()}>{t("yl.changeSave")}</button>
+      </div>
+    </Modal>
+  );
+}
+
 function LoadDialog({ kind: kind0, errMsg, onClose, onLoaded }: {
   kind: "dty" | "aty"; errMsg: (e: unknown) => string; onClose: () => void; onLoaded: (v: View) => void }) {
   const { t } = useI18n();

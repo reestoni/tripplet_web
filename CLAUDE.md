@@ -519,6 +519,16 @@ bei Auto-Speed nur Mittelwert) und die Zusatzdatei danach geschrieben. `saved_ru
 Partner-/Merk-Dateien); Dateiname geprüft (`_check_file`). Web `GET /api/yarnscope-live/saved`, `POST /saved/load` (sofort `view` oder `job_id`),
 `GET /saved/job/{id}`; Seite: "Messung laden…", Banner "Geladen … / Zurück zur Live-Ansicht", Polling pausiert. Desktop: `LoadRunDialog` (Fortschritt über
 `_Job`), `SensorLiveWindow._loaded`/`_view()`.
+**Live: Pause + Protokoll** (2026-11-25, beide Apps, Nutzerwunsch "wie eine kleine Doku", Variante B): "⏸ Pause"/"▶ Weiter" in derselben Messung
+und Datei (`LiveSession.pause/resume`: keine Meter, nichts in Datei/Merk-Puffer, angefangenes Fenster verworfen über den Queue-Marker `_RESET`; Pause =
+eine Meterstelle, grau gestrichelt). Maschine vor dem Start wählen (`machine_id`); "✎ Änderung…" pausiert NICHT und trägt beim aktuellen Meter ein:
+Machine-Data-Felder der Maschine (`live_log.field_catalog`: Housing/Jet/Jet Plate/Air + `tblMachineFields`, Dropdowns über `machine_data.lookup_map`,
+Prüfung wie Kopieren `trial_copy.normalize_value`), freie Felder (Name ≤ 40, Wert ≤ 60), Notiz; alter -> neuer Wert, Löschen rechnet die alten Werte neu.
+Logik `ui/yarnscope/live_log.py` (`LiveLog`, `summary`); `pauses`/`machine`/`changes` in `view()` und in der Zusatzdatei (nach dem Lauf neu geschrieben),
+`load_saved` zeigt sie wieder. Blaue Linien + Kurztext in den Diagrammen, Liste "Protokoll". Web `/api/yarnscope-live/pause|resume|fields?machine=|machine|change`,
+DELETE `/change/{id}` (Pause/Weiter nur Starter oder Superuser, Protokoll ab Recht Versuche bearbeiten); Seite `ChangeDialog` in `YarnScopeLive.tsx`. Desktop
+Knopf + Maschine + Protokoll-Tabelle in `sensor_live_window.py`, `ChangeDialog`. Tests: Desktop `test_sensor_live.py::test_pause_resume_and_change_log`,
+`::test_desktop_pause_and_change_dialog`; Web `test_sensor_live_api.py::test_pause_and_change_log`. Idee offen: Versuchswerte aus dem Protokoll vorbelegen.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

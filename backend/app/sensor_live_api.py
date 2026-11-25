@@ -48,7 +48,15 @@ def setup(user: Dict[str, Any] = Depends(_feature)):
             "window_m": sl.WINDOW_M, "window_range": list(sl.WINDOW_RANGE), "speed_range": list(sm.SPEED_RANGE),
             "manual_dir": sm.MANUAL_DIR, "save_limit_m": sl.SAVE_LIMIT_M,
             "running": bool(cur and cur.state in ("running", "stopping")),
-            "default_distance_mm": DEFAULT_DISTANCE_MM, "zeros": _zeros()}
+            "default_distance_mm": DEFAULT_DISTANCE_MM, "zeros": _zeros(), "machines": _machines()}
+
+
+def _machines():
+    try:
+        from ui.yarnscope import live_log
+        return live_log.machines()
+    except Exception:  # noqa: BLE001 - no DB: the run works without a change log machine
+        return []
 
 
 class ZeroBody(BaseModel):
@@ -87,6 +95,7 @@ class StartBody(BaseModel):
     save: bool = True
     name: str = "live"
     kind: str = "dty"
+    machine_id: Optional[int] = None       # change log: its Machine Data fields (2026-11-25)
 
 
 @router.post("/start")
@@ -100,7 +109,7 @@ def start(body: StartBody, user: Dict[str, Any] = Depends(_feature)):
         s = sl.start(box=body.box, head_name=p["head"], connector=p["connector"], speed_m_min=body.speed,
                      distance_mm=body.distance, window_m=body.window, save=body.save, name=body.name, kind=body.kind,
                      user={"id": user.get("id"), "username": user.get("username")}, auto_speed=body.auto_speed,
-                     **_second_kw(p2))
+                     machine_id=body.machine_id, **_second_kw(p2))
     except sm.MeasureError as e:
         return _merr(e)
     return s.view()
@@ -365,3 +374,103 @@ def saved_job(job_id: str, user: Dict[str, Any] = Depends(_feature)):
     if job is None or job["user"] != user.get("id"):
         return _err(404, "no_job", "Unknown job.")
     return {k: v for k, v in job.items() if k != "user"}
+
+
+# ------------------------------------------------------------------------------------ pause / change log
+# Nutzerwunsch 2026-11-25: pause and go on in the same run; log what was changed (machine fields + free ones + note) -
+# markers on the charts, kept with the saved run. A change does not pause (user's choice).
+def _mine(s, user) -> bool:
+    return (s.user.get("id") == user.get("id")) or int(user.get("access_level") or 0) >= 4
+
+
+@router.post("/pause")
+def pause(user: Dict[str, Any] = Depends(_feature)):
+    s, err = _session_or_err()
+    if err:
+        return err
+    if not _mine(s, user):
+        return _err(403, "not_yours", "Started by someone else.", user=s.user.get("username") or "")
+    try:
+        return s.pause()
+    except sm.MeasureError as e:
+        return _merr(e)
+
+
+@router.post("/resume")
+def resume(user: Dict[str, Any] = Depends(_feature)):
+    s, err = _session_or_err()
+    if err:
+        return err
+    if not _mine(s, user):
+        return _err(403, "not_yours", "Started by someone else.", user=s.user.get("username") or "")
+    return s.resume()
+
+
+@router.get("/fields")
+def fields(machine: int, user: Dict[str, Any] = Depends(_feature)):
+    from ui.yarnscope import live_log
+    try:
+        return {"fields": live_log.field_catalog(machine)}
+    except Exception as e:  # noqa: BLE001
+        return _err(500, "fields_failed", str(e)[:200])
+
+
+class MachineBody(BaseModel):
+    machine_id: Optional[int] = None
+
+
+@router.post("/machine")
+def machine(body: MachineBody, user: Dict[str, Any] = Depends(_feature)):
+    if not ta.can_edit_trials(user):
+        return _err(403, "read_only", "Write access required.")
+    s, err = _session_or_err()
+    if err:
+        return err
+    try:
+        return s.set_machine(body.machine_id)
+    except sm.MeasureError as e:
+        return _merr(e)
+
+
+class ChangeItem(BaseModel):
+    key: str
+    value: Optional[str] = None
+
+
+class FreeItem(BaseModel):
+    name: str = ""
+    value: str = ""
+
+
+class ChangeBody(BaseModel):
+    items: list[ChangeItem] = []
+    free: list[FreeItem] = []
+    note: str = ""
+
+
+@router.post("/change")
+def change(body: ChangeBody, user: Dict[str, Any] = Depends(_feature)):
+    if not ta.can_edit_trials(user):
+        return _err(403, "read_only", "Write access required.")
+    s, err = _session_or_err()
+    if err:
+        return err
+    try:
+        return s.add_change([i.model_dump() for i in body.items], [f.model_dump() for f in body.free], body.note)
+    except sm.MeasureError as e:
+        return _merr(e)
+
+
+@router.delete("/change/{cid}")
+def change_delete(cid: int, user: Dict[str, Any] = Depends(_feature)):
+    if not ta.can_edit_trials(user):
+        return _err(403, "read_only", "Write access required.")
+    s, err = _session_or_err()
+    if err:
+        return err
+    try:
+        s.delete_change(cid)
+    except sm.MeasureError as e:
+        return _merr(e)
+    return {"ok": True}
+
