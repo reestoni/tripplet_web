@@ -53,7 +53,7 @@ type TResult = { trial_id: number; vno: number; series_id: number; file: string 
 const PREF = "tripplet.yarnscopeLive";
 type Prefs = { box?: string; sensor?: string; second?: string; distance?: string; speed?: string; window?: string;
   save?: boolean; name?: string; kind?: "dty" | "aty"; auto?: boolean; bmLen?: string; bmName?: string; bmSeries?: string;
-  machine?: string };
+  machine?: string; span?: string; spanAll?: boolean };
 const loadPrefs = (): Prefs => { try { return JSON.parse(localStorage.getItem(PREF) || "{}"); } catch { return {}; } };
 const savePrefs = (p: Prefs) => { try { localStorage.setItem(PREF, JSON.stringify(p)); } catch { /* storage blocked */ } };
 const headLabel = (h: string) => { const p = h.split("_"); return p.length >= 3 ? `${p[0]} ${p[1]}-${p[2]}` : h; };
@@ -82,6 +82,10 @@ export default function YarnScopeLive() {
   const [busy, setBusy] = useState(false);
   const [bmLen, setBmLen] = useState(prefs.current.bmLen ?? "100");
   const [machine, setMachine] = useState(prefs.current.machine ?? "");
+  // charts: all data or only the last N m, rolling (Nutzerwunsch 2026-11-26) - per browser, also for loaded runs
+  const [spanAll, setSpanAll] = useState(prefs.current.spanAll ?? true);
+  const [span, setSpan] = useState(prefs.current.span ?? "300");
+  useEffect(() => { prefs.current = { ...prefs.current, span, spanAll }; savePrefs(prefs.current); }, [span, spanAll]);
   const [changeOpen, setChangeOpen] = useState(false);
   const [bmSel, setBmSel] = useState<number | null>(null);
   const [bmMsg, setBmMsg] = useState<string | null>(null);
@@ -218,8 +222,18 @@ export default function YarnScopeLive() {
 
   const two = (view?.sensors?.length ?? 0) > 1;
   const last = rows[rows.length - 1];
-  const x = rows.map((r) => r.to_m);
+  const spanM = Math.max(10, num(span) || 300);
+  const endM = last?.to_m ?? 0;
+  const fromM = spanAll ? -Infinity : endM - spanM;
+  const crows = spanAll ? rows : rows.filter((r) => r.to_m >= fromM);
+  const x = crows.map((r) => r.to_m);
+  // full-size chart: the change texts next to the triangles
+  const changeLabels = (view?.changes ?? []).filter((c) => c.at_m >= fromM).map((c, k) => ({ x: c.at_m, y: 0.93 - (k % 3) * 0.08,
+    yref: "paper", text: changeText(c).length > 40 ? changeText(c).slice(0, 39) + "…" : changeText(c), showarrow: false,
+    font: { size: 11, color: "#2a78d6" }, xanchor: "left", bgcolor: "rgba(255,255,255,0.75)", hovertext: changeText(c) }));
   const charts = useMemo(() => {
+    const rows = crows;
+    const inSpan = (m: number) => m >= fromM;
     const line = (y: (number | null | undefined)[], i: number, nm: string) =>
       ({ type: "scatter", mode: "lines+markers", x, y, name: nm, line: { color: COLORS[i], width: 2 }, marker: { size: 5 } });
     // y axis with a MINIMUM span around the values, so 0.5 knots more does not look like a jump (user 2026-11-23):
@@ -234,19 +248,22 @@ export default function YarnScopeLive() {
     };
     const vline = (xv: number, color: string, dash: string) => ({ type: "line", x0: xv, x1: xv, yref: "paper", y0: 0, y1: 1,
       line: { color, width: 2, dash } });
-    const shapes = [...(view?.bookmarks ?? []).map((b) => vline(b.at_m, "#e0a100", "dot")),
-      ...(view?.changes ?? []).map((c) => vline(c.at_m, "#2a78d6", "solid")),
-      ...(view?.pauses ?? []).map((pz) => vline(pz.at_m, "#999999", "dash"))];
-    const short = (txt: string) => txt.length > 28 ? txt.slice(0, 27) + "…" : txt;
-    const notes = [...(view?.bookmarks ?? []).map((b) => ({ x: b.at_m, y: 1, yref: "paper", text: `📌${b.id}`, showarrow: false,
+    const bms = (view?.bookmarks ?? []).filter((b) => inSpan(b.at_m));
+    const chs = (view?.changes ?? []).filter((c) => inSpan(c.at_m));
+    const pzs = (view?.pauses ?? []).filter((pz) => inSpan(pz.at_m));
+    const shapes = [...bms.map((b) => vline(b.at_m, "#e0a100", "dot")),
+      ...chs.map((c) => ({ ...vline(c.at_m, "rgba(42,120,214,0.35)", "dot"), line: { color: "rgba(42,120,214,0.35)", width: 1, dash: "dot" } })),
+      ...pzs.map((pz) => vline(pz.at_m, "#999999", "dash"))];
+    const notes = [...bms.map((b) => ({ x: b.at_m, y: 1, yref: "paper", text: `📌${b.id}`, showarrow: false,
       font: { size: 10 }, yanchor: "bottom" })),
-      ...(view?.changes ?? []).map((c, k) => ({ x: c.at_m, y: 0.98 - (k % 3) * 0.09, yref: "paper", text: short(changeText(c)), showarrow: false,
-        font: { size: 10, color: "#2a78d6" }, xanchor: "left", bgcolor: "rgba(255,255,255,0.75)", hovertext: changeText(c) })),
-      ...(view?.pauses ?? []).map((pz) => ({ x: pz.at_m, y: 0.02, yref: "paper", text: "⏸", showarrow: false, font: { size: 11 },
+      // a setting was changed: small triangle at the top (Nutzerwunsch 2026-11-26), the text on hover
+      ...chs.map((c) => ({ x: c.at_m, y: 1, yref: "paper", text: "▼", showarrow: false, yanchor: "top",
+        font: { size: 13, color: "#2a78d6" }, hovertext: changeText(c), captureevents: true })),
+      ...pzs.map((pz) => ({ x: pz.at_m, y: 0.02, yref: "paper", text: "⏸", showarrow: false, font: { size: 11 },
         yanchor: "bottom" }))];
     const lay = (title: string, yr?: [number, number]) => ({ margin: { l: 46, r: 8, t: 30, b: 34 },
       title: { text: title, font: { size: 12 }, y: 0.97 }, showlegend: two, legend: { orientation: "h", y: -0.28, font: { size: 10 } },
-      xaxis: { title: { text: "m", standoff: 2 } }, yaxis: yr ? { range: yr } : {}, shapes, annotations: notes });
+      xaxis: { title: { text: "m", standoff: 2 }, ...(spanAll ? {} : { range: [Math.max(0, endM - spanM), endM] }) }, yaxis: yr ? { range: yr } : {}, shapes, annotations: notes });
     const names = (view?.sensors ?? []).map((s) => `${headLabel(s.head)} ${s.connector}`);
     const fpm = rows.flatMap((r) => r.sensors.map((s) => s.fpm));
     const cv = rows.flatMap((r) => r.sensors.map((s) => s.cv));
@@ -264,7 +281,7 @@ export default function YarnScopeLive() {
         dline(rows.map((r) => r.sensors[i]?.d_knot), i, `${nm} ${t("yl.knot")}`, true)]),
         layout: { ...lay(`${t("yl.thick")} µm`, range(dv, 0.05)), showlegend: true } }] : []),
     ];
-  }, [rows, view?.sensors, view?.bookmarks, view?.changes, view?.pauses, two, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [rows, view?.sensors, view?.bookmarks, view?.changes, view?.pauses, two, t, spanAll, spanM]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const lock = running || busy;
   return (
@@ -429,6 +446,16 @@ export default function YarnScopeLive() {
                       </tr>))}
                 </tbody></table></div>)}
             </div>)}
+          {rows.length > 0 && (
+            <div className="yl-span" role="group" aria-label={t("yl.span")}>
+              <span className="small muted">{t("yl.span")}</span>
+              <div className="jr-seg">
+                <button className={spanAll ? "on" : ""} aria-pressed={spanAll} onClick={() => setSpanAll(true)}>{t("yl.spanAll")}</button>
+                <button className={!spanAll ? "on" : ""} aria-pressed={!spanAll} onClick={() => setSpanAll(false)}>{t("yl.spanLast")}</button>
+              </div>
+              <input type="number" min={10} step={10} value={span} aria-label={t("yl.spanM")} className="yl-span-m"
+                onChange={(e) => { setSpan(e.target.value); setSpanAll(false); }} /> m
+            </div>)}
           {rows.length > 0 && <div className="yl-charts">{charts.map((c, i) => (
             <div key={i} className="yl-chart">
               <button className="yl-chart-max" title={t("yl.enlarge")} aria-label={t("yl.enlarge")} onClick={() => setBig(i)}>⤢</button>
@@ -441,7 +468,8 @@ export default function YarnScopeLive() {
                 <button className="btn-plain" onClick={() => setBig(null)}>✕ {t("yl.shrink")}</button>
               </div>
               <div className="yl-bigchart-plot"><Plot data={charts[big].data}
-                layout={{ ...charts[big].layout, title: undefined, margin: { l: 60, r: 20, t: 20, b: 50 } }} /></div>
+                layout={{ ...charts[big].layout, title: undefined, margin: { l: 60, r: 20, t: 20, b: 50 },
+                  annotations: [...((charts[big].layout as { annotations?: object[] }).annotations ?? []), ...changeLabels] }} /></div>
             </div>)}
           {rows.length > 0 && (
             <div className="yl-table-wrap"><table className="yl-table">

@@ -536,6 +536,10 @@ Logik `ui/yarnscope/live_log.py` (`LiveLog`, `summary`); `pauses`/`machine`/`cha
 DELETE `/change/{id}` (Pause/Weiter nur Starter oder Superuser, Protokoll ab Recht Versuche bearbeiten); Seite `ChangeDialog` in `YarnScopeLive.tsx`. Desktop
 Knopf + Maschine + Protokoll-Tabelle in `sensor_live_window.py`, `ChangeDialog`. Tests: Desktop `test_sensor_live.py::test_pause_resume_and_change_log`,
 `::test_desktop_pause_and_change_dialog`; Web `test_sensor_live_api.py::test_pause_and_change_log`. Idee offen: Versuchswerte aus dem Protokoll vorbelegen.
+**Live: rollendes Diagrammfenster + Änderungs-Dreiecke** (2026-11-26, nur Web): über den Diagrammen "alles / letzte … m" (localStorage
+`tripplet.yarnscopeLive` `spanAll`/`span`, Vorgabe alles bzw. 300 m, gilt auch für geladene Läufe; nur Diagramme, Tabelle zeigt alles; x-Achse fest
+[Ende − N, Ende], Markierungen ausserhalb weg). Änderungen = kleines blaues ▼ oben (Text beim Darüberfahren, in voller Grösse zusätzlich als Text),
+feine gepunktete Linie.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,
