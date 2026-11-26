@@ -18,7 +18,14 @@ Läuft **parallel** zur Desktop-App auf **derselben MySQL-Datenbank**.
   Maschinen-, Garnnamen) werden nicht übersetzt.
 - "Backlog" heisst auch auf Deutsch (und Spanisch) "Backlog" (Nutzerentscheid); Chinesisch 待办.
 
-## Grundregel ab 2026-11-14: jedes neue Feature in BEIDEN Apps
+## Ab 2026-11-26: NUR NOCH die Web-App weiterentwickeln
+
+**Nutzerentscheid 2026-11-26:** Die Web-App wird gepusht; neue Features und Korrekturen nur noch im Web. Die Desktop-App bleibt, wie sie
+ist (keine neuen Screens/Widgets, keine Desktop-Zwillinge, `PARITY.md` nicht mehr nachführen). Gemeinsame Qt-freie Logik darf weiter
+in `tripplet_project` entstehen (das Backend importiert sie) - dann dort committen und pushen, aber den Desktop nicht brechen.
+Fresh off the Spool weiter in `ui/widgets/whats_new_texts.py`. Der Abschnitt unten gilt nur noch historisch.
+
+## (Historisch) Grundregel 2026-11-14 bis 2026-11-25: jedes neue Feature in BEIDEN Apps
 
 **Ziel (Nutzerentscheid 2026-11-14):** Die Web-App ersetzt den Desktop. Sind alle Tests gut, wird die
 Desktop-App eingestellt. **Bis dahin muss jedes neue Feature und jede Änderung an bestehenden Funktionen
