@@ -166,6 +166,129 @@
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", add); else add();
   })();
 
+  // Jet drawing on hover over a legend entry (Nutzerwunsch 2026-11-26, web only): pictures / PDF first page stored with the
+  // jet in Manage Jets (app/jet_drawing.py). Box stays while the mouse is on the entry or the box; < > pages; Ctrl+click on
+  // the entry opens the drawing large in a new tab (instead of hiding the trace). Not a jet (other legends) = no box.
+  (function () {
+    var lang = "en";
+    try { lang = localStorage.getItem("tripplet.lang") || (navigator.language || "en").slice(0, 2); } catch (e) { /* blocked */ }
+    var T = { en: { none: "No drawing stored with this jet", load: "Loading…", tip: "Ctrl+click: open large", prev: "Previous", next: "Next" },
+      de: { none: "Keine Zeichnung bei dieser Düse hinterlegt", load: "Lädt…", tip: "Strg+Klick: gross öffnen", prev: "Zurück", next: "Weiter" },
+      es: { none: "No hay dibujo guardado para esta boquilla", load: "Cargando…", tip: "Ctrl+clic: abrir en grande", prev: "Anterior", next: "Siguiente" },
+      zh: { none: "此喷嘴未存储图纸", load: "加载中…", tip: "Ctrl+单击：大图打开", prev: "上一张", next: "下一张" } }[lang] || null;
+    if (!T) T = { none: "No drawing stored with this jet", load: "Loading…", tip: "Ctrl+click: open large", prev: "Previous", next: "Next" };
+    var cache = {}, box = null, cur = null, idx = 0, showT = null, hideT = null, onEntry = null;
+
+    function jetName(label) {
+      var n = String(label || "").replace(/\s*\[[^\]]*\]\s*$/, "").trim();   // "LB-04 [series]" (several series)
+      return n;
+    }
+    function fetchJet(name) {
+      if (cache[name]) return cache[name];
+      var q = fetch("/api/jet-drawings?name=" + encodeURIComponent(name), { credentials: "same-origin" })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (j && !j.jet_id && name.indexOf("::") > 0) return fetchJet(name.split("::")[0]);   // "jet::plate" keys
+          return j;
+        }).catch(function () { return null; });
+      cache[name] = q;
+      return q;
+    }
+    function ensureBox() {
+      if (box) return box;
+      var st = document.createElement("style");
+      st.textContent = "#jd-box{position:fixed;z-index:99999;background:#fff;border:1px solid #c8c8c8;border-radius:8px;" +
+        "box-shadow:0 6px 24px rgba(0,0,0,.18);padding:8px;font:12px/1.35 system-ui,sans-serif;color:#333;max-width:440px}" +
+        "#jd-box img{display:block;max-width:420px;max-height:340px;margin-top:6px;background:#fff}" +
+        "#jd-box .jd-head{display:flex;align-items:center;gap:6px}#jd-box .jd-head b{flex:1}" +
+        "#jd-box button{border:1px solid #c8c8c8;background:#fafafa;border-radius:4px;cursor:pointer;padding:1px 7px;font:inherit}" +
+        "#jd-box .jd-muted{color:#777}";
+      document.head.appendChild(st);
+      box = document.createElement("div");
+      box.id = "jd-box";
+      box.style.display = "none";
+      box.addEventListener("mouseenter", function () { clearTimeout(hideT); });
+      box.addEventListener("mouseleave", hideSoon);
+      document.body.appendChild(box);
+      return box;
+    }
+    function paint() {
+      var b = ensureBox(), j = cur && cur.data;
+      b.innerHTML = "";
+      var head = document.createElement("div");
+      head.className = "jd-head";
+      var t = document.createElement("b");
+      t.textContent = (j && j.name) || (cur && cur.name) || "";
+      head.appendChild(t);
+      if (j && j.files.length > 1) {
+        var pv = document.createElement("button"), nx = document.createElement("button"), n = document.createElement("span");
+        pv.textContent = "◀"; pv.title = T.prev; pv.setAttribute("aria-label", T.prev);
+        nx.textContent = "▶"; nx.title = T.next; nx.setAttribute("aria-label", T.next);
+        n.className = "jd-muted"; n.textContent = (idx + 1) + "/" + j.files.length;
+        pv.onclick = function () { idx = (idx + j.files.length - 1) % j.files.length; paint(); };
+        nx.onclick = function () { idx = (idx + 1) % j.files.length; paint(); };
+        head.appendChild(pv); head.appendChild(n); head.appendChild(nx);
+      }
+      b.appendChild(head);
+      if (!j) { var l = document.createElement("div"); l.className = "jd-muted"; l.textContent = T.load; b.appendChild(l); return; }
+      if (!j.files.length) { var e = document.createElement("div"); e.className = "jd-muted"; e.textContent = T.none; b.appendChild(e); return; }
+      var f = j.files[idx], cap = document.createElement("div"), img = document.createElement("img");
+      cap.className = "jd-muted"; cap.textContent = f.name + " · " + T.tip;
+      img.alt = f.name;
+      img.src = "/api/jet-drawings/file/" + f.id;
+      img.onload = function () { place(); };
+      b.appendChild(cap); b.appendChild(img);
+    }
+    function place() {
+      if (!box || !cur) return;
+      var w = box.offsetWidth, h = box.offsetHeight, x = cur.x + 16, y = cur.y + 16;
+      if (x + w > window.innerWidth - 8) x = Math.max(8, cur.x - w - 16);
+      if (y + h > window.innerHeight - 8) y = Math.max(8, window.innerHeight - h - 8);
+      box.style.left = x + "px"; box.style.top = y + "px";
+    }
+    function hideSoon() {
+      clearTimeout(showT); clearTimeout(hideT);
+      hideT = setTimeout(function () { if (box) box.style.display = "none"; cur = null; onEntry = null; }, 250);
+    }
+    function entryOf(target) {
+      var g = target && target.closest ? target.closest("g.legend g.traces") : null;
+      if (!g) return null;
+      var tx = g.querySelector("text.legendtext");
+      return tx ? { g: g, name: jetName(tx.textContent) } : null;
+    }
+    document.addEventListener("mouseover", function (ev) {
+      if (document.body.classList.contains("m-small")) return;          // touch screens: no hover
+      var e = entryOf(ev.target);
+      if (!e) { if (onEntry && !(box && box.contains(ev.target))) { onEntry = null; hideSoon(); } return; }
+      clearTimeout(hideT);
+      if (onEntry === e.g) return;
+      onEntry = e.g;
+      var x = ev.clientX, y = ev.clientY;
+      clearTimeout(showT);
+      showT = setTimeout(function () {
+        if (!e.name) return;
+        fetchJet(e.name).then(function (j) {
+          if (onEntry !== e.g || !j || !j.jet_id) return;                // not a jet: nothing
+          cur = { name: e.name, x: x, y: y, data: j }; idx = 0;
+          ensureBox().style.display = "block";
+          paint(); place();
+        });
+      }, 300);
+    }, true);
+    document.addEventListener("mousedown", function (ev) {
+      if (!(ev.ctrlKey || ev.metaKey)) return;
+      var e = entryOf(ev.target);
+      if (!e || !e.name) return;
+      ev.preventDefault(); ev.stopPropagation();                           // keep the trace visible
+      var win = window.open("", "_blank");                                 // opened now (pop-up blockers), filled below
+      fetchJet(e.name).then(function (j) {
+        if (!win) return;
+        if (j && j.files && j.files.length) win.location.href = "/api/jet-drawings/file/" + j.files[(cur && cur.data === j) ? idx : 0].id;
+        else win.close();
+      });
+    }, true);
+  })();
+
   // what the page expects from Qt
   window.qt = { webChannelTransport: null };
   window.QWebChannel = function (_transport, callback) {

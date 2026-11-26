@@ -540,6 +540,13 @@ Knopf + Maschine + Protokoll-Tabelle in `sensor_live_window.py`, `ChangeDialog`.
 `tripplet.yarnscopeLive` `spanAll`/`span`, Vorgabe alles bzw. 300 m, gilt auch für geladene Läufe; nur Diagramme, Tabelle zeigt alles; x-Achse fest
 [Ende − N, Ende], Markierungen ausserhalb weg). Änderungen = kleines blaues ▼ oben (Text beim Darüberfahren, in voller Grösse zusätzlich als Text),
 feine gepunktete Linie.
+**Düsenzeichnung als Kasten** (2026-11-26, nur Web, Nutzerwunsch): `app/jet_drawing.py` - `GET /api/jet-drawings?name=|jet=` (Bilder + PDFs aus
+`tblJetFile`/JetFiles, neueste zuerst, nur vorhandene Dateien), `GET /api/jet-drawings/file/{id}` (PNG/JPG/GIF/WEBP direkt, BMP/TIFF -> PNG, PDF ->
+erste Seite über `doc_render`). Sichtbar für JEDEN Angemeldeten (Nutzerentscheid 2026-11-26), Browser schickt nie Pfade. Report: in
+`static/web_bridge.js` (nicht in der Desktop-Vorlage) - Maus auf `g.legend g.traces` -> nach 0.3 s Kasten (Name ohne " [Serie]", "jet::plate" ->
+Düse; keine Düse = kein Kasten; ◀ ▶; Strg+Klick = gross im neuen Tab, Spur bleibt sichtbar; Texte 4-sprachig aus `tripplet.lang`; nicht bei
+`m-small`). Machine Data: Düsenzeile bekommt `jimg` (Datei-ID) -> `HoverImage` zeigt Bild + Text. Zeichnungen sind vertraulich (Datenampel rot):
+nie selbst ansehen, mit Dummy-Bildern testen. Tests `tests/test_jet_drawing.py`.
 
 **Einstellungen** (2026-11-13): `/settings` (Konto-Menü im Seitenleisten-Fuss), `app/settings_api.py` auf `db/user_account.py` +
 `db/display_settings.py` - gleiche gespeicherte Werte wie der Desktop (Begrüssung, Startbildschirm, Akzentfarbe,

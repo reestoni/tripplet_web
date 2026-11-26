@@ -35,6 +35,22 @@ def _int_or(v: Any) -> Any:
         return v
 
 
+def _jet_drawing(stored: Any, cache: Dict[int, Optional[int]]) -> Optional[int]:
+    """tblJetFile id of the newest picture / PDF of a jet (app/jet_drawing.py), cached per request."""
+    try:
+        jid = int(float(stored))
+    except (TypeError, ValueError):
+        return None
+    if jid not in cache:
+        try:
+            from .jet_drawing import drawings
+            files = drawings(jet=jid)["files"]
+            cache[jid] = files[0]["id"] if files else None
+        except Exception:  # noqa: BLE001 - no picture then
+            cache[jid] = None
+    return cache[jid]
+
+
 def _lookup(m: Dict[Any, Any], key: Any) -> Any:
     """Lookup maps of db/machine_data hold int and str keys."""
     k = _int_or(key)
@@ -308,6 +324,7 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
     for rr, lst in (md.dropdown_lists or {}).items():
         dd_rows[rr] = _options(lst)
     rows = []
+    drawing_ids: Dict[int, Optional[int]] = {}
     prof = _schema_profile(cache, md.row_keys)
     # OF row in Machine Data (RDSetting = 2): the page computes the speed tooltip live from the typed OF
     of_row = mdm.of_row_index(md.row_titles)
@@ -331,6 +348,9 @@ def machine_data(series_id: int, mode: str = "single", custom: int = 0, _user: D
             stored = md.cells[r][c][0]
             if r == mdm.JET_ROW and stored not in (None, ""):      # desktop: jet geometry tooltip
                 tip = _lookup(jets.tooltip_map, stored) or tip
+                jimg = _jet_drawing(stored, drawing_ids)             # web: the jet's drawing in the box (2026-11-26)
+                if jimg:
+                    cell["jimg"] = jimg
             if r == mdm.HOUSING_ROW and stored not in (None, "") and _lookup(housing.image_map, stored):
                 cell["img"] = _int_or(stored)                     # desktop: housing picture on hover
             if tip:

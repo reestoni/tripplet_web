@@ -27,6 +27,8 @@ app.add_middleware(speed.TextGZipMiddleware)      # outermost: compresses what t
 app.include_router(series_lists.router)
 app.include_router(series_view.router)
 app.include_router(report.router)
+from . import jet_drawing  # noqa: E402  (jet drawing as hover box, 2026-11-26)
+app.include_router(jet_drawing.router)
 app.include_router(yarnscope.router)
 app.include_router(yarnscope_aty.router)
 from . import sensor_api  # noqa: E402  (YarnScope measuring with the NI box, 2026-11-20)

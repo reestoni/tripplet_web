@@ -282,7 +282,7 @@ export default function MachineTable({ seriesId, rowTitle, source = "machine", m
                     return (
                       <EditCell key={i} addr={{ tab: source, r: row.r, c: c.c }} text={cell.v} raw={cell.raw}
                         editable={!!cell.e} options={row.options ?? null}
-                        hoverImg={cell.img != null ? `/api/housing-image/${cell.img}` : undefined}
+                        hoverImg={cell.img != null ? `/api/housing-image/${cell.img}` : cell.jimg != null ? `/api/jet-drawings/file/${cell.jimg}` : undefined}
                         className={(cell.alert ?? "") + (c.reference ? " ref" : "") + (cell.notes ? " has-note" : "")
                           + (hl && row.key && hl.keys.includes(row.key) && hl.cols.includes(c.c) ? " schema-hl-cell" : "")}
                         hoverTip={cell.of_base != null ? ofSpeedTip(cell.of_base, ed?.pending({ tab: source, r: row.r, c: c.c })?.value ?? cell.v) ?? (cell.tip || undefined)

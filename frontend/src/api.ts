@@ -115,7 +115,7 @@ export type MachineData = {
   columns: { c: number; notes: CellNote[]; filter: string; trial_id: number; trial_label: string; reference: string | null; ply: string;
     ply_tooltip: string; colour: string | null; colour_name: string }[];
   rows: { r: number; title: string; key: string; readonly: boolean; options?: [number | string, string][] | null; kb?: string | null;
-    cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null; img?: number | string; kb?: string;
+    cells: { v: string; tip?: string; alert?: string; notes?: CellNote[]; e?: number; raw?: string | null; img?: number | string; jimg?: number; kb?: string;
       of_base?: number }[] }[];
   filter_labels: string[];
   multi_ply?: boolean;
